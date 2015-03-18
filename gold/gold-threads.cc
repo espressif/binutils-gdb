@@ -284,9 +284,18 @@ Condvar::~Condvar()
 class Once_initialize
 {
  public:
-  Once_initialize()
-    : once_(PTHREAD_ONCE_INIT)
-  { }
+   Once_initialize()
+#if !defined(__APPLE__)
+     : once_(PTHREAD_ONCE_INIT)
+   { }
+#else
+// In Drawin PTHREAD_ONCE_INIT is {0x30B1BCBA, {0}} and the GCC < 4.4 doesn't support
+// extended initializer list as above */
+   {
+     pthread_once_t once_2 = PTHREAD_ONCE_INIT;
+     once_ = once_2; 
+   }
+#endif
 
   // Return a pointer to the pthread_once_t variable.
   pthread_once_t*
