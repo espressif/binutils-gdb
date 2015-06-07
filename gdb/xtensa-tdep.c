@@ -2381,7 +2381,7 @@ call0_analyze_prologue (struct gdbarch *gdbarch,
   /* Find out, if we have an information about the prologue from DWARF.  */
   prologue_sal = find_pc_line (start, 0);
   if (prologue_sal.line != 0) /* Found debug info.  */
-    body_pc = prologue_sal.end;
+    body_pc = prologue_sal.end + 40;
 
   /* If we are going to analyze the prologue in general without knowing about
      the current PC, make the best assumption for the end of the prologue.  */
