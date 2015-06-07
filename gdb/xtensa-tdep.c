@@ -3138,6 +3138,9 @@ xtensa_derive_tdep (xtensa_gdbarch_tdep *tdep)
   if (tdep->num_regs == 0)
     tdep->num_regs = tdep->num_nopriv_regs;
 
+  if (tdep->ar_base == -1)
+    tdep->ar_base = tdep->a0_base;
+
   /* Number of pseudo registers.  */
   tdep->num_pseudo_regs = n - tdep->num_regs;
 
