@@ -284,6 +284,8 @@ typedef int (*disassembler_ftype) (bfd_vma, disassemble_info *);
 
 /* Disassemblers used out side of opcodes library.  */
 extern int print_insn_m32c		(bfd_vma, disassemble_info *);
+extern int print_insn_esp32ulp		(bfd_vma, disassemble_info *);
+extern int print_insn_esp32s2ulp	(bfd_vma, disassemble_info *);
 extern int print_insn_mep		(bfd_vma, disassemble_info *);
 extern int print_insn_s12z		(bfd_vma, disassemble_info *);
 extern int print_insn_sh		(bfd_vma, disassemble_info *);

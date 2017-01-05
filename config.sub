@@ -267,6 +267,10 @@ case $1 in
 				basic_machine=bfin-unknown
 				basic_os=linux
 				;;
+			esp32dum)
+				basic_machine=esp32ulp-unknown
+				os=linux
+				;;
 			cegcc)
 				basic_machine=arm-unknown
 				basic_os=cegcc
@@ -1039,6 +1043,10 @@ case $cpu-$vendor in
 		cpu=bfin
 		basic_os=linux
 		;;
+	esp32dum-*)
+		cpu=esp32ulp
+		os=linux
+		;;
 	c54x-*)
 		cpu=tic54x
 		;;
@@ -1193,7 +1201,7 @@ case $cpu-$vendor in
 			| asmjs \
 			| ba \
 			| be32 | be64 \
-			| bfin | bpf | bs2000 \
+			| bfin | esp32ulp | bpf | bs2000 \
 			| c[123]* | c30 | [cjt]90 | c4x \
 			| c8051 | clipper | craynv | csky | cydra \
 			| d10v | d30v | dlx | dsp16xx \

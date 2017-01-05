@@ -93,6 +93,8 @@ GAS_CFILES = \
 	sb.c \
 	stabs.c \
 	subsegs.c \
+	config/tc-esp32ulp_esp32.c \
+	config/tc-esp32ulp_esp32s2.c \
 	symbols.c \
 	write.c
 
@@ -138,6 +140,9 @@ TARGET_CPU_CFILES = \
 	config/tc-avr.c \
 	config/tc-bfin.c \
 	config/tc-bpf.c \
+	config/tc-esp32ulp.c \
+	config/tc-esp32ulp_esp32.c \
+	config/tc-esp32ulp_esp32s2.c \
 	config/tc-cr16.c \
 	config/tc-cris.c \
 	config/tc-crx.c \
@@ -214,6 +219,7 @@ TARGET_CPU_HFILES = \
 	config/tc-avr.h \
 	config/tc-bfin.h \
 	config/tc-bpf.h \
+	config/tc-esp32ulp.h \
 	config/tc-cr16.h \
 	config/tc-cris.h \
 	config/tc-crx.h \
@@ -376,6 +382,7 @@ EXTRA_SCRIPTS = .gdbinit
 
 EXTRA_DIST = config/m68k-parse.c itbl-parse.c itbl-parse.h itbl-lex.c \
 	config/bfin-parse.c config/bfin-parse.h config/bfin-lex.c \
+	config/esp32ulp-parse.c config/esp32ulp-parse.h config/esp32ulp-lex.c \
 	config/rl78-parse.c config/rl78-parse.h \
 	config/rx-parse.c config/rx-parse.h \
 	config/loongarch-parse.c config/loongarch-parse.h config/loongarch-lex.c
@@ -462,6 +469,18 @@ config/bfin-lex.c: $(srcdir)/config/bfin-lex.l
 	$(SHELL) $(YLWRAP) $(srcdir)/config/bfin-lex.l lex.yy.c $@ -- $(LEXCOMPILE)
 
 config/bfin-lex-wrapper.@OBJEXT@: config/bfin-lex.c config/bfin-parse.h
+
+EXTRA_as_new_SOURCES += config/esp32ulp-parse.y
+config/esp32ulp-parse.c: $(srcdir)/config/esp32ulp-parse.y
+	$(SHELL) $(YLWRAP) $(srcdir)/config/esp32ulp-parse.y y.tab.c $@ y.tab.h config/esp32ulp-parse.h -- $(YACCCOMPILE) -d ;
+config/esp32ulp-parse.h: config/esp32ulp-parse.c
+	@true
+
+EXTRA_as_new_SOURCES += config/esp32ulp-lex.l
+config/esp32ulp-lex.c: $(srcdir)/config/esp32ulp-lex.l
+	$(SHELL) $(YLWRAP) $(srcdir)/config/esp32ulp-lex.l lex.yy.c $@ -- $(LEXCOMPILE)
+
+config/esp32ulp-lex-wrapper.@OBJEXT@: config/esp32ulp-lex.c config/esp32ulp-parse.h
 
 EXTRA_as_new_SOURCES += config/rl78-parse.y
 config/rl78-parse.c: $(srcdir)/config/rl78-parse.y

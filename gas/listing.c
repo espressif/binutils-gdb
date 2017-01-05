@@ -114,7 +114,7 @@
 #define LISTING_RHS_WIDTH 100
 #endif
 #ifndef LISTING_LHS_CONT_LINES
-#define LISTING_LHS_CONT_LINES 4
+#define LISTING_LHS_CONT_LINES 100
 #endif
 #define MAX_DATELEN 30
 
@@ -300,8 +300,8 @@ listing_newline (char *ps)
   static const char *last_file = NULL;
   list_info_type *new_i = NULL;
 
-  if (listing == 0)
-    return;
+  //if (listing == 0)
+  //  return;
 
   if (now_seg == absolute_section)
     return;

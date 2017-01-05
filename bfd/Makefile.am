@@ -97,6 +97,7 @@ ALL_MACHINES = \
 	cpu-avr.lo \
 	cpu-bfin.lo \
 	cpu-bpf.lo \
+	cpu-esp32ulp.lo \
 	cpu-cr16.lo \
 	cpu-cris.lo \
 	cpu-crx.lo \
@@ -182,6 +183,7 @@ ALL_MACHINES_CFILES = \
 	cpu-avr.c \
 	cpu-bfin.c \
 	cpu-bpf.c \
+	cpu-esp32ulp.c \
 	cpu-cr16.c \
 	cpu-cris.c \
 	cpu-crx.c \
@@ -297,6 +299,7 @@ BFD32_BACKENDS = \
 	elf32-arm.lo \
 	elf32-avr.lo \
 	elf32-bfin.lo \
+	elf32-esp32ulp.lo \
 	elf32-cr16.lo \
 	elf32-cris.lo \
 	elf32-crx.lo \
@@ -430,6 +433,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-arm.c \
 	elf32-avr.c \
 	elf32-bfin.c \
+	elf32-esp32ulp.c \
 	elf32-cr16.c \
 	elf32-cris.c \
 	elf32-crx.c \
@@ -687,7 +691,7 @@ SOURCE_HFILES = \
 	coff-arm.h coff-bfd.h coffcode.h coffswap.h \
 	cpu-aarch64.h cpu-arm.h cpu-h8300.h cpu-m68k.h cpu-riscv.h \
 	ecoff-bfd.h ecoffswap.h \
-	elf32-arm.h elf32-avr.h elf32-bfin.h elf32-cr16.h elf32-csky.h \
+	elf32-arm.h elf32-avr.h elf32-bfin.h elf32-esp32ulp.h elf32-cr16.h elf32-csky.h \
 	elf32-dlx.h elf32-hppa.h elf32-m68hc1x.h elf32-m68k.h \
 	elf32-metag.h elf32-nds32.h elf32-nios2.h elf32-ppc.h \
 	elf32-rx.h elf32-score.h elf32-sh-relocs.h elf32-spu.h \

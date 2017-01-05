@@ -728,6 +728,15 @@ case "${target}" in
   arm-wince-pe)
     noconfigdirs="$noconfigdirs target-libffi"
     ;;
+  arm*-*-symbianelf*)
+    noconfigdirs="$noconfigdirs target-libffi"
+    ;;
+  bpf-*-*)
+    noconfigdirs="$noconfigdirs target-libffi"
+    ;;
+  esp32ulp-*-*)
+    noconfigdirs="$noconfigdirs target-boehm-gc"
+    ;;
   cris-*-* | crisv32-*-*)
     case "${target}" in
       *-*-linux*)

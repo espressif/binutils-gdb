@@ -159,6 +159,7 @@ CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES = gdb.ini .gdbinit po/Makefile.in
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_1 = app.$(OBJEXT) as.$(OBJEXT) atof-generic.$(OBJEXT) \
 	compress-debug.$(OBJEXT) cond.$(OBJEXT) depend.$(OBJEXT) \
 	dwarf2dbg.$(OBJEXT) dw2gencfi.$(OBJEXT) ecoff.$(OBJEXT) \
@@ -168,9 +169,10 @@ am__objects_1 = app.$(OBJEXT) as.$(OBJEXT) atof-generic.$(OBJEXT) \
 	listing.$(OBJEXT) literal.$(OBJEXT) macro.$(OBJEXT) \
 	messages.$(OBJEXT) output-file.$(OBJEXT) read.$(OBJEXT) \
 	remap.$(OBJEXT) sb.$(OBJEXT) stabs.$(OBJEXT) subsegs.$(OBJEXT) \
-	symbols.$(OBJEXT) write.$(OBJEXT)
+	config/tc-esp32ulp_esp32.$(OBJEXT) \
+	config/tc-esp32ulp_esp32s2.$(OBJEXT) symbols.$(OBJEXT) \
+	write.$(OBJEXT)
 am_as_new_OBJECTS = $(am__objects_1)
-am__dirstamp = $(am__leading_dot)dirstamp
 as_new_OBJECTS = $(am_as_new_OBJECTS)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = ../bfd/libbfd.la ../libiberty/libiberty.a
@@ -572,6 +574,8 @@ GAS_CFILES = \
 	sb.c \
 	stabs.c \
 	subsegs.c \
+	config/tc-esp32ulp_esp32.c \
+	config/tc-esp32ulp_esp32s2.c \
 	symbols.c \
 	write.c
 
@@ -616,6 +620,9 @@ TARGET_CPU_CFILES = \
 	config/tc-avr.c \
 	config/tc-bfin.c \
 	config/tc-bpf.c \
+	config/tc-esp32ulp.c \
+	config/tc-esp32ulp_esp32.c \
+	config/tc-esp32ulp_esp32s2.c \
 	config/tc-cr16.c \
 	config/tc-cris.c \
 	config/tc-crx.c \
@@ -692,6 +699,7 @@ TARGET_CPU_HFILES = \
 	config/tc-avr.h \
 	config/tc-bfin.h \
 	config/tc-bpf.h \
+	config/tc-esp32ulp.h \
 	config/tc-cr16.h \
 	config/tc-cris.h \
 	config/tc-crx.h \
@@ -847,6 +855,7 @@ noinst_SCRIPTS = $(GDBINIT)
 EXTRA_SCRIPTS = .gdbinit
 EXTRA_DIST = config/m68k-parse.c itbl-parse.c itbl-parse.h itbl-lex.c \
 	config/bfin-parse.c config/bfin-parse.h config/bfin-lex.c \
+	config/esp32ulp-parse.c config/esp32ulp-parse.h config/esp32ulp-lex.c \
 	config/rl78-parse.c config/rl78-parse.h \
 	config/rx-parse.c config/rx-parse.h \
 	config/loongarch-parse.c config/loongarch-parse.h config/loongarch-lex.c
@@ -887,9 +896,9 @@ EXTRA_as_new_SOURCES = $(CFILES) $(HFILES) $(TARGET_CPU_CFILES) \
 	$(TARGET_CPU_HFILES) $(TARGET_EXTRA_FILES) $(TARG_ENV_CFILES) \
 	$(OBJ_FORMAT_CFILES) $(OBJ_FORMAT_HFILES) \
 	$(CONFIG_ATOF_CFILES) $(MULTI_CFILES) config/m68k-parse.y \
-	config/bfin-parse.y config/bfin-lex.l config/rl78-parse.y \
-	config/rx-parse.y config/loongarch-parse.y \
-	config/loongarch-lex.l
+	config/bfin-parse.y config/bfin-lex.l config/esp32ulp-parse.y \
+	config/esp32ulp-lex.l config/rl78-parse.y config/rx-parse.y \
+	config/loongarch-parse.y config/loongarch-lex.l
 EXPECT = expect
 RUNTEST = runtest
 RUNTESTFLAGS = 
@@ -1065,6 +1074,10 @@ config/$(am__dirstamp):
 config/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) config/$(DEPDIR)
 	@: > config/$(DEPDIR)/$(am__dirstamp)
+config/tc-esp32ulp_esp32.$(OBJEXT): config/$(am__dirstamp) \
+	config/$(DEPDIR)/$(am__dirstamp)
+config/tc-esp32ulp_esp32s2.$(OBJEXT): config/$(am__dirstamp) \
+	config/$(DEPDIR)/$(am__dirstamp)
 config/tc-aarch64.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
 config/tc-alpha.$(OBJEXT): config/$(am__dirstamp) \
@@ -1078,6 +1091,8 @@ config/tc-avr.$(OBJEXT): config/$(am__dirstamp) \
 config/tc-bfin.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
 config/tc-bpf.$(OBJEXT): config/$(am__dirstamp) \
+	config/$(DEPDIR)/$(am__dirstamp)
+config/tc-esp32ulp.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
 config/tc-cr16.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
@@ -1259,6 +1274,10 @@ config/bfin-parse.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
 config/bfin-lex.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
+config/esp32ulp-parse.$(OBJEXT): config/$(am__dirstamp) \
+	config/$(DEPDIR)/$(am__dirstamp)
+config/esp32ulp-lex.$(OBJEXT): config/$(am__dirstamp) \
+	config/$(DEPDIR)/$(am__dirstamp)
 config/rl78-parse.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
 config/rx-parse.$(OBJEXT): config/$(am__dirstamp) \
@@ -1328,6 +1347,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/e-i386coff.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/e-i386elf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/e-mipself.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/esp32ulp-lex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/esp32ulp-parse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/loongarch-lex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/loongarch-parse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/m68k-parse.Po@am__quote@
@@ -1357,6 +1378,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-d30v.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-dlx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-epiphany.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-esp32ulp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-esp32ulp_esp32.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-esp32ulp_esp32s2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-fr30.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-frv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-ft32.Po@am__quote@
@@ -1821,6 +1845,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 	-rm -f config/bfin-lex.c
 	-rm -f config/bfin-parse.c
+	-rm -f config/esp32ulp-lex.c
+	-rm -f config/esp32ulp-parse.c
 	-rm -f config/loongarch-lex.c
 	-rm -f config/loongarch-parse.c
 	-rm -f config/m68k-parse.c
@@ -2064,6 +2090,14 @@ config/bfin-lex.c: $(srcdir)/config/bfin-lex.l
 	$(SHELL) $(YLWRAP) $(srcdir)/config/bfin-lex.l lex.yy.c $@ -- $(LEXCOMPILE)
 
 config/bfin-lex-wrapper.@OBJEXT@: config/bfin-lex.c config/bfin-parse.h
+config/esp32ulp-parse.c: $(srcdir)/config/esp32ulp-parse.y
+	$(SHELL) $(YLWRAP) $(srcdir)/config/esp32ulp-parse.y y.tab.c $@ y.tab.h config/esp32ulp-parse.h -- $(YACCCOMPILE) -d ;
+config/esp32ulp-parse.h: config/esp32ulp-parse.c
+	@true
+config/esp32ulp-lex.c: $(srcdir)/config/esp32ulp-lex.l
+	$(SHELL) $(YLWRAP) $(srcdir)/config/esp32ulp-lex.l lex.yy.c $@ -- $(LEXCOMPILE)
+
+config/esp32ulp-lex-wrapper.@OBJEXT@: config/esp32ulp-lex.c config/esp32ulp-parse.h
 config/rl78-parse.c: $(srcdir)/config/rl78-parse.y
 	$(SHELL) $(YLWRAP) $(srcdir)/config/rl78-parse.y y.tab.c $@ y.tab.h config/rl78-parse.h -- $(YACCCOMPILE) -d ;
 config/rl78-parse.h: config/rl78-parse.c

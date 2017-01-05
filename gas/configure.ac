@@ -443,6 +443,16 @@ changequote([,])dnl
 	fi
         using_cgen=yes
         ;;
+
+      esp32ulp)
+	for f in config/esp32ulp-parse.o config/esp32ulp-lex-wrapper.o; do
+	  case " $extra_objects " in
+	    *" $f "*) ;;
+	    *) extra_objects="$extra_objects $f" ;;
+	  esac
+	done
+	;;
+
       epiphany | fr30 | ip2k | iq2000 | lm32 | m32r | or1k)
 	using_cgen=yes
 	;;

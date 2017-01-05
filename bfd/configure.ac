@@ -468,6 +468,8 @@ do
     avr_elf32_vec)		 tb="$tb elf32-avr.lo elf32.lo $elf" ;;
     bfin_elf32_vec)		 tb="$tb elf32-bfin.lo elf32.lo $elf" ;;
     bfin_elf32_fdpic_vec)	 tb="$tb elf32-bfin.lo elf32.lo $elf" ;;
+    esp32ulp_elf32_vec)		 tb="$tb elf32-esp32ulp.lo elf32.lo $elf" ;;
+    esp32ulp_elf32_fdpic_vec)	 tb="$tb elf32-esp32ulp.lo elf32.lo $elf" ;;
     cr16_elf32_vec)		 tb="$tb elf32-cr16.lo elf32.lo $elf" ;;
     cris_aout_vec)		 tb="$tb aout-cris.lo" ;;
     cris_elf32_vec)		 tb="$tb elf32-cris.lo elf32.lo $elf" ;;

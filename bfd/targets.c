@@ -709,6 +709,8 @@ extern const bfd_target arm_pei_wince_le_vec;
 extern const bfd_target avr_elf32_vec;
 extern const bfd_target bfin_elf32_vec;
 extern const bfd_target bfin_elf32_fdpic_vec;
+extern const bfd_target esp32ulp_elf32_vec;
+extern const bfd_target esp32ulp_elf32_fdpic_vec;
 extern const bfd_target cr16_elf32_vec;
 extern const bfd_target cris_aout_vec;
 extern const bfd_target cris_elf32_vec;
@@ -1036,6 +1038,9 @@ static const bfd_target * const _bfd_target_vector[] =
 
 	&bfin_elf32_vec,
 	&bfin_elf32_fdpic_vec,
+
+	&esp32ulp_elf32_vec,
+	&esp32ulp_elf32_fdpic_vec,
 
 	&cr16_elf32_vec,
 

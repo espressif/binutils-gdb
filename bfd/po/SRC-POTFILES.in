@@ -160,6 +160,8 @@ elf32-avr.c
 elf32-avr.h
 elf32-bfin.c
 elf32-bfin.h
+elf32-esp32ulp.c
+elf32-esp32ulp.h
 elf32-cr16.c
 elf32-cr16.h
 elf32-cris.c
