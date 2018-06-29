@@ -572,13 +572,19 @@ ldfile_open_file_search (const char *arch,
      directory first.  */
   if (!entry->flags.maybe_archive)
     {
-      if (entry->flags.sysrooted && IS_ABSOLUTE_PATH (entry->filename))
+      /* For absolute pathnames, try to always open the file in the
+	 sysroot first. If this fails, try to open the file at the
+	 given location.  */
+      entry->flags.sysrooted = is_sysrooted_pathname (entry->filename);
+      if (!entry->flags.sysrooted && IS_ABSOLUTE_PATH (entry->filename)
+	  && ld_sysroot)
 	{
 	  char *name = concat (ld_sysroot, entry->filename,
 			       (const char *) NULL);
 	  if (ldfile_try_open_bfd (name, entry))
 	    {
 	      entry->filename = name;
+	      entry->flags.sysrooted = true;
 	      return true;
 	    }
 	  free (name);
