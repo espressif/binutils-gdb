@@ -1134,6 +1134,8 @@ ldelf_handle_dt_needed (struct elf_link_hash_table *htab,
 		  && command_line.rpath == NULL)
 		{
 		  path = (const char *) getenv ("LD_RUN_PATH");
+		  if (path && *path == '\0')
+		    path = NULL;
 		  if (path
 		      && ldelf_search_needed (path, &n, force,
 					      is_linux, elfsize))
@@ -1808,6 +1810,8 @@ ldelf_before_allocation (char **audit, char **depaudit,
   rpath = command_line.rpath;
   if (rpath == NULL)
     rpath = (const char *) getenv ("LD_RUN_PATH");
+  if (rpath && *rpath == '\0')
+    rpath = NULL;
 
   for (abfd = link_info.input_bfds; abfd; abfd = abfd->link.next)
     if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
