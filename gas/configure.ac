@@ -944,7 +944,10 @@ AC_DEFINE_UNQUOTED(TARGET_VENDOR,	"${target_vendor}", [Target vendor.])
 AC_DEFINE_UNQUOTED(TARGET_OS,		"${target_os}",    [Target OS.])
 
 AC_PROG_YACC
+save_LIBS=$LIBS
 AM_PROG_LEX
+LIBS=$save_LIBS
+LEXLIB=
 
 ALL_LINGUAS="es fi fr id ja ru rw sv tr uk zh_CN"
 ZW_GNU_GETTEXT_SISTER_DIR
