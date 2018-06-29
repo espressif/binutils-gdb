@@ -629,6 +629,14 @@ static const struct ld_option ld_options[] =
 		   "                                <method> is: share-unconflicted (default),\n"
 		   "                                             share-duplicated"),
     TWO_DASHES },
+  { {"no-poison-system-directories", no_argument, NULL,
+    OPTION_NO_POISON_SYSTEM_DIRECTORIES},
+    '\0', NULL, N_("Do not warn for -L options using system directories"),
+    TWO_DASHES },
+  { {"error-poison-system-directories", no_argument, NULL,
+    OPTION_ERROR_POISON_SYSTEM_DIRECTORIES},
+    '\0', NULL, N_("Give an error for -L options using system directories"),
+    TWO_DASHES },
 };
 
 #define OPTION_COUNT ARRAY_SIZE (ld_options)
@@ -641,6 +649,7 @@ parse_args (unsigned argc, char **argv)
   int ingroup = 0;
   char *default_dirlist = NULL;
   char *shortopts;
+  char *BR_paranoid_env;
   struct option *longopts;
   struct option *really_longopts;
   int last_optind;
@@ -1738,6 +1747,14 @@ parse_args (unsigned argc, char **argv)
 	  }
 	  break;
 
+	case OPTION_NO_POISON_SYSTEM_DIRECTORIES:
+	  command_line.poison_system_directories = false;
+	  break;
+
+	case OPTION_ERROR_POISON_SYSTEM_DIRECTORIES:
+	  command_line.error_poison_system_directories = true;
+	  break;
+
 	case OPTION_PUSH_STATE:
 	  input_flags.pushed = xmemdup (&input_flags,
 					sizeof (input_flags),
@@ -1890,6 +1907,10 @@ parse_args (unsigned argc, char **argv)
       einfo (_("%P: SONAME must not be empty string; ignored\n"));
       command_line.soname = NULL;
     }
+
+  BR_paranoid_env = getenv("BR_COMPILER_PARANOID_UNSAFE_PATH");
+  if (BR_paranoid_env && strlen(BR_paranoid_env) > 0)
+    command_line.error_poison_system_directories = false;
 
   while (ingroup)
     {
