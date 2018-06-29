@@ -18016,6 +18016,7 @@ fi
 done
 test -n "$YACC" || YACC="yacc"
 
+save_LIBS=$LIBS
 for ac_prog in flex lex
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -18179,6 +18180,8 @@ esac
 if test "$LEX" = :; then
   LEX=${am_missing_run}flex
 fi
+LIBS=$save_LIBS
+LEXLIB=
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable maintainer-specific portions of Makefiles" >&5

@@ -153,7 +153,10 @@ if test -z "$host" ; then
 fi
 
 AC_PROG_YACC
+save_LIBS=$LIBS
 AM_PROG_LEX
+LIBS=$save_LIBS
+LEXLIB=
 
 ALL_LINGUAS="bg ca da es fi fr hr id it ja pt ro ru rw sk sr sv tr uk vi zh_CN zh_TW"
 AM_PO_SUBDIRS
