@@ -56,6 +56,8 @@
 #include "arch/riscv.h"
 #include "riscv-ravenscar-thread.h"
 #include "gdbsupport/gdb-safe-ctype.h"
+#include "regset.h"
+#include "assert.h"
 
 /* The stack must be 16-byte aligned.  */
 #define SP_ALIGNMENT 16
@@ -4169,6 +4171,74 @@ static const char *const stap_register_indirection_suffixes[] =
   ")", nullptr
 };
 
+/* Supply register REGNUM from the buffer specified by GREGS and LEN
+   in the general-purpose register set REGSET to register cache
+   REGCACHE.  If REGNUM is -1 do this for all registers in REGSET.  */
+static void
+riscv_supply_gregset (const struct regset *regset,
+		       struct regcache *rc,
+		       int regnum,
+		       const void *gregs,
+		       size_t len)
+{
+  riscv_regs *regs = (riscv_regs *) gregs;
+  int i = 0;
+  static const uint32_t zero = 0;
+
+  assert (regnum >= -1 && regnum <= RISCV_LAST_REGNUM);
+
+  if (regnum == RISCV_PC_REGNUM) {
+    /* For some reasons, GDB doesn't work properly if RISCV_PC_REGNUM is
+     * assigned to 0. While debugging, PC will be set correctly when the core
+     * file is loaded but "info registers" will show that $pc is 0.
+     * Thus, let's keep this macro as it is and manage it manually.
+     */
+    rc->raw_supply (RISCV_PC_REGNUM, &regs->pc);
+  } else if (regnum == RISCV_ZERO_REGNUM) {
+    rc->raw_supply (RISCV_ZERO_REGNUM, &zero);
+  } else if (regnum > RISCV_ZERO_REGNUM && regnum < RISCV_GP_REGS_COUNT) {
+    /* Dump a single GP register */
+    rc->raw_supply (regnum, &regs->as_array[regnum]);
+  } else if (regnum >= RISCV_FIRST_FP_REGNUM && regnum <= RISCV_LAST_REGNUM) {
+    /* Dump any unsupported register. It will be set to 0. */
+    rc->raw_supply (regnum, &zero);
+  } else {
+    /* Dump all registers.
+     * In regs structure, the first 32-bit value is the PC and not the zero reg
+     * as expected by the gdbarch for RISC-V, so we have to manually fill both
+     * $pc and $zero register */
+    rc->raw_supply (RISCV_ZERO_REGNUM, &zero);
+
+    for (i = 1; i < RISCV_GP_REGS_COUNT; ++i)
+    	rc->raw_supply (i, &regs->as_array[i]);
+
+    rc->raw_supply (RISCV_PC_REGNUM, &regs->pc);
+
+    for (i = RISCV_FIRST_FP_REGNUM; i <= RISCV_LAST_REGNUM; i++)
+      rc->raw_supply (i, &zero);
+  }
+}
+
+/* RISC-V register set.  */
+static struct regset riscv_gregset =
+{
+  NULL,
+  riscv_supply_gregset,
+  NULL,
+  0
+};
+
+/* Iterate over supported core file register note sections. */
+static void
+riscv_iterate_over_regset_sections (struct gdbarch *gdbarch,
+				     iterate_over_regset_sections_cb *cb,
+				     void *cb_data,
+				     const struct regcache *regcache)
+{
+  cb (".reg", sizeof(riscv_regs), sizeof(riscv_regs), &riscv_gregset,
+      NULL, cb_data);
+}
+
 /* Initialize the current architecture based on INFO.  If possible,
    re-use an architecture from ARCHES, which is a list of
    architectures already created during this debugging session.
@@ -4398,6 +4468,10 @@ riscv_gdbarch_init (struct gdbarch_info info,
      description.  */
   for (const auto &alias : pending_aliases)
     alias.create (gdbarch);
+
+  /* Provide a function to iterate over the regset section in a core dump file. */
+  set_gdbarch_iterate_over_regset_sections
+    (gdbarch, riscv_iterate_over_regset_sections);
 
   /* Compile command hooks.  */
   set_gdbarch_gcc_target_options (gdbarch, riscv_gcc_target_options);
