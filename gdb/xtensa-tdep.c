@@ -3147,6 +3147,12 @@ xtensa_derive_tdep (xtensa_gdbarch_tdep *tdep)
   /* Number of pseudo registers.  */
   tdep->num_pseudo_regs = n - tdep->num_regs;
 
+  if (tdep->isa_use_windowed_registers) {
+    /* In window ABI, a0-a15 are pseudo registers */
+    tdep->num_regs = tdep->a0_base;
+    tdep->num_pseudo_regs = n - tdep->a0_base;
+  }
+
   /* Empirically determined maximum sizes.  */
   tdep->max_register_raw_size = max_size;
   tdep->max_register_virtual_size = max_size;
