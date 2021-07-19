@@ -833,13 +833,16 @@ xtensa_supply_gregset (const struct regset *regset,
   if (regnum == tdep->ws_regnum || regnum == -1)
     rc->raw_supply (tdep->ws_regnum,
 		    (char *) &regs->windowstart);
-  if (regnum == tdep->lbeg_regnum || regnum == -1)
+  if (tdep->lbeg_regnum != -1 &&
+      (regnum == tdep->lbeg_regnum || regnum == -1))
     rc->raw_supply (tdep->lbeg_regnum,
 		    (char *) &regs->lbeg);
-  if (regnum == tdep->lend_regnum || regnum == -1)
+  if (regnum == tdep->lend_regnum != -1 &&
+      (regnum == tdep->lend_regnum || regnum == -1))
     rc->raw_supply (tdep->lend_regnum,
 		    (char *) &regs->lend);
-  if (regnum == tdep->lcount_regnum || regnum == -1)
+  if (tdep->lcount_regnum != -1 &&
+      (regnum == tdep->lcount_regnum || regnum == -1))
     rc->raw_supply (tdep->lcount_regnum,
 		    (char *) &regs->lcount);
   if (regnum == tdep->sar_regnum || regnum == -1)
