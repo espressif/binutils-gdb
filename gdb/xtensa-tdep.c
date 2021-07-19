@@ -837,7 +837,7 @@ xtensa_supply_gregset (const struct regset *regset,
       (regnum == tdep->lbeg_regnum || regnum == -1))
     rc->raw_supply (tdep->lbeg_regnum,
 		    (char *) &regs->lbeg);
-  if (regnum == tdep->lend_regnum != -1 &&
+  if (tdep->lend_regnum != -1 &&
       (regnum == tdep->lend_regnum || regnum == -1))
     rc->raw_supply (tdep->lend_regnum,
 		    (char *) &regs->lend);
@@ -3263,7 +3263,52 @@ xtensa_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 static void
 xtensa_dump_tdep (struct gdbarch *gdbarch, struct ui_file *file)
 {
-  error (_("xtensa_dump_tdep(): not implemented"));
+  xtensa_gdbarch_tdep *tdep = gdbarch_tdep<xtensa_gdbarch_tdep> (gdbarch);
+  if (tdep != NULL)
+    {
+      gdb_printf (file, "xtensa_dump_tdep: tdep->num_regs = %d\n",
+                                tdep->num_regs);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->num_nopriv_regs = %d\n",
+                                tdep->num_nopriv_regs);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->num_pseudo_regs = %d\n",
+                                tdep->num_pseudo_regs);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->ar_base = %d\n",
+                                tdep->ar_base);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->a0_base = %d\n",
+                                tdep->a0_base);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->wb_regnum = %d\n",
+                                tdep->wb_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->ws_regnum = %d\n",
+                                tdep->ws_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->pc_regnum = %d\n",
+                                tdep->pc_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->ps_regnum = %d\n",
+                                tdep->ps_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->lbeg_regnum = %d\n",
+                                tdep->lbeg_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->lend_regnum = %d\n",
+                                tdep->lend_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->lcount_regnum = %d\n",
+                                tdep->lcount_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->sar_regnum = %d\n",
+                                tdep->sar_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->litbase_regnum = %d\n",
+                                tdep->litbase_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->threadptr_regnum = %d\n",
+                                tdep->threadptr_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->interrupt_regnum = %d\n",
+                                tdep->interrupt_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->interrupt2_regnum = %d\n",
+                                tdep->interrupt2_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->cpenable_regnum = %d\n",
+                                tdep->cpenable_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->debugcause_regnum = %d\n",
+                                tdep->debugcause_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->exccause_regnum = %d\n",
+                                tdep->exccause_regnum);
+      gdb_printf (file, "xtensa_dump_tdep: tdep->excvaddr_regnum = %d\n",
+                                tdep->excvaddr_regnum);
+    }
 }
 
 void _initialize_xtensa_tdep ();
