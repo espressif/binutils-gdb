@@ -1,0 +1,24 @@
+# syntax = edrevo/dockerfile-plus
+
+ARG DOCKER_REGISTRY
+ARG TOOLCHAIN_TAG
+
+FROM ${DOCKER_REGISTRY}/esp32-toolchain-arm-cross:${TOOLCHAIN_TAG}
+
+ARG TARGET_HOSTS="arm-linux-gnueabihf"
+ARG OPENSSL_BUILD_PLATFORM="linux-generic32"
+ARG OPENSSL_TARGET_PLATFORM="linux-armv4"
+ARG TARGET_HOST="arm-linux-gnueabihf"
+
+INCLUDE+ ./common/Dockerfile.update-apt-sources
+
+RUN set -ex;                                            \
+    apt-get update                                      \
+  && apt-get install -y -q --no-install-recommends      \
+        libc6-dev                                       \
+        linux-libc-dev                                  \
+        libffi-dev:armhf                                \
+  && rm -rf /var/lib/apt/lists/*
+
+INCLUDE+ ./common/Dockerfile.gdb-deps
+INCLUDE+ ./common/Dockerfile.python-builder

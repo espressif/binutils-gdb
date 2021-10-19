@@ -1,0 +1,18 @@
+# syntax = edrevo/dockerfile-plus
+
+ARG DOCKER_REGISTRY
+ARG TOOLCHAIN_TAG
+
+# Needed to build for mingw, see
+# http://lists.gnu.org/archive/html/info-gnu/2011-02/msg00020.html
+ARG NCURSES_TARGET_OPTS="--enable-term-driver --enable-sp-funcs"
+
+
+FROM ${DOCKER_REGISTRY}/esp32-toolchain-win-cross:${TOOLCHAIN_TAG}
+
+ARG TARGET_HOST="i686-w64-mingw32"
+ARG WIN_PLATFORM="win32"
+
+INCLUDE+ ./common/Dockerfile.update-apt-sources
+INCLUDE+ ./common/Dockerfile.gdb-deps
+INCLUDE+ ./common/Dockerfile.win-python

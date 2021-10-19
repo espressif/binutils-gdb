@@ -1,0 +1,94 @@
+ARG OPENSSL_DIR="/opt/openssl"
+ARG PYENV_VERSION="v2.3.36"
+ARG PYTHON_VERSIONS="3.8.0 3.9.0 3.10.0 3.11.0 3.12.0"
+
+ARG OPENSSL_VERSION="openssl-3.2.1"
+
+# install python build dependencies
+RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --force-yes \
+    lzip \
+    git \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    wget \
+    curl \
+    llvm \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
+    $CUSTOM_PACKAGES \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG HOST_TRIPLET="gcc -dumpmachine"
+
+# install pyenv
+RUN rm -fr ~/.pyenv && \
+    git clone -b ${PYENV_VERSION} --single-branch --depth 1 https://github.com/pyenv/pyenv.git ~/.pyenv && \
+    cd ~/.pyenv && \
+    src/configure && \
+    make -C src
+
+# setup environment variables for pyenv
+RUN sed -Ei -e '/^([^#]|$)/ {a \export PYENV_ROOT="$HOME/.pyenv"\nexport PATH="$PYENV_ROOT/bin:$PATH" \n' -e ':a' -e '$!{n;ba};}' ~/.profile && \
+    echo 'eval "$(pyenv init --path)"' >> ~/.profile && \
+    bash -c "echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\\n eval \"\$(pyenv init -)\"\nfi' >> ~/.bashrc"
+
+RUN git clone -b $OPENSSL_VERSION https://github.com/openssl/openssl.git --depth=1 && \
+    cd openssl && \
+    ./Configure ${OPENSSL_BUILD_PLATFORM} --prefix=${OPENSSL_DIR}-`${HOST_TRIPLET}` && \
+    make install_sw && make distclean && \
+    for TARGET_HOST in $TARGET_HOSTS; do \
+       ./Configure ${OPENSSL_TARGET_PLATFORM} --cross-compile-prefix=${TARGET_HOST}- --prefix=${OPENSSL_DIR}-${TARGET_HOST} && \
+       make install_sw && make distclean; \
+    done && \
+    rm -fr openssl
+
+# build native python3 versions using pyenv. Linking with built openssl
+RUN . ~/.profile && \
+    export PYTHON_CONFIGURE_OPTS="--enable-shared --with-openssl=${OPENSSL_DIR}-`${HOST_TRIPLET}`" && \
+    export LD_LIBRARY_PATH="${OPENSSL_DIR}-`${HOST_TRIPLET}`/lib:$LIBRARY_PATH" && \
+    for PYTHON_VERSION in $PYTHON_VERSIONS; do \
+        pyenv install "$PYTHON_VERSION"; \
+        cp -R /root/.pyenv/versions/$PYTHON_VERSION /opt/python-`${HOST_TRIPLET}`-${PYTHON_VERSION}; \
+    done; \
+    find /root/.pyenv/versions  -type f | xargs strip || true
+
+RUN . ~/.profile && \
+    for TARGET_HOST in $TARGET_HOSTS; do \
+        export OPENSSL_CROSS_DIR="${OPENSSL_DIR}-${TARGET_HOST}" \
+        export CC=$TARGET_HOST-gcc && \
+        export CXX=$TARGET_HOST-g++ && \
+        export AR=$TARGET_HOST-ar && \
+        export RANLIB=$TARGET_HOST-ranlib && \
+        eval "$(pyenv init -)" && \
+        for PYTHON_VERSION in $PYTHON_VERSIONS; do \
+            unset PYTHON_EXTRA_OPTIONS; \
+            if [ "$(echo $PYTHON_VERSION | cut -d . -f2)" = "11" ]; then \
+                PYTHON_EXTRA_OPTIONS+=" --with-system-ffi"; \
+            fi; \
+            if [ "$(echo $PYTHON_VERSION | cut -d . -f2)" -ge "11" ]; then \
+                PYTHON_EXTRA_OPTIONS+=" --with-build-python=/opt/python-`${HOST_TRIPLET}`-${PYTHON_VERSION}/bin/python"; \
+            fi; \
+            export PYTHON_DIST_DIR=/opt/python-$TARGET_HOST-$PYTHON_VERSION; \
+            pyenv shell "$PYTHON_VERSION"; \
+            wget --no-verbose https://www.python.org/ftp/python/"$PYTHON_VERSION"/Python-"$PYTHON_VERSION".tgz; \
+            tar xzf Python-"$PYTHON_VERSION".tgz; \
+            rm Python-"$PYTHON_VERSION".tgz; \
+            cd Python-"$PYTHON_VERSION"; \
+            ./configure --prefix=$PYTHON_DIST_DIR --host=$TARGET_HOST --target=$TARGET_HOST --build=`gcc -dumpmachine` --disable-ipv6 ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no ac_cv_have_long_long_format=yes --enable-shared --with-openssl=${OPENSSL_CROSS_DIR} CFLAGS="-I$OPENSSL_CROSS_DIR/include" export LDFLAGS="-L$OPENSSL_CROSS_DIR/lib" $PYTHON_EXTRA_OPTIONS; \
+            make HOSTPYTHON=$PYTHON_DIST_DIR HOSTPGEN=$PYTHON_DIST_DIR/Parser/pgen BLDSHARED="$TARGET_HOST-gcc -shared" CROSS-COMPILE=$TARGET_HOST- CROSS_COMPILE_TARGET=yes HOSTARCH=$TARGET_HOST BUILDARCH=$TARGET_HOST; \
+            make install; \
+            find $PYTHON_DIST_DIR -type f | xargs strip || true; \
+            cd ..; \
+            rm -fr Python-"$PYTHON_VERSION"; \
+        done; \
+    done; \
+    rm -fr  /opt/python-${TARGET_HOST}-*/bin /opt/python-${TARGET_HOST}-*/lib/python* /opt/python-${TARGET_HOST}-*/share

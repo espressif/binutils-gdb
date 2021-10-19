@@ -1,0 +1,30 @@
+# Download built python versions for linking when cross-compile
+ARG PYTHON_VERSIONS="3.8.0 3.9.0 3.10.0 3.11.0 3.12.0"
+
+# Get pre-built libraries
+RUN for PYTHON_VERSION in $PYTHON_VERSIONS; do \
+        export TEMP_DIR="python_unpack_dir"; \
+        export LINK="https://www.python.org/ftp/python/$PYTHON_VERSION/python-$PYTHON_VERSION-embed-$WIN_PLATFORM.zip"; \
+        export FILE_NAME=$(basename $LINK); \
+        export DEST_DIR=/opt/python-$TARGET_HOST-$PYTHON_VERSION; \
+        wget --no-verbose $LINK; \
+        unzip $FILE_NAME -d $TEMP_DIR && rm $FILE_NAME; \
+        mkdir -p $DEST_DIR/lib; \
+        cp -R $TEMP_DIR/* $DEST_DIR/lib; \
+        rm -fr $TEMP_DIR; \
+    done;
+
+# Get include dir from sources
+RUN for PYTHON_VERSION in $PYTHON_VERSIONS; do \
+        export TEMP_DIR="python_unpack_dir"; \
+        export LINK="https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz"; \
+        export FILE_NAME=$(basename $LINK); \
+        export DEST_DIR=/opt/python-$TARGET_HOST-$PYTHON_VERSION; \
+        wget --no-verbose $LINK; \
+        mkdir $TEMP_DIR; \
+        tar -xzf $FILE_NAME -C $TEMP_DIR && rm $FILE_NAME; \
+        mkdir -p $DEST_DIR/include; \
+        cp -R $TEMP_DIR/Python-$PYTHON_VERSION/Include/* $DEST_DIR/include/; \
+        cp -R $TEMP_DIR/Python-$PYTHON_VERSION/PC/pyconfig.h $DEST_DIR/include/; \
+        rm -fr $TEMP_DIR; \
+    done;

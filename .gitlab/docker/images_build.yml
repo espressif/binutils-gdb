@@ -1,0 +1,104 @@
+.build_image: &build_image
+  stage: images
+  image: espressif/dind:1
+  tags: [ "dind", "internet", "amd64" ]
+  rules:
+    - if: $BUILD_IMAGES
+    - changes:
+      - .gitlab/docker/**/*
+  variables:
+    QEMU_IMAGE: qemu-v5.2:2-20230522
+    TOOLCHAIN_TAG: 4
+    EXTRA_BUILD_ARGS: ""
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - ${CI_PROJECT_DIR}/build.log
+  script:
+    - cd .gitlab/docker
+    # This is workaround for https://github.com/edrevo/dockerfile-plus/issues/13
+    # After the bug is fixed, please remove the line below.
+    - ./dockerfile-plus_workaround.sh ${DOCKERFILE_NAME} && cat ${DOCKERFILE_NAME}
+    - echo -n $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - echo -n $DOCKER_REGISTRY_PASS | docker login -u $DOCKER_REGISTRY_USER --password-stdin $CI_DOCKER_REGISTRY
+    - docker pull $CI_REGISTRY_IMAGE/$IMAGE_NAME:latest || true
+    - docker build
+        --cache-from $CI_REGISTRY_IMAGE/$IMAGE_NAME:latest
+        --file $DOCKERFILE_NAME
+        --build-arg DOCKER_REGISTRY=$CI_DOCKER_REGISTRY
+        --build-arg TOOLCHAIN_TAG=$TOOLCHAIN_TAG
+        ${EXTRA_BUILD_ARGS}
+        --tag $CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHA
+        --tag $CI_REGISTRY_IMAGE/$IMAGE_NAME:latest .
+        > ${CI_PROJECT_DIR}/build.log
+    - docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME:latest
+
+
+image_linux_x86:
+  variables:
+    DOCKERFILE_NAME: Dockerfile.linux-x86
+    IMAGE_NAME: gdb-build-linux-x86
+  extends: .build_image
+
+image_linux_x86_64:
+  variables:
+    DOCKERFILE_NAME: Dockerfile.linux-x86_64
+    IMAGE_NAME: gdb-build-linux-x86_64
+  extends: .build_image
+
+image_linux_armel:
+  variables:
+    TOOLCHAIN_TAG: 5
+    DOCKERFILE_NAME: Dockerfile.linux-armel
+    IMAGE_NAME: gdb-build-linux-armel
+  extends: .build_image
+
+image_linux_armhf:
+  variables:
+    TOOLCHAIN_TAG: 5
+    DOCKERFILE_NAME: Dockerfile.linux-armhf
+    IMAGE_NAME: gdb-build-linux-armhf
+  extends: .build_image
+
+image_linux_arm64:
+  variables:
+    TOOLCHAIN_TAG: 5
+    DOCKERFILE_NAME: Dockerfile.linux-arm64
+    IMAGE_NAME: gdb-build-linux-arm64
+  extends: .build_image
+
+image_win_x86:
+  variables:
+    DOCKERFILE_NAME: Dockerfile.win-x86
+    IMAGE_NAME: gdb-build-win-x86
+  extends: .build_image
+
+image_win_x86_64:
+  variables:
+    DOCKERFILE_NAME: Dockerfile.win-x86_64
+    IMAGE_NAME: gdb-build-win-x86_64
+  extends: .build_image
+
+image_macos_x86_64:
+  variables:
+    TOOLCHAIN_TAG: 3
+    DOCKERFILE_NAME: Dockerfile.macos
+    IMAGE_NAME: gdb-build-macos-x86_64
+  extends: .build_image
+
+image_macos_arm64:
+  variables:
+    TOOLCHAIN_TAG: 5
+    DOCKERFILE_NAME: Dockerfile.macos
+    IMAGE_NAME: gdb-build-macos-arm64
+    EXTRA_BUILD_ARGS: "--build-arg TARGET_HOST=aarch64-apple-darwin21.1"
+  extends: .build_image
+
+image_dejagnu:
+  variables:
+    DOCKERFILE_NAME: Dockerfile.dejagnu
+    IMAGE_NAME: gdb-test-dejagnu
+    EXTRA_BUILD_ARGS: "--build-arg QEMU_IMAGE=$QEMU_IMAGE"
+  extends: .build_image

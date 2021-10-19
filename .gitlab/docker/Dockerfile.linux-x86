@@ -1,0 +1,12 @@
+# syntax = edrevo/dockerfile-plus
+
+ARG DOCKER_REGISTRY
+ARG TOOLCHAIN_TAG
+
+FROM ${DOCKER_REGISTRY}/esp32-toolchain-x86:${TOOLCHAIN_TAG}
+
+ARG OPENSSL_BUILD_PLATFORM="linux-generic32"
+
+INCLUDE+ ./common/Dockerfile.update-apt-sources
+INCLUDE+ ./common/Dockerfile.gdb-deps
+INCLUDE+ ./common/Dockerfile.python-builder

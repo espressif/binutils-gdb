@@ -1,0 +1,80 @@
+ARG GMP_VERSION=6.2.1
+ARG MPFR_VERSION=4.2.1
+ARG MPC_VERSION=1.2.0
+ARG EXPAT_VERSION=2.4.1
+ARG NCURSES_VERSION=6.2
+ARG NCURSES_SHA256=30306e0c76e0f9f1f0de987cf1c82a5c21e1ce6568b9227f7da5b71cbea86c9d
+ARG NCURSES_TARGET_OPTS
+
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --force-yes \
+    lzip \
+    m4 \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN if [ -z "$TARGET_HOST" ] ; then export TARGET_HOST=`gcc -dumpmachine`; fi && \
+    rm -fr /opt/*${TARGET_HOST}*
+
+RUN echo "TARGET_HOST: ${TARGET_HOST:-}" && \
+    echo "GMP_VERSION: ${GMP_VERSION:-}" && \
+    if [ -z "$TARGET_HOST" ] ; then export TARGET_HOST=`gcc -dumpmachine`; fi && \
+    wget --no-verbose --no-check-certificate https://gmplib.org/download/gmp/gmp-$GMP_VERSION.tar.lz && \
+    tar --lzip -xvf gmp-$GMP_VERSION.tar.lz && \
+    rm gmp-$GMP_VERSION.tar.lz && \
+    cd gmp-$GMP_VERSION && \
+    ./configure --enable-static --disable-shared --prefix=/opt/gmp-$TARGET_HOST --host=$TARGET_HOST && \
+    make && make install
+
+RUN if [ -z "$TARGET_HOST" ] ; then export TARGET_HOST=`gcc -dumpmachine`; fi && \
+    wget --no-verbose --no-check-certificate https://www.mpfr.org/mpfr-current/mpfr-$MPFR_VERSION.tar.gz && \
+    tar xzf mpfr-$MPFR_VERSION.tar.gz && \
+    rm mpfr-$MPFR_VERSION.tar.gz && \
+    cd mpfr-$MPFR_VERSION && \
+    ./configure --enable-static --disable-shared --with-gmp-build=$PWD/../gmp-$GMP_VERSION --prefix=/opt/mpfr-$TARGET_HOST --host=$TARGET_HOST && \
+    make && make install && \
+    cd .. && rm -fr mpfr-$MPFR_VERSION gmp-$GMP_VERSION
+
+RUN if [ -z "$TARGET_HOST" ] ; then export TARGET_HOST=`gcc -dumpmachine`; fi && \
+    wget --no-verbose --no-check-certificate https://www.multiprecision.org/downloads/mpc-$MPC_VERSION.tar.gz && \
+    tar xzf mpc-$MPC_VERSION.tar.gz && \
+    rm mpc-$MPC_VERSION.tar.gz && \
+    cd mpc-$MPC_VERSION && \
+    export CFLAGS="-I/opt/gmp-$TARGET_HOST/include -I/opt/mpfr-$TARGET_HOST/include" && \
+    export LDFLAGS="-L/opt/gmp-$TARGET_HOST/lib -L/opt/mpfr-$TARGET_HOST/lib" && \
+    ./configure --enable-static --disable-shared --prefix=/opt/mpc-$TARGET_HOST --host=$TARGET_HOST && \
+    make && make install && \
+    cd .. && rm -fr mpc-$MPC_VERSION
+
+RUN if [ -z "$TARGET_HOST" ] ; then export TARGET_HOST=`gcc -dumpmachine`; fi && \
+    curl -LO https://github.com/libexpat/libexpat/releases/download/R_${EXPAT_VERSION//./_}/expat-$EXPAT_VERSION.tar.gz && \
+    tar xzf expat-$EXPAT_VERSION.tar.gz && \
+    rm expat-$EXPAT_VERSION.tar.gz && \
+    cd expat-$EXPAT_VERSION && \
+    ./configure --enable-static --disable-shared --prefix=/opt/expat-$TARGET_HOST --host=$TARGET_HOST && \
+    make && make install && \
+    cd .. && rm -fr expat-$EXPAT_VERSION
+
+RUN if [ -z "$TARGET_HOST" ] ; then export TARGET_HOST=`gcc -dumpmachine`; fi && \
+    wget --no-verbose https://ftp.gnu.org/pub/gnu/ncurses/ncurses-$NCURSES_VERSION.tar.gz && \
+    echo "$NCURSES_SHA256 *ncurses-$NCURSES_VERSION.tar.gz" | sha256sum --check --strict - && \
+    tar xzf ncurses-$NCURSES_VERSION.tar.gz && \
+    pushd ncurses-$NCURSES_VERSION && \
+    mkdir utils && \
+    pushd utils && \
+    $PWD/../configure && \
+    make -C include && make -C progs tic infocmp && \
+    export PATH=$PWD/progs:$PATH && \
+    popd && \
+    NCURSES_OPTS="--prefix=/opt/ncurses-$TARGET_HOST --host=$TARGET_HOST \
+        --without-progs --without-debug --enable-termcap --enable-symlinks --without-manpages \
+        --without-tests --without-cxx --without-cxx-binding --without-ada \
+        --disable-database --disable-db-install --with-abi-version=5 \
+        --with-fallbacks=linux,xterm,xterm-color,xterm-256color,vt100,ansi $NCURSES_TARGET_OPTS" && \
+    ./configure $NCURSES_OPTS && \
+    make && make install && \
+    ./configure $NCURSES_OPTS --enable-widec && \
+    make && make install && \
+    popd && rm -fr ncurses-$NCURSES_VERSION*
+

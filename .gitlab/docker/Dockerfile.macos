@@ -1,0 +1,45 @@
+# syntax = edrevo/dockerfile-plus
+
+ARG DOCKER_REGISTRY
+ARG TOOLCHAIN_TAG
+
+FROM ${DOCKER_REGISTRY}/esp32-toolchain-macos-cross:${TOOLCHAIN_TAG}
+
+# Download built python versions for linking when cross-compile
+ARG PYTHON_DOWNLOAD_LINKS="https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg \
+    https://www.python.org/ftp/python/3.8.10/python-3.8.10-macos11.pkg \
+    https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg \
+    https://www.python.org/ftp/python/3.9.13/python-3.9.13-macos11.pkg \
+    https://www.python.org/ftp/python/3.10.0/python-3.10.0-macos11.pkg \
+    https://www.python.org/ftp/python/3.11.0/python-3.11.0-macos11.pkg \
+    https://www.python.org/ftp/python/3.12.0/python-3.12.0-macos11.pkg"
+
+ARG TARGET_HOST="x86_64-apple-darwin14"
+
+INCLUDE+ ./common/Dockerfile.update-apt-sources
+
+RUN rm /bin/sh && ln -s bash /bin/sh
+RUN which $TARGET_HOST-gcc || \
+    (set +H && \
+    echo  -e "#!/bin/bash\n$TARGET_HOST-clang++ \"\$@\"" > /opt/osxcross/target/bin/$TARGET_HOST-g++ && \
+    echo  -e "#!/bin/bash\n$TARGET_HOST-clang \"\$@\"" > /opt/osxcross/target/bin/$TARGET_HOST-gcc && \
+    chmod 755 /opt/osxcross/target/bin/$TARGET_HOST-g++ /opt/osxcross/target/bin/$TARGET_HOST-gcc)
+
+INCLUDE+ ./common/Dockerfile.gdb-deps
+
+RUN for LINK in $PYTHON_DOWNLOAD_LINKS; do \
+        export TEMP_DIR="python_unpack_dir"; \
+        export FILE_NAME=$(basename $LINK); \
+        export PYTHON_VERSION=$(basename $(dirname $LINK)); \
+        export PYTHON_VERSION_MINOR=${PYTHON_VERSION%.*}; \
+        export DEST_DIR=/opt/python-$TARGET_HOST-$PYTHON_VERSION; \
+        wget --no-verbose $LINK; \
+        mkdir $TEMP_DIR && cd $TEMP_DIR; \
+        xar -xf ../$FILE_NAME; \
+        rm -fr ../$FILE_NAME; \
+        cd Python_Framework.pkg && cat Payload | gzip -d | cpio -id; \
+        mkdir -p $DEST_DIR/lib; \
+        cp Versions/$PYTHON_VERSION_MINOR/lib/libpython*.dylib $DEST_DIR/lib; \
+        cp -r Versions/$PYTHON_VERSION_MINOR/include $DEST_DIR/; \
+        cd ../../ && rm -fr $TEMP_DIR; \
+    done;

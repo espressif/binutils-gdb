@@ -1,0 +1,56 @@
+#
+# Libraries for configurations
+#
+TARGET_ESP_CHIPS = \
+	esp32s3 \
+	esp32s2 \
+	esp32
+
+CROSS_COMPILE ?= ""
+CC = $(CROSS_COMPILE)gcc
+CXX = $(CROSS_COMPILE)g++
+AR = $(CROSS_COMPILE)ar
+
+lib: $(patsubst %,xtensaconfig-%.so,$(TARGET_ESP_CHIPS))
+
+OBJ_DIR=./obj
+
+LIBCONFIG-GDB_SOURCES = \
+         src/dynconfig.c \
+         src/option_gdb.c
+
+LIBCONFIG-DEFAULT_SOURCES = \
+         lib_config/xtensa-config.c
+
+.PHONY: lib
+
+RELEASE_FLAGS = -O2 -Wall -Wextra -Wpedantic -D_GNU_SOURCE
+
+LIB_SRCS = xtensa-config.c \
+	       config/xtensa_%/binutils/bfd/xtensa-modules.c \
+	       config/xtensa_%/gdb/gdb/xtensa-config.c \
+	       config/xtensa_%/gdb/gdb/xtensa-xtregs.c
+
+INCLUDE += -Iinclude -Iconfig/xtensa_$*/binutils/include
+
+LIB_FLAGS = -nostdlib -shared -fPIC $(RELEASE_FLAGS) $(CFLAGS)
+
+$(OBJ_DIR)/%.o: %.c dirmake
+	$(CC) -c $(RELEASE_FLAGS) $(CFLAGS) $(INCLUDE) -o $@  $<
+
+dirmake:
+	@mkdir -p $(OBJ_DIR)
+
+xtensaconfig-%.so: $(LIB_SRCS)
+	@echo $@
+	@echo $^
+	@echo $(CFLAGS)
+	$(CC) $(LIB_FLAGS) $(INCLUDE) $^ -o $@
+
+clean:
+	rm -fr *.so *.a $(OBJ_DIR)
+
+
+install: lib
+	mkdir -p $(DESTDIR)$(PREFIX)/lib
+	cp -f *.so $(DESTDIR)$(PREFIX)/lib
