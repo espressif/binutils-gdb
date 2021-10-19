@@ -1,0 +1,56 @@
+ARG FROM_IMAGE=debian:bookworm
+
+FROM ${FROM_IMAGE}
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh \
+ && apt-get update && apt-get install -y -q \
+      apt-utils \
+      autoconf \
+      automake \
+      autotools-dev \
+      bc \
+      binfmt-support \
+      bison \
+      build-essential \
+      ca-certificates \
+      cmake \
+      cpio \
+      curl \
+      devscripts \
+      file \
+      flex \
+      g++ \
+      gawk \
+      gcc \
+      gettext \
+      git \
+      gperf \
+      grep \
+      gzip \
+      help2man \
+      jq \
+      libc6-dev \
+      libncurses-dev \
+      libncursesw5-dev \
+      libssl-dev \
+      libtool \
+      libtool-bin \
+      lzip \
+      m4 \
+      make \
+      openssh-client \
+      patch \
+      pkg-config \
+      rsync \
+      tar \
+      texinfo \
+      unzip \
+      uuid-dev \
+      vim \
+      wget \
+      wget \
+      xz-utils \
+      zip \
+  && rm -rf /var/lib/apt/lists/*

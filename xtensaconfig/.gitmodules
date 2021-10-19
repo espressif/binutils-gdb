@@ -1,0 +1,3 @@
+[submodule "config"]
+	path = config
+	url = ../xtensa-overlays.git

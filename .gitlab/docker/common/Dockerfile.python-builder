@@ -1,0 +1,61 @@
+ARG PYENV_VERSION="v2.6.24"
+ARG PYTHON_VERSIONS="3.8.0 3.9.0 3.10.0 3.11.0 3.12.0 3.13.0 3.14.0"
+
+RUN apt update && \
+    apt install -y --force-yes \
+    lzip \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -fr ~/.pyenv && \
+    git clone -b ${PYENV_VERSION} --single-branch --depth 1 https://github.com/pyenv/pyenv.git ~/.pyenv && \
+    cd ~/.pyenv && src/configure && make -C src && \
+    export PYENV_ROOT="$HOME/.pyenv" && \
+    export PATH="$PYENV_ROOT/bin:$PATH" && \
+    eval "$(pyenv init --path)" && \
+    eval "$(pyenv init -)" && \
+    for PYTHON_VERSION in $PYTHON_VERSIONS; do \
+      PYTHON_EXTRA_OPTIONS="" && \
+      if [ "$(echo $PYTHON_VERSION | cut -d . -f2)" -ge "11" ]; then \
+         pyenv install "$PYTHON_VERSION" && \
+         pyenv shell "$PYTHON_VERSION" && \
+         PYTHON_EXTRA_OPTIONS="--with-build-python=/root/.pyenv/versions/$PYTHON_VERSION/bin/python"; \
+      fi && \
+      PYTHON_DIST_DIR=/opt/python-$TARGET_HOST-$PYTHON_VERSION && \
+      wget --no-verbose https://www.python.org/ftp/python/"$PYTHON_VERSION"/Python-"$PYTHON_VERSION".tgz && \
+      tar xzf Python-"$PYTHON_VERSION".tgz && \
+      cd Python-"$PYTHON_VERSION" && \
+      ./configure --prefix=$PYTHON_DIST_DIR --host=$TARGET_HOST --target=$TARGET_HOST --build=`gcc -dumpmachine` --disable-ipv6 ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no ac_cv_have_long_long_format=yes --enable-shared $PYTHON_EXTRA_OPTIONS && \
+      make inclinstall && \
+      make -j$(nproc) libpython${PYTHON_VERSION%.*}.so && \
+      mkdir -p $PYTHON_DIST_DIR/lib && \
+      cp libpython${PYTHON_VERSION%.*}.so $PYTHON_DIST_DIR/lib && \
+      ${TARGET_HOST}-strip $PYTHON_DIST_DIR/lib/* && \
+      cd .. && \
+      rm -fr Python-*; \
+    done && \
+    rm -fr /root/.pyenv && \
+    apt remove -y \
+    lzip \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev
