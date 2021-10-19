@@ -1,0 +1,439 @@
+include:
+  - template: 'Workflows/Branch-Pipelines.gitlab-ci.yml'
+  - '.gitlab/ci/jobs.yml'
+  - '.gitlab/docker/images_build.yml'
+
+stages:
+  - images
+  - build
+  - sign
+  - pack
+  - codesign
+  - internal_deploy
+  - test
+  - github_deploy
+
+image: $CI_REGISTRY_IMAGE/gdb-build-linux-x86_64:latest
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  GDB_DIST_DIR: ${CI_PROJECT_DIR}/dist
+
+  GITHUB_IMAGE_TAG: 2
+
+  # GitHub Tool options
+  GITHUB_USER: "${GH_USER}"
+  GITHUB_REPO: "${GH_REPO}"
+  GITHUB_TOKEN: "${GH_TOKEN}"
+
+  LINUX_ARCHIVE_TOOL: "tar czvf"
+  LINUX_ARCHIVE_EXT: "tar.gz"
+
+.get_release_version: &get_release_version |
+  ESP_GDB_VERSION=${CI_COMMIT_TAG:-""}
+  ESP_GDB_VERSION=${ESP_GDB_VERSION#"esp-gdb-v"}
+  ESP_GDB_VERSION=${ESP_GDB_VERSION:-${CI_COMMIT_SHORT_SHA}}
+
+.gen_sha256_file: &gen_sha256_file |
+  FILES_LIST=$(find * -type f -name "*esp-elf-gdb-${ESP_GDB_VERSION}*")
+  SHA256_FILE="esp-gdb-${ESP_GDB_VERSION}-checksum.sha256"
+  for n in $FILES_LIST; do
+    sz=$(stat -c%s "${n}") >> ${SHA256_FILE};
+    printf "# %s: %s bytes\n" "${n}" "${sz}" >> ${SHA256_FILE};
+    sha256sum -b "${n}" >> ${SHA256_FILE};
+  done
+
+.release_submit_action: &release_submit_action
+  image: espressif/github-hub:${GITHUB_IMAGE_TAG}
+  when: manual
+  allow_failure: true
+  before_script:
+    - set -o errexit; set -o pipefail; set -o nounset
+    - test "${DEBUG_SHELL:-''}" = "1" && set -x
+    - git remote remove github || true
+    - git remote add github ${GH_REPO_HTTPS}
+  variables:
+    GIT_STRATEGY: fetch
+    GH_REL_TAG: ${CI_COMMIT_TAG}
+
+before_script:
+  - set -o errexit; set -o pipefail; set -o nounset
+  - test "${DEBUG_SHELL:-''}" = "1" && set -x
+
+.needs_all_distros: &needs_all_distros
+  needs:
+    - pack-xtensa-x86_64-linux-gnu
+    - pack-riscv32-x86_64-linux-gnu
+    - pack-xtensa-i586-linux-gnu
+    - pack-riscv32-i586-linux-gnu
+    - pack-xtensa-arm-linux-gnueabi
+    - pack-riscv32-arm-linux-gnueabi
+    - pack-xtensa-arm-linux-gnueabihf
+    - pack-riscv32-arm-linux-gnueabihf
+    - pack-xtensa-aarch64-linux-gnu
+    - pack-riscv32-aarch64-linux-gnu
+    - win_manifest_xtensa_esp_win64
+    - win_manifest_xtensa_esp_win
+    - win_manifest_riscv32_esp_win64
+    - win_manifest_riscv32_esp_win
+    - macos_codesign_xtensa_esp_macos_arm64
+    - macos_codesign_riscv32_esp_macos_arm64
+    - macos_codesign_xtensa_esp_macos
+    - macos_codesign_riscv32_esp_macos
+
+.use_ci_tools: &use_ci_tools |
+  curl -sSL ${CIT_LOADER_URL} -o cit_loader.sh && sh cit_loader.sh
+  source citools/import_functions
+
+.gen_platformio_package_json: &gen_platformio_package_json |
+  cat | jq -M . >${GDB_DIST_DIR}/package.json <<EOL
+  {
+    "name": "${ESP_CHIP_ARCH}-esp-elf-gdb",
+    "version": "${ESP_GDB_VERSION}",
+    "description": "GNU Debugger for Espressif ${ESP_CHIP_ARCH} MCUs",
+    "keywords": [
+      "debugger",
+      "espressif"
+    ],
+    "license": "GPL-2.0-or-later",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/espressif/binutils-gdb"
+    },
+    "system": ${PLATFORMIO_SYSTEM}
+  }
+  EOL
+
+# Common template for all builds
+.build_template: &build_template
+  stage: build
+  tags: [ "build", "amd64" ]
+  artifacts:
+    paths:
+      - ${GDB_DIST_DIR}
+    when: always
+    expire_in: 1 week
+  script:
+    - *get_release_version
+    - echo ${ESP_GDB_VERSION} > ./gdb/version.in
+    - ./build_esp_gdb.sh ${BUILD_ARCH_TRIPLET} ${ESP_CHIP_ARCH} ${PYTHON_VERSION} ${GDB_DIST_DIR}
+
+# Template for tests with qemu
+.test_qemu_template: &test_qemu_template
+  stage: test
+  artifacts:
+    when: on_failure
+    paths:
+      - ${CI_PROJECT_DIR}/gdb/testsuite/gdb.log
+  script:
+    # Load variables with tests to remove and to ignore
+    - set -a; source <(grep -v "^#" ".gitlab/ci/gdb-test-suites.env"); set +a
+    - set +u; . ~/.profile; set -u
+    - cd gdb/testsuite
+    - cp -R ${GDB_DIST_DIR}/share/gdb/* ../data-directory/
+    - ./configure --target=${ESP_CHIP_ARCH}-${ESP_CHIP}-elf --host=${ESP_CHIP_ARCH}-${ESP_CHIP}-elf
+    - make site.exp
+    - test "${CI_JOB_NAME##*-}" != "without_python" && pyenv local ${PYTHON_VERSION}
+    - test "${CI_JOB_NAME##*-}" == "without_python" && export REMOVE_TESTS="gdb.python $REMOVE_TESTS"
+    - ESP_DEBUG_TRACE=1 ${GDB_DIST_DIR}/bin/${ESP_CHIP_ARCH}-${ESP_CHIP}-elf-gdb --version
+    # Run chip specific test first. It will be removed by next step.
+    - runtest --tool gdb --status --target ${ESP_CHIP_ARCH}-${ESP_CHIP}-elf --target_board=simesp GDB=${GDB_DIST_DIR}/bin/${ESP_CHIP_ARCH}-${ESP_CHIP}-elf-gdb gdb.${ESP_CHIP_ARCH}-${ESP_CHIP}/*.exp
+    - rm -fr $REMOVE_TESTS
+    - runtest --tool gdb --status --target ${ESP_CHIP_ARCH}-${ESP_CHIP}-elf --target_board=simesp GDB=${GDB_DIST_DIR}/bin/${ESP_CHIP_ARCH}-${ESP_CHIP}-elf-gdb --ignore "$IGNORE_TESTS" gdb.*/*.exp
+
+# Template for others tests without qemu
+.test_no_qemu_template: &test_no_qemu_template
+  stage: test
+  artifacts:
+    when: on_failure
+    paths:
+      - ${CI_PROJECT_DIR}/gdb/testsuite/gdb.log
+  script:
+    - set +u; . ~/.profile; set -u
+    - cd gdb/testsuite
+    - cp -R ${GDB_DIST_DIR}/share/gdb/* ../data-directory/
+    - ./configure --target=${ESP_CHIP_ARCH}-${ESP_CHIP}-elf --host=${ESP_CHIP_ARCH}-${ESP_CHIP}-elf 
+    - make site.exp
+    - echo "GDB_BASE_TESTS $GDB_BASE_TESTS"
+    - test "${CI_JOB_NAME##*-}" != "without_python" && pyenv local ${PYTHON_VERSION}
+    - ESP_DEBUG_TRACE=1 ${GDB_DIST_DIR}/bin/${ESP_CHIP_ARCH}-${ESP_CHIP}-elf-gdb --version
+    - TESTS_TO_RUN="${GDB_BASE_TESTS} gdb.${ESP_CHIP_ARCH}-${ESP_CHIP}/*.exp"
+    - runtest --tool gdb --status --target ${ESP_CHIP_ARCH}-${ESP_CHIP}-elf GDB=${GDB_DIST_DIR}/bin/${ESP_CHIP_ARCH}-${ESP_CHIP}-elf-gdb $TESTS_TO_RUN
+
+.windows_test_corefile: &windows_test_corefile |
+  & $env:GDB_DIST_DIR\bin\$env:ESP_CHIP_ARCH-$env:ESP_CHIP-elf-gdb $chip_tests_dir\corefile.elf $chip_tests_dir\corefile.core -ex "bt" -ex "quit" | Tee-Object -FilePath test_corefile_out.txt
+  $stringmatch = Get-Content -Raw -Path test_corefile_out.txt
+  $pattern = Get-Content -Raw -Path $chip_tests_dir\corefile_pattern.txt
+  Select-String -InputObject $stringmatch -pattern $pattern -OutVariable patternMatch
+  if(!$patternMatch) {exit 1}
+
+.windows_test_tdep: &windows_test_tdep |
+  & $env:GDB_DIST_DIR\bin\$env:ESP_CHIP_ARCH-$env:ESP_CHIP-elf-gdb -ex '\"maint print arch\"' -ex "quit" | Tee-Object -FilePath test_tdep_out.txt
+  $stringmatch = Get-Content -Raw -Path test_tdep_out.txt
+  $pattern = Get-Content -Raw -Path $chip_tests_dir\tdep_pattern.txt
+  Select-String -InputObject $stringmatch -pattern $pattern -OutVariable patternMatch
+  if(!$patternMatch) {exit 1}
+
+# Template for windows
+.test_windows_template: &test_windows_template
+  stage: test
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  inherit:
+    default: false
+  script:
+    - $chip_tests_dir="$env:CI_PROJECT_DIR\gdb\testsuite\gdb.$env:ESP_CHIP_ARCH-$env:ESP_CHIP"
+    - *windows_test_corefile
+    - *windows_test_tdep
+
+# Template for macos
+.test_macos_template: &test_macos_template
+  stage: test
+  artifacts:
+    when: on_failure
+    paths:
+      - ${CI_PROJECT_DIR}/gdb/testsuite/gdb.log
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  inherit:
+    default: false
+  before_script:
+    - set -o errexit; set -o pipefail; set -o nounset
+    - test "${DEBUG_SHELL:-''}" = "1" && set -x
+    - curl -LO http://ftp.gnu.org/gnu/dejagnu/dejagnu-1.6.3.tar.gz
+    - tar -xf dejagnu-1.6.3.tar.gz
+    - pushd dejagnu-1.6.3
+    - ./configure
+    - make
+    - export PATH="$PWD:$PATH"
+    - popd
+    - eval "$(pyenv init --path)"
+  script:
+    - cd gdb/testsuite
+    - cp -R ${GDB_DIST_DIR}/share/gdb/* ../data-directory/
+    - ./configure
+    - make site.exp
+    - pyenv local $TEST_PYTHON_VERSION
+    - python3 -V
+    - ESP_DEBUG_TRACE=1 ${GDB_DIST_DIR}/bin/${ESP_CHIP_ARCH}-${ESP_CHIP}-elf-gdb --version
+    - runtest --tool gdb --status --target ${ESP_CHIP_ARCH}-${ESP_CHIP}-elf GDB=${GDB_DIST_DIR}/bin/${ESP_CHIP_ARCH}-${ESP_CHIP}-elf-gdb gdb.${ESP_CHIP_ARCH}-${ESP_CHIP}/*.exp
+
+# Simple test template
+.test_simple_template: &test_simple_template
+  stage: test
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  inherit:
+    default: false
+  script:
+    - ESP_DEBUG_TRACE=1 ${GDB_DIST_DIR}/bin/${ESP_CHIP_ARCH}-${ESP_CHIP}-elf-gdb --version
+
+# Pack build output
+.pack_template: &pack_template
+  stage: pack
+  tags: [ "build", "amd64" ]
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: '$CI_COMMIT_TAG =~ "/^$/"'
+      when: manual
+  allow_failure: true
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  artifacts:
+    paths:
+      - ${GDB_DIST_DIR}
+    when: always
+    expire_in: 1 week
+  script:
+    - *get_release_version
+    - *gen_platformio_package_json
+    - GDB_BASE_NAME=${ESP_CHIP_ARCH}-esp-elf-gdb
+    - ARCHIVE_NAME=${GDB_BASE_NAME}-${ESP_GDB_VERSION}-${PLATFORM_NAME}.${ARCHIVE_EXT}
+    - mv ${GDB_DIST_DIR} ${GDB_BASE_NAME}
+    - ${ARCHIVE_TOOL} ${ARCHIVE_NAME} ${GDB_BASE_NAME}
+    - mkdir ${GDB_DIST_DIR}
+    - mv ${ARCHIVE_NAME} ${GDB_DIST_DIR}/
+    - ( test -z ${PLATFORM_NAME/*apple*} || test -z ${PLATFORM_NAME/*mingw*} ) && echo "${ARCHIVE_NAME}" > ${GDB_DIST_DIR}/dist_name_${GDB_BASE_NAME}-${ESP_GDB_VERSION}-${PLATFORM_NAME} || true
+
+.template_macos_codesign: &template_macos_codesign
+  stage: codesign
+  resource_group: macos_codesign
+  tags: [ "darwin", "codesign" ]
+  when: manual
+  artifacts:
+    paths:
+      - ${GDB_DIST_DIR}
+  variables:
+    # directory with distro archives
+    DIST_ART_DIR: ${GDB_DIST_DIR}
+    # command to archive distro
+    ARCHIVE_TOOL: "tar czf"
+    # command to unarchive distro
+    UNARCHIVE_TOOL: "tar xzf"
+    # URL to macos codesign repo
+    NOTARIZATION_SCRIPTS_GIT: "${CI_SERVER_PROTOCOL}://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/espressif/macos_codesign_notarization.git"
+  script:
+    - git clone -q --depth=1 ${NOTARIZATION_SCRIPTS_GIT} -b ${CI_COMMIT_REF_NAME} ||
+      git clone -q --depth=1 ${NOTARIZATION_SCRIPTS_GIT}
+    - ./macos_codesign_notarization/run.sh
+    - rm -f ${GDB_DIST_DIR}/dist_name_*
+
+macos_codesign_xtensa_esp_macos_arm64:
+  extends: .template_macos_codesign
+  needs: [ pack-xtensa-aarch64-apple-darwin21.1 ]
+
+macos_codesign_riscv32_esp_macos_arm64:
+  extends: .template_macos_codesign
+  needs: [ pack-riscv32-aarch64-apple-darwin21.1 ]
+
+macos_codesign_xtensa_esp_macos:
+  extends: .template_macos_codesign
+  needs: [ pack-xtensa-x86_64-apple-darwin21.1 ]
+
+macos_codesign_riscv32_esp_macos:
+  extends: .template_macos_codesign
+  needs: [ pack-riscv32-x86_64-apple-darwin21.1 ]
+
+.template_win_manifest:
+  stage: codesign
+  tags: [ "windows", "manifest", "powershell" ]
+  when: manual
+  artifacts:
+    paths:
+      - ${DIST_ART_DIR}
+  before_script: []
+  variables:
+    # directory with distro archives
+    DIST_ART_DIR: dist
+    # URL to windows manifest repo
+    MANIFEST_SCRIPTS_GIT: "${CI_SERVER_PROTOCOL}://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/espressif/windows_manifest.git"
+  script:
+    - git clone -q --depth=1 ${MANIFEST_SCRIPTS_GIT} -b ${CI_COMMIT_REF_NAME}; if ($LASTEXITCODE -ne 0) { git clone -q --depth=1 ${MANIFEST_SCRIPTS_GIT} }
+    - ./windows_manifest/run.ps1
+    - Remove-Item ${GDB_DIST_DIR}/dist_name_*
+
+win_manifest_xtensa_esp_win64:
+  extends: .template_win_manifest
+  needs: [ pack-xtensa-x86_64-w64-mingw32 ]
+  variables:
+    WIN_MANIFEST_APP_NAME: "xtensa_esp_win64_gdb"
+    WIN_MANIFEST_APP_VERSION: "0.0.0.1"
+    WIN_MANIFEST_ARCH: "x64"
+
+win_manifest_xtensa_esp_win:
+  extends: .template_win_manifest
+  needs: [ pack-xtensa-i686-w64-mingw32 ]
+  variables:
+    WIN_MANIFEST_APP_NAME: "xtensa_esp_win_gdb"
+    WIN_MANIFEST_APP_VERSION: "0.0.0.1"
+    WIN_MANIFEST_ARCH: "x86"
+
+win_manifest_riscv32_esp_win64:
+  extends: .template_win_manifest
+  needs: [ pack-riscv32-x86_64-w64-mingw32 ]
+  variables:
+    WIN_MANIFEST_APP_NAME: "riscv32_esp_win64_gdb"
+    WIN_MANIFEST_APP_VERSION: "0.0.0.1"
+    WIN_MANIFEST_ARCH: "x64"
+
+win_manifest_riscv32_esp_win:
+  extends: .template_win_manifest
+  needs: [ pack-riscv32-i686-w64-mingw32 ]
+  variables:
+    WIN_MANIFEST_APP_NAME: "riscv32_esp_win_gdb"
+    WIN_MANIFEST_APP_VERSION: "0.0.0.1"
+    WIN_MANIFEST_ARCH: "x86"
+
+upload_to_internal:
+  stage: internal_deploy
+  image: $CI_DOCKER_REGISTRY/compiler-testsuite:3
+  <<: *needs_all_distros
+  tags:
+    - deploy
+    - shiny
+  when: manual
+  allow_failure: true
+  variables:
+    GIT_STRATEGY: none
+  artifacts:
+    reports:
+      dotenv: ${GDB_DIST_DIR}/build.env
+  before_script:
+    - set -o errexit; set -o pipefail; set -o nounset
+    - test "${DEBUG_SHELL:-''}" = "1" && set -x
+    - *use_ci_tools
+  script:
+    - *get_release_version
+    - cit_add_ssh_key "${HTTP_UPLOAD_KEY}" "$(cit_parse_url_host ${HTTP_UPLOAD_DIR})"
+    - cd ${GDB_DIST_DIR}
+    - *gen_sha256_file
+    - FILES="$SHA256_FILE $(find . -type f -name "*esp-elf-gdb-${ESP_GDB_VERSION}*")"
+    - scp ${FILES} ${HTTP_UPLOAD_DIR}/
+    - echo -e "\nArchives were published there:\n\n$(for n in ${FILES}; do echo "${HTTP_PUBLIC_DIR}/${n}"; done)\n"
+    - echo "NEW_GDB_ARMHF_DISTRO_URL=${HTTP_PUBLIC_DIR}/xtensa-esp-elf-gdb-${ESP_GDB_VERSION}-arm-linux-gnueabihf.${LINUX_ARCHIVE_EXT}" >> ${GDB_DIST_DIR}/build.env
+    - echo "NEW_GDB_ARMHF_DISTRO_DIR=xtensa-esp-elf-gdb" >> ${GDB_DIST_DIR}/build.env
+    - echo "IDF_TOOLS_GDB_VERSION=${ESP_GDB_VERSION}" >> ${GDB_DIST_DIR}/build.env
+
+test_with_openocd:
+  stage: test
+  when: manual
+  allow_failure: true
+  variables:
+    GDB_ARMHF_DISTRO_URL: ${NEW_GDB_ARMHF_DISTRO_URL}
+    NEW_GDB_ARMHF_DISTRO_DIR: ${NEW_GDB_ARMHF_DISTRO_DIR}
+  needs: [ upload_to_internal ]
+  trigger:
+    project: idf/openocd-esp32
+    strategy: depend
+
+upload_to_github:
+  stage: github_deploy
+  tags: [ "amd64", "internet" ]
+  <<: *needs_all_distros
+  <<: *release_submit_action
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: manual
+  artifacts:
+    reports:
+      dotenv: ${GDB_DIST_DIR}/build.env
+  script:
+    - *get_release_version
+    - hub release delete ${GH_REL_TAG} || true
+    # List of archives
+    - cd ${GDB_DIST_DIR}
+    - *gen_sha256_file
+    - FILES_LIST=$(find * -type f -name "*esp-elf-gdb-${ESP_GDB_VERSION}*")
+    - ATTACH_FILE_OPTIONS=$(printf -- "-a %s " $FILES_LIST)
+    - ATTACH_FILE_OPTIONS="-a $SHA256_FILE $ATTACH_FILE_OPTIONS"
+    # Create pre-release with archives attached
+    - hub release create --prerelease -m "${ESP_GDB_VERSION}" ${ATTACH_FILE_OPTIONS} ${GH_REL_TAG}
+    - echo "IDF_TOOLS_GDB_VERSION=${ESP_GDB_VERSION}" >> ${GDB_DIST_DIR}/build.env
+
+.update_idf_tools:
+  allow_failure: true
+  when: manual
+  variables:
+    TOOL_NAME: "gdb"
+    TOOL_MEMBERS: "xtensa-esp-elf-gdb riscv32-esp-elf-gdb"
+    TOOL_VERSION: ${IDF_TOOLS_GDB_VERSION}
+  trigger:
+    project: idf/idf-tools-updater
+    strategy: depend
+
+internal_update_idf_tools:
+  extends: .update_idf_tools
+  stage: internal_deploy
+  needs: [ upload_to_internal ]
+  when: manual
+  variables:
+    TOOL_SHA256_URL: ${HTTP_PUBLIC_DIR}/esp-gdb-${IDF_TOOLS_GDB_VERSION}-checksum.sha256
+
+github_update_idf_tools:
+  extends: .update_idf_tools
+  stage: github_deploy
+  needs: [ upload_to_github ]
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: manual
+  variables:
+    TOOL_SHA256_URL: ${GH_REPO_URL}/releases/download/${CI_COMMIT_TAG}/esp-gdb-${IDF_TOOLS_GDB_VERSION}-checksum.sha256
