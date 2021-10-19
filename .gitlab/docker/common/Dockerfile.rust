@@ -1,0 +1,9 @@
+ARG RUST_TARGET_TRIPLET="please set target"
+
+# Can not use rust version > 1.69.0 because of https://github.com/rust-lang/rust/issues/112368
+RUN  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh  -s -- -y --default-toolchain 1.69.0 \
+ && . "$HOME/.cargo/env" \
+ && rustup target add $RUST_TARGET_TRIPLET
+
+ENV RUST_TARGET_TRIPLET=$RUST_TARGET_TRIPLET
+ENV PATH="/root/.cargo/bin:$PATH"

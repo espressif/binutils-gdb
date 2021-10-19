@@ -1,0 +1,101 @@
+# syntax = edrevo/dockerfile-plus
+
+INCLUDE+ ./common/Dockerfile.base
+
+# Based on https://github.com/andrew-d/docker-osxcross
+# and https://github.com/multiarch/crossbuild
+
+RUN set -ex; \
+  apt-get update && apt-get install -y -q --no-install-recommends \
+    build-essential \
+    clang \
+    libgmp-dev \
+    libmpc-dev \
+    libmpfr-dev \
+    libncurses5-dev \
+    libxml2-dev \
+    llvm \
+    llvm-dev \
+    zlib1g-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV OSXCROSS_SDK_VERSION=12.0
+
+ARG SDK_VERSION=${OSXCROSS_SDK_VERSION}
+ARG OSX_VERSION_MIN=${SDK_VERSION}
+ARG SDK_TAR=MacOSX${SDK_VERSION}.sdk.tar.xz
+ARG SDK_SHA256=cae67d142880ce67a3eca5dfd742f875f286d838abf3f2b6af8259c76b2e6c72
+
+ARG OSXCROSS_COMMIT=56d8ec4ec9875f560e93aee738a631a35cfd6be9
+
+RUN OSXCROSS_SRCS=/opt/osxcross \
+  && OSXCROSS_TMP=/tmp/osxcross \
+  && cd $(dirname ${OSXCROSS_SRCS}) \
+  && git clone https://github.com/tpoechtrager/osxcross.git \
+  && cd ${OSXCROSS_SRCS} \
+  && git reset --hard ${OSXCROSS_COMMIT} \
+  && cd tarballs/ && wget --no-verbose "https://dl.espressif.com/dl/toolchains/${SDK_TAR}" \
+  && echo "${SDK_SHA256} *${SDK_TAR}" | sha256sum --check --strict - \
+  && cd - \
+  && export PORTABLE=1 \
+  && export UNATTENDED=1 \
+  && export GCC_VERSION=8.3.0 \
+  && ./build.sh \
+  && sed -i "s|https://git.llvm.org/git/compiler-rt.git|https://github.com/llvm-mirror/compiler-rt.git|g" build_compiler_rt.sh \
+  && ./build_compiler_rt.sh \
+  && ./build_gcc.sh \
+  && ./build_binutils.sh \
+  ####################### fix issue when trying to download already downloaded ###################### \
+  && rm ${OSXCROSS_SRCS}/tarballs/binutils-2.32.tar.gz && rm ${OSXCROSS_SRCS}/tarballs/gdb-8.3.tar.gz \
+  && TARGET_ARCH=aarch64 ./build_binutils.sh \
+  && mkdir -p ${OSXCROSS_TMP} \
+  && mv target ${OSXCROSS_TMP}/ \
+  && mv tools ${OSXCROSS_TMP}/ \
+  && rm -rf "${OSXCROSS_TMP}/target/SDK/MacOSX${SDK_VERSION}.sdk/usr/share/man" \
+  && rm -rf "${OSXCROSS_SRCS}" \
+  && mv ${OSXCROSS_TMP} /opt/
+
+ENV PATH $PATH:/opt/osxcross/target/bin
+ENV PATH $PATH:/opt/osxcross/target/binutils/bin
+ENV MACOSX_DEPLOYMENT_TARGET=10.8
+
+RUN for TARGET_HOST in "aarch64-apple-darwin21.1" "x86_64-apple-darwin21.1"; do \
+  which $TARGET_HOST-gcc || \
+    (set +H && \
+     echo -e "#!/bin/bash\n$TARGET_HOST-clang++ \"\$@\"" > /opt/osxcross/target/bin/$TARGET_HOST-g++ && \
+     echo -e "#!/bin/bash\n$TARGET_HOST-clang \"\$@\"" > /opt/osxcross/target/bin/$TARGET_HOST-gcc && \
+     chmod 755 /opt/osxcross/target/bin/$TARGET_HOST-g++ /opt/osxcross/target/bin/$TARGET_HOST-gcc) \
+  done
+
+ARG TARGET_HOST="x86_64-apple-darwin21.1"
+
+INCLUDE+ ./common/Dockerfile.gdb-deps
+
+# Download built python versions for linking when cross-compile
+ARG PYTHON_DOWNLOAD_LINKS="https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg \
+    https://www.python.org/ftp/python/3.8.10/python-3.8.10-macos11.pkg \
+    https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg \
+    https://www.python.org/ftp/python/3.9.13/python-3.9.13-macos11.pkg \
+    https://www.python.org/ftp/python/3.10.0/python-3.10.0-macos11.pkg \
+    https://www.python.org/ftp/python/3.11.0/python-3.11.0-macos11.pkg \
+    https://www.python.org/ftp/python/3.12.0/python-3.12.0-macos11.pkg \
+    https://www.python.org/ftp/python/3.13.0/python-3.13.0-macos11.pkg"
+
+RUN for LINK in $PYTHON_DOWNLOAD_LINKS; do \
+        export TEMP_DIR="python_unpack_dir"; \
+        export FILE_NAME=$(basename $LINK); \
+        export PYTHON_VERSION=$(basename $(dirname $LINK)); \
+        export PYTHON_VERSION_MINOR=${PYTHON_VERSION%.*}; \
+        export DEST_DIR=/opt/python-$TARGET_HOST-$PYTHON_VERSION; \
+        wget --no-verbose $LINK; \
+        mkdir $TEMP_DIR && cd $TEMP_DIR; \
+        xar -xf ../$FILE_NAME; \
+        rm -fr ../$FILE_NAME; \
+        cd Python_Framework.pkg && cat Payload | gzip -d | cpio -id; \
+        mkdir -p $DEST_DIR/lib; \
+        cp Versions/$PYTHON_VERSION_MINOR/lib/libpython*.dylib $DEST_DIR/lib; \
+        cp -r Versions/$PYTHON_VERSION_MINOR/include $DEST_DIR/; \
+        cd ../../ && rm -fr $TEMP_DIR; \
+    done;
+
+INCLUDE+ ./common/Dockerfile.rust

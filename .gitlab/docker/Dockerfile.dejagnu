@@ -1,0 +1,105 @@
+FROM ubuntu:20.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    curl \
+    zip \
+    autoconf \
+    make \
+    texinfo \
+    expect \
+    libpixman-1-0 \
+    libnuma1 \
+    libglib2.0-0 \
+    libffi-dev \
+    libncursesw5 \
+    libssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    zlib1g-dev \
+    gcc \
+    liblzma-dev \
+    patch \
+    xz-utils \
+    libsdl2-2.0-0 \
+    libslirp0 \
+  && apt remove --purge -y python3 \
+  && apt autoremove -y \
+  && rm -rf /var/lib/apt/lists/*
+
+# instal dejagnu
+ARG DEJAGNU_VERSION=1.6.3
+ARG DEJAGNU_SHA256=87daefacd7958b4a69f88c6856dbd1634261963c414079d0c371f589cd66a2e3
+RUN curl -LO http://ftp.gnu.org/gnu/dejagnu/dejagnu-${DEJAGNU_VERSION}.tar.gz && \
+    tar -xf dejagnu-${DEJAGNU_VERSION}.tar.gz && \
+    echo "${DEJAGNU_SHA256} dejagnu-${DEJAGNU_VERSION}.tar.gz" | sha256sum --check --strict - && \
+    cd dejagnu-${DEJAGNU_VERSION} && \
+    ./configure && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -fr dejagnu*
+
+# Install esp-toolchains for esp DejaGNU tests
+ARG ESP_TOOLCHAIN_CHECKSUM_URL="https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240305/crosstool-NG-esp-13.2.0_20240305-checksum.sha256"
+ARG ESP_TOOLCHAIN_URLS=" \
+https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240305/xtensa-esp-elf-13.2.0_20240305-x86_64-linux-gnu.tar.xz \
+https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240305/riscv32-esp-elf-13.2.0_20240305-x86_64-linux-gnu.tar.xz"
+RUN set -e; \
+    curl -LO $ESP_TOOLCHAIN_CHECKSUM_URL && \
+    export ESP_TOOLCHAIN_CHECKSUM_FILE=${ESP_TOOLCHAIN_CHECKSUM_URL##*/} && \
+    for ESP_TOOLCHAIN_URL in $ESP_TOOLCHAIN_URLS; do \
+        curl -LO ${ESP_TOOLCHAIN_URL} && \
+        export ESP_TOOLCHAIN_ARCHIVE=${ESP_TOOLCHAIN_URL##*/} && \
+        grep "*$ESP_TOOLCHAIN_ARCHIVE" $ESP_TOOLCHAIN_CHECKSUM_FILE | sha256sum --check --strict - && \
+        tar -xf $ESP_TOOLCHAIN_ARCHIVE -C /opt && \
+        rm -fr $ESP_TOOLCHAIN_ARCHIVE; \
+    done; \
+    rm $ESP_TOOLCHAIN_CHECKSUM_FILE
+
+ENV PATH=/opt/xtensa-esp-elf/bin/:$PATH
+ENV PATH=/opt/riscv32-esp-elf/bin/:$PATH
+
+# Install esp-qemu for esp DejaGNU tests
+ARG ESP_QEMU_CHECKSUM_URL="https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-esp_develop_8.2.0_20240122-checksum.sha256"
+ARG ESP_QEMU_URLS=" \
+https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-xtensa-softmmu-esp_develop_8.2.0_20240122-x86_64-linux-gnu.tar.xz \
+https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-riscv32-softmmu-esp_develop_8.2.0_20240122-x86_64-linux-gnu.tar.xz"
+RUN set -e; \
+    curl -LO $ESP_QEMU_CHECKSUM_URL && \
+    export ESP_QEMU_CHECKSUM_FILE=${ESP_QEMU_CHECKSUM_URL##*/} && \
+    for ESP_TOOLCHAIN_URL in $ESP_QEMU_URLS; do \
+        curl -LO ${ESP_TOOLCHAIN_URL} && \
+        export ESP_TOOLCHAIN_ARCHIVE=${ESP_TOOLCHAIN_URL##*/} && \
+        grep "*$ESP_TOOLCHAIN_ARCHIVE" $ESP_QEMU_CHECKSUM_FILE | sha256sum --check --strict - && \
+        tar -xf $ESP_TOOLCHAIN_ARCHIVE -C /opt && \
+        rm -fr $ESP_TOOLCHAIN_ARCHIVE; \
+    done; \
+    rm $ESP_QEMU_CHECKSUM_FILE
+
+ENV PATH=/opt/qemu/bin/:$PATH
+
+# install pyenv
+ARG PYENV_DIST_VERSION="v2.4.17"
+RUN mkdir -p /opt/pyenv \
+    && git clone -b ${PYENV_DIST_VERSION} --single-branch --depth 1 https://github.com/pyenv/pyenv.git /opt/pyenv/pyenv-${PYENV_DIST_VERSION} \
+    && echo "export PYENV_ROOT=\"/opt/pyenv/pyenv-${PYENV_DIST_VERSION}\"" >> ~/.profile \
+    && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.profile \
+    && echo 'eval "$(pyenv init --path)"' >> ~/.profile \
+    && echo 'if command -v pyenv 1>/dev/null 2>&1; then' >> ~/.bashrc \
+    && echo '  eval "$(pyenv init --path)"' >> ~/.bashrc \
+    && echo 'fi' >> ~/.bashrc
+
+
+# install pythons
+ARG PYTHON_VERSIONS="3.8.0 3.9.0 3.10.0 3.11.0 3.12.0 3.13.0"
+RUN . ~/.profile && \
+    export PYTHON_CONFIGURE_OPTS="--enable-shared" && \
+    for PYTHON_VERSION in $PYTHON_VERSIONS; do \
+        pyenv install $PYTHON_VERSION; \
+    done; \
+    pyenv local --unset

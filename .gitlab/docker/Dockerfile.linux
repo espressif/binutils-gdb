@@ -1,0 +1,10 @@
+# syntax = edrevo/dockerfile-plus
+
+INCLUDE+ ./common/Dockerfile.base
+
+ARG TARGET_HOST="x86_64-linux-gnu"
+
+INCLUDE+ ./common/Dockerfile.build-toolchain
+INCLUDE+ ./common/Dockerfile.gdb-deps
+INCLUDE+ ./common/Dockerfile.python-builder
+INCLUDE+ ./common/Dockerfile.rust

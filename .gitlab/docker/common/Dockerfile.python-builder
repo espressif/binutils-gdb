@@ -1,0 +1,147 @@
+ARG OPENSSL_BUILD_PLATFORM=""
+ARG OPENSSL_TARGET_PLATFORM=""
+ARG OPENSSL_DIR="/opt/openssl"
+ARG OPENSSL_VERSION="openssl-3.2.1"
+ARG PYENV_VERSION="v2.4.17"
+ARG PYTHON_VERSIONS="3.8.0 3.9.0 3.10.0 3.11.0 3.12.0 3.13.0"
+ARG LIBFFI_VERSION="v3.4.6"
+ARG LIBTIRPC_VERSION="1.3.5"
+ARG READLINE_VERSION="8.2"
+ARG ZLIB_VERSION="1.3.1"
+ARG UUID_VERSION="1.0.3"
+ARG XZ_VERSION="5.6.2"
+
+
+ARG HOST_TRIPLET="gcc -dumpmachine"
+
+# install python build dependencies
+RUN apt update && apt install -y --force-yes \
+    lzip \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone -b $OPENSSL_VERSION --depth=1 https://github.com/openssl/openssl.git && \
+    cd openssl && \
+    if [ "`${HOST_TRIPLET}`" != "${TARGET_HOST}" ]; then \
+      ./Configure ${OPENSSL_BUILD_PLATFORM} --prefix=${OPENSSL_DIR}-`${HOST_TRIPLET}` && \
+      make install_sw && make distclean; \
+    fi && \
+    ./Configure ${OPENSSL_TARGET_PLATFORM} --cross-compile-prefix=${TARGET_HOST}- --prefix=${OPENSSL_DIR}-${TARGET_HOST} && \
+    make install_sw && make distclean && \
+    cd .. && \
+    rm -fr openssl
+
+RUN wget --no-verbose https://zlib.net/zlib-$ZLIB_VERSION.tar.gz && \
+    tar -xzf zlib-$ZLIB_VERSION.tar.gz && \
+    cd zlib-$ZLIB_VERSION && \
+    CROSS_PREFIX=${TARGET_HOST}- ./configure --prefix=/opt/zlib-${TARGET_HOST} && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -fr zlib-${ZLIB_VERSION}*
+
+RUN wget --no-verbose https://tukaani.org/xz/xz-$XZ_VERSION.tar.gz && \
+    tar -xzf xz-$XZ_VERSION.tar.gz && \
+    cd xz-$XZ_VERSION && \
+    ./configure --host=$TARGET_HOST --target=$TARGET_HOST --build=`${HOST_TRIPLET}` --prefix=/opt/xz-${TARGET_HOST} && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -fr xz-$XZ_VERSION*
+
+RUN wget --no-verbose https://ftp.gnu.org/gnu/readline/readline-$READLINE_VERSION.tar.gz && \
+    tar -xzf readline-$READLINE_VERSION.tar.gz && \
+    cd readline-$READLINE_VERSION && \
+    ./configure --host=$TARGET_HOST --target=$TARGET_HOST --build=`${HOST_TRIPLET}` --prefix=/opt/xz-${TARGET_HOST} && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -fr readline-$READLINE_VERSION*
+
+RUN git clone -b $LIBFFI_VERSION --depth=1 https://github.com/libffi/libffi.git && \
+    cd libffi && \
+    ./autogen.sh && \
+    ./configure --host=$TARGET_HOST --target=$TARGET_HOST --build=`${HOST_TRIPLET}` --prefix=/opt/libffi-${TARGET_HOST} --disable-multi-os-directory && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf libffi
+
+RUN wget --no-verbose https://downloads.sourceforge.net/libtirpc/libtirpc-$LIBTIRPC_VERSION.tar.bz2 && \
+    tar -xjf libtirpc-$LIBTIRPC_VERSION.tar.bz2 && \
+    cd libtirpc-$LIBTIRPC_VERSION && \
+    ./configure --host=$TARGET_HOST --target=$TARGET_HOST --build=`${HOST_TRIPLET}` --prefix=/opt/libtirpc-${TARGET_HOST} --disable-gssapi && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf libtirpc-$LIBTIRPC_VERSION*
+
+RUN wget --no-verbose https://sourceforge.net/projects/libuuid/files/libuuid-$UUID_VERSION.tar.gz && \
+    tar -xzf libuuid-$UUID_VERSION.tar.gz && \
+    cd libuuid-$UUID_VERSION && \
+    ./configure --host=$TARGET_HOST --target=$TARGET_HOST --build=`${HOST_TRIPLET}` --prefix=/opt/libuuid-${TARGET_HOST} && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf libuuid-$UUID_VERSION*
+
+# install pyenv
+RUN set -e && \
+    rm -fr ~/.pyenv && \
+    git clone -b ${PYENV_VERSION} --single-branch --depth 1 https://github.com/pyenv/pyenv.git ~/.pyenv && \
+    cd ~/.pyenv && \
+    src/configure && \
+    make -C src && \
+    export PYENV_ROOT="$HOME/.pyenv" && \
+    export PATH="$PYENV_ROOT/bin:$PATH" && \
+    eval "$(pyenv init --path)" && \
+    eval "$(pyenv init -)" && \
+    export PYTHON_CONFIGURE_OPTS="--enable-shared --with-openssl=${OPENSSL_DIR}-`${HOST_TRIPLET}`" && \
+    export LD_LIBRARY_PATH="${OPENSSL_DIR}-`${HOST_TRIPLET}`/lib:$LIBRARY_PATH" && \
+    for PYTHON_VERSION in $PYTHON_VERSIONS; do \
+        export PYTHON_DIST_DIR=/opt/python-$TARGET_HOST-$PYTHON_VERSION; \
+        pyenv install "$PYTHON_VERSION"; \
+        unset PYTHON_EXTRA_OPTIONS; \
+        unset CFLAGS; \
+        unset LDFLAGS; \
+        if [ "$(echo $PYTHON_VERSION | cut -d . -f2)" = "11" ]; then \
+            PYTHON_EXTRA_OPTIONS+=" --with-system-ffi"; \
+        fi; \
+        if [ "$(echo $PYTHON_VERSION | cut -d . -f2)" -ge "11" ]; then \
+            PYTHON_EXTRA_OPTIONS+=" --with-build-python=/root/.pyenv/versions/$PYTHON_VERSION/bin/python"; \
+            export CFLAGS="-I/opt/zlib-${TARGET_HOST}/include -I/opt/xz-${TARGET_HOST}/include -I/opt/readline-${TARGET_HOST}/include -I/opt/libffi-${TARGET_HOST}/include -I/opt/libtirpc-${TARGET_HOST}/include -I/opt/libuuid-${TARGET_HOST}/include"; \
+            export LDFLAGS="-L/opt/zlib-${TARGET_HOST}/lib -L/opt/xz-${TARGET_HOST}/lib -L/opt/readline-${TARGET_HOST}/lib -L/opt/libffi-${TARGET_HOST}/lib -L/opt/libtirpc-${TARGET_HOST}/lib -L/opt/libuuid-${TARGET_HOST}/lib"; \
+        fi; \
+        if [ "$(echo $PYTHON_VERSION | cut -d . -f2)" = "13" ]; then \
+            export LDFLAGS="-latomic $LDFLAGS"; \
+        fi; \
+        pyenv shell "$PYTHON_VERSION"; \
+        wget --no-verbose https://www.python.org/ftp/python/"$PYTHON_VERSION"/Python-"$PYTHON_VERSION".tgz; \
+        tar xzf Python-"$PYTHON_VERSION".tgz; \
+        cd Python-"$PYTHON_VERSION"; \
+        ./configure --prefix=$PYTHON_DIST_DIR --host=$TARGET_HOST --target=$TARGET_HOST --build=`${HOST_TRIPLET}` --disable-ipv6 ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no ac_cv_have_long_long_format=yes --enable-shared --with-openssl=${OPENSSL_DIR}-${TARGET_HOST} $PYTHON_EXTRA_OPTIONS; \
+        if [ "${TARGET_HOST}" = "`${HOST_TRIPLET}`" ]; then \
+            make -j$(nproc) libpython${PYTHON_VERSION%.*}.so; \
+            ${TARGET_HOST}-strip libpython${PYTHON_VERSION%.*}.so; \
+            cp -R /root/.pyenv/versions/$PYTHON_VERSION $PYTHON_DIST_DIR; \
+            cp libpython${PYTHON_VERSION%.*}.so $PYTHON_DIST_DIR/lib/libpython${PYTHON_VERSION%.*}.so; \
+        else \
+            make -j$(nproc); \
+            make install; \
+        fi; \
+        find $PYTHON_DIST_DIR -type f -exec file {} + | grep ELF | cut -d : -f1 | xargs $TARGET_HOST-strip; \
+        cd ..; \
+        rm -fr Python-*; \
+    done; \
+    rm -fr /root/.pyenv
