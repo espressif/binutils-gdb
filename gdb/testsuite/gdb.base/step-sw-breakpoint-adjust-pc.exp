@@ -76,7 +76,7 @@ proc test {non_stop displaced always_inserted} {
     }
 }
 
-foreach_with_prefix non_stop { "off" "on" } {
+foreach_with_prefix non_stop { "off" } {
     foreach_with_prefix displaced_step { "off" "on" } {
 	foreach_with_prefix always_inserted { "off" "on" } {
 	    test $non_stop $displaced_step $always_inserted

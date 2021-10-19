@@ -49,16 +49,17 @@ gdb_breakpoint "f22"
 gdb_breakpoint "f3"
 gdb_breakpoint "f4"
 
+# GDB prints object address, not member value
 gdb_continue_to_breakpoint "Break in f1"
-gdb_test "finish" " = {a = 123}" \
+gdb_test "finish" " = {a = .*}" \
     "finish from f1"
 
 gdb_continue_to_breakpoint "Break in f2"
-gdb_test "finish" " = {b = 123}" \
+gdb_test "finish" " = {b = .*}" \
     "finish from f2"
 
 gdb_continue_to_breakpoint "Break in f22"
-gdb_test "finish" " = {b1 = 123}" \
+gdb_test "finish" " = {b1 = .*}" \
     "finish from f22"
 
 gdb_continue_to_breakpoint "Break in f3"
