@@ -777,6 +777,36 @@ AC_ARG_WITH(python,
 AC_MSG_CHECKING([whether to use python])
 AC_MSG_RESULT([$with_python])
 
+dnl Use --with-python-libdir to control where GDB looks for the Python
+dnl libraries.
+dnl
+dnl If this is not given then the default will be based on the value
+dnl passed to --with-python, which is in the python_prefix variable.
+dnl If the --with-python option wasn't given then the default value in
+dnl python_prefix is based on running the 'gdb/python/python-config
+dnl --exec-prefix' script.
+AC_ARG_WITH(python-libdir,
+  AS_HELP_STRING([--with-python-libdir@<:@=DIR@:>@], [search for python's libraries in DIR]),
+  [],[])
+
+dnl Use --with-python-includes to override python-config values
+dnl
+dnl If this is given then using instead of python-config --includes
+AC_ARG_WITH(python-includes,
+  AS_HELP_STRING([--with-python-includes], [override python-config --includes]),
+  [
+    python_includes="${with_python_includes}"
+  ],[])
+
+dnl Use --with-python-ldflags to override python-config values
+dnl
+dnl If this is given then using instead of python-config --ldflags
+AC_ARG_WITH(python-ldflags,
+  AS_HELP_STRING([--with-python-ldflags], [override python-config --ldflags]),
+  [
+    python_libs="${with_python_ldflags}"
+  ],[])
+
 if test "${with_python}" = no; then
   AC_MSG_WARN([python support disabled; some features may be unavailable.])
   have_libpython=no
@@ -850,21 +880,33 @@ else
     # We have a python program to use, but it may be too old.
     # Don't flag an error for --with-python=auto (the default).
     have_python_config=yes
-    python_includes=`${python_prog} ${srcdir}/python/python-config.py --includes`
+    if test -z "${python_includes}"; then
+      python_includes=`${python_prog} ${srcdir}/python/python-config.py --includes`
+    else
+      true
+    fi
     if test $? != 0; then
       have_python_config=failed
       if test "${with_python}" != auto; then
 	AC_MSG_ERROR(failure running python-config --includes)
       fi
     fi
-    python_libs=`${python_prog} ${srcdir}/python/python-config.py --ldflags`
+    if test -z "${python_libs}"; then
+      python_libs=`${python_prog} ${srcdir}/python/python-config.py --ldflags`
+    else
+      true
+    fi
     if test $? != 0; then
       have_python_config=failed
       if test "${with_python}" != auto; then
 	AC_MSG_ERROR(failure running python-config --ldflags)
       fi
     fi
-    python_prefix=`${python_prog} ${srcdir}/python/python-config.py --exec-prefix`
+    if test -z "${with_python_libdir}"; then
+      python_prefix=`${python_prog} ${srcdir}/python/python-config.py --exec-prefix`
+    else
+      true
+    fi
     if test $? != 0; then
       have_python_config=failed
       if test "${with_python}" != auto; then
@@ -877,9 +919,11 @@ else
     # path from the python_prefix either, because that include path
     # depends on the Python version.  So, there is nothing much we can
     # do except assume that the compiler will be able to find those files.
-    python_includes=
-    python_libs=
-    have_python_config=no
+    if [ test -n "${python_includes}" ] && [ test -n "${python_libs}" ]; then
+      have_python_config=yes
+    else
+      have_python_config=no
+    fi
   fi
 
   # If we have python-config, only try the configuration it provides.
@@ -913,24 +957,6 @@ else
   fi
 fi
 
-dnl Use --with-python-libdir to control where GDB looks for the Python
-dnl libraries.
-dnl
-dnl If this is not given then the default will be based on the value
-dnl passed to --with-python, which is in the python_prefix variable.
-dnl If the --with-python option wasn't given then the default value in
-dnl python_prefix is based on running the 'gdb/python/python-config
-dnl --exec-prefix' script.
-AC_ARG_WITH(python-libdir,
-  AS_HELP_STRING([--with-python-libdir@<:@=DIR@:>@], [search for python's libraries in DIR]),
-  [],[
-    # If no python libdir is specified then select one based on
-    # python's prefix path.
-    if test -n "${python_prefix}"; then
-      with_python_libdir=${python_prefix}/lib
-    fi
-  ])
-
 if test "${have_libpython}" != no; then
   AC_DEFINE(HAVE_PYTHON, 1, [Define if Python interpreter is being linked in.])
   CONFIG_OBS="$CONFIG_OBS \$(SUBDIR_PYTHON_OBS)"
@@ -939,6 +965,11 @@ if test "${have_libpython}" != no; then
   CONFIG_INSTALL="$CONFIG_INSTALL install-python"
   ENABLE_CFLAGS="$ENABLE_CFLAGS \$(SUBDIR_PYTHON_CFLAGS)"
 
+  # If no python libdir is specified then select one based on
+  # python's prefix path.
+  if [ -z "${with_python_libdir}" ] && [ test -n "${python_prefix}" ]; then
+    with_python_libdir=${python_prefix}/lib
+  fi
   if test -n "${with_python_libdir}"; then
     AC_DEFINE_UNQUOTED(WITH_PYTHON_LIBDIR, "${with_python_libdir}",
 		       [Directory containing Python's standard libraries from --with-python-libdir.])
