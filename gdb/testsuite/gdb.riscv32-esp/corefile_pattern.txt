@@ -1,0 +1,33 @@
+GNU gdb .*
+.*
+.*
+.*
+.*
+.*
+This GDB was configured as.*target=riscv32-esp-elf.*
+.*
+.*
+.*
+.*
+.*
+.*
+.*
+.*
+Reading symbols from.*
+\[New process 1070173892\]
+\[New process 1070175776\]
+\[New process 1070181624\]
+\[New process 1070169168\]
+\[New process 1070196780\]
+\[New process 1070185680\]
+#0  0x42005f5a in start_wps \(\)
+.*
+\[Current thread is 1 \(process 1070173892\)\]
+#0  0x42005f5a in start_wps \(\)
+.*
+#1  0x420065b8 in app_main \(\)
+.*
+#2  0x42081fe2 in main_task \(args=<optimized out>\)
+.*
+#3  0x40388e24 in vPortSetInterruptMask \(\)
+.*

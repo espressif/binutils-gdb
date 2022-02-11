@@ -96,7 +96,7 @@ with_test_prefix "cycle at level 5" {
 	     "#3 \[^\r\n\]* normal_func \\(\\) at \[^\r\n\]+" \
 	     "#4 \[^\r\n\]* inline_func \\(\\) at \[^\r\n\]+" \
 	     "#5 \[^\r\n\]* normal_func \\(\\) at \[^\r\n\]+" \
-	     "Backtrace stopped: previous frame identical to this frame \\(corrupt stack\\?\\)"]
+	     "(Backtrace stopped: previous frame identical to this frame \\(corrupt stack\\?\\))|(Register .* was not saved)"]
 }
 
 with_test_prefix "cycle at level 3" {
@@ -110,7 +110,7 @@ with_test_prefix "cycle at level 3" {
 	     "#1 \[^\r\n\]* normal_func \\(\\) at \[^\r\n\]+" \
 	     "#2 \[^\r\n\]* inline_func \\(\\) at \[^\r\n\]+" \
 	     "#3 \[^\r\n\]* normal_func \\(\\) at \[^\r\n\]+" \
-	     "Backtrace stopped: previous frame identical to this frame \\(corrupt stack\\?\\)"]
+	     "(Backtrace stopped: previous frame identical to this frame \\(corrupt stack\\?\\))|((Register .* was not saved))"]
 }
 
 with_test_prefix "cycle at level 1" {
@@ -122,7 +122,7 @@ with_test_prefix "cycle at level 1" {
 	[multi_line \
 	     "#0 \[^\r\n\]* inline_func \\(\\) at \[^\r\n\]+" \
 	     "#1 \[^\r\n\]* normal_func \\(\\) at \[^\r\n\]+" \
-	     "Backtrace stopped: previous frame identical to this frame \\(corrupt stack\\?\\)"]
+	     "(Backtrace stopped: previous frame identical to this frame \\(corrupt stack\\?\\))|(Register .* was not saved)"]
 }
 
 # Flush the register cache (which also flushes the frame cache) so we
