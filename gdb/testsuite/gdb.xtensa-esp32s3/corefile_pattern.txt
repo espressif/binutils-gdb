@@ -1,0 +1,34 @@
+GNU gdb .*
+.*
+.*
+.*
+.*
+.*
+This GDB was configured as.*target=xtensa-esp-elf.*
+.*
+.*
+.*
+.*
+.*
+.*
+.*
+.*
+Reading symbols from.*
+\[New process 1070472568\]
+\[New process 1070549672\]
+\[New process 1070551560\]
+\[New process 1070474968\]
+\[New process 1070470168\]
+\[New process 1070537184\]
+\[New process 1070543272\]
+\[New process 1070538824\]
+#0  0x42004ea9 in recur_func \(\) at \.\./main/test_core_dump\.c:70
+\[Current thread is 1 \(process 1070472568\)\]
+#0  0x42004ea9 in recur_func \(\) at \.\./main/test_core_dump\.c:70
+#1  0x42004e84 in recur_func \(\) at \.\./main/test_core_dump\.c:63
+#2  0x42004e84 in recur_func \(\) at \.\./main/test_core_dump\.c:63
+#3  0x42004ecf in unaligned_ptr_task \(pvParameter=0x0\)
+    at \.\./main/test_core_dump\.c:80
+#4  0x4037b9e4 in vPortTaskWrapper \(pxCode=0x42004eb4 <unaligned_ptr_task>.*
+    pvParameters=0x0\)
+    at /builds/espressif/esp-idf/components/freertos/port/xtensa/port\.c:130
