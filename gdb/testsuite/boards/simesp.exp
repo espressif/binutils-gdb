@@ -1,0 +1,138 @@
+set simesp_spawn_id ""
+set simesp_last_load_file ""
+
+if { [info exists ::env(ESP_BIN_GEN_PATH)] } {
+    set esp_bin_gen_path $::env(ESP_BIN_GEN_PATH)
+} else {
+    set esp_bin_gen_path "$::env(PWD)/esp_bin_generator"
+}
+
+if { [info exists ::env(SIMESP_PATH)] } {
+    set simesp_path $::env(SIMESP_PATH)
+} else {
+    set simesp_path "qemu-system-xtensa"
+}
+
+if { [info exists ::env(SIMESP_CPU)] } {
+    set simesp_cpu $::env(SIMESP_CPU)
+} else {
+    set simesp_cpu "esp32"
+}
+
+set_board_info compiler "xtensa-${simesp_cpu}-elf-gcc"
+set_board_info c++compiler "xtensa-${simesp_cpu}-elf-g++"
+
+set_board_info cflags  "-mlongcalls"
+set_board_info ldflags "--specs=sim.elf.specs --specs=sys.qemu.specs -Wl,-z,noexecstack"
+
+set_board_info use_gdb_stub 1
+set_board_info gdb_protocol "remote"
+set_board_info gdb,do_reload_on_run 1
+set_board_info noargs 1
+set_board_info gdb,noinferiorio 1
+set_board_info gdb,nofileio 1
+set_board_info gdb,no_long_long 1
+set_board_info gdb,noresults 1
+set_board_info gdb,nosignals 1
+set_board_info gdb,skip_huge_test 1
+set_board_info gdb,start_symbol 0x40000400
+
+proc init_simulator { file } {
+    global simesp_last_load_file
+    global simesp_spawn_id
+    global simesp_cpu
+    global simesp_path
+    global timeout
+
+    if { $file == "" } {
+	set file $simesp_last_load_file
+    } else {
+	set simesp_last_load_file $file
+    }
+
+    gdb_file_cmd $file
+
+    # Close any previous simesp instance.
+    if { $simesp_spawn_id != "" } {
+	verbose -log "simesp: closing previous spawn id $simesp_spawn_id"
+	if [catch { close -i $simesp_spawn_id } != 0] {
+	    warning "simesp: failed to close connection to previous simesp instance"
+	}
+
+	wait -i $simesp_spawn_id
+	set simesp_spawn_id ""
+    }
+
+    set cmd "spawn -noecho ${simesp_path} -nographic -monitor null -cpu ${simesp_cpu} -M ${simesp_cpu} -m 4M -S -s -kernel ${file} -d trace:gdbstub_op_start -semihosting"
+    verbose -log "Spawning simesp (timeout $timeout): $cmd"
+    for {set i 0} {$i < 10} {incr i} {
+        # Run simesp.
+        verbose -log "try to execute simesp: $i"
+        eval $cmd
+        set simesp_spawn_id $spawn_id
+        expect {
+	    -i $simesp_spawn_id -re "::1234" {}
+	    timeout {
+	        verbose -log "simesp: timeout, closing simesp spawn id"
+	        close -i $simesp_spawn_id
+	        verbose -log "simesp: timeout, waiting for simesp process exit"
+	        wait -i $simesp_spawn_id
+	        set simesp_spawn_id ""
+	        verbose -log "unable to start simesp: timeout"
+	        continue
+	    }
+	    eof {
+	        verbose -log "simesp: eof, waiting for simesp process exit"
+	        wait -i $simesp_spawn_id
+	        set simesp_spawn_id ""
+	        verbose -log "unable to start simesp: eof"
+	        continue
+	    }
+        }
+        verbose -log "simesp: executed ok"
+        break
+    }
+    verbose -log "simesp: simesp spawned with spawn id $simesp_spawn_id, pid [exp_pid $simesp_spawn_id]"
+    return 0
+}
+
+proc connect_to_simesp {} {
+    global simesp_spawn_id
+    global gdb_prompt
+
+    verbose -log "simesp: connecting to remote ..."
+
+    # Connect to simesp.
+    send_gdb "target remote :1234\n"
+    gdb_expect {
+	-re ".*Remote debugging using :1234.*\[\r\n\]+$gdb_prompt $" {}
+	-re "Kill the program being debugged? (y or n)" {
+	    send_gdb "y\n"
+	    connect_to_simesp
+	}
+	timeout {
+	    verbose -log "simesp: unable to connect to simesp, closing simesp spawn id"
+	    close -i $simesp_spawn_id
+	    verbose -log "simesp: unable to connect to simesp, waiting for simesp process exit"
+	    wait -i $simesp_spawn_id
+	    set simesp_spawn_id ""
+	    error "unable to connect to simesp stub"
+	}
+    }
+    verbose -log "simesp: connected"
+}
+
+proc gdb_load { file } {
+    return [ init_simulator $file ]
+}
+
+proc gdb_run_cmd  { {inferior_args {}} } {
+    init_simulator $inferior_args
+    connect_to_simesp
+    send_gdb "continue\n"
+    gdb_expect 60 {
+        -re "Continu\[^\r\n\]*\[\r\n\]" {}
+        default {}
+    }
+    return 0
+}

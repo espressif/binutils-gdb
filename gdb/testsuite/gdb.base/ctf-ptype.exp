@@ -302,5 +302,5 @@ if {[runto_main]} {
   set timeout $prev_timeout
 
   # Test ptype of user register
-  gdb_test "ptype \$pc" "void \\(\\*\\)\\(\\)" "ptype \$pc"
+  gdb_test "ptype \$pc" "void \\*" "ptype \$pc"
 }
