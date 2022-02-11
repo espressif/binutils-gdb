@@ -1,0 +1,37 @@
+set expected_output \
+  [multi_line \
+     ".*" \
+     "gdbarch_dump: num_regs = 155" \
+     "gdbarch_dump: num_pseudo_regs = 22" \
+     ".*" \
+     "gdbarch_dump: sp_regnum = 156" \
+     ".*" \
+     "gdbarch_dump: ps_regnum = 70" \
+     ".*" \
+     "xtensa_dump_tdep: tdep->num_regs = 155" \
+     "xtensa_dump_tdep: tdep->num_nopriv_regs = 73" \
+     "xtensa_dump_tdep: tdep->num_pseudo_regs = 22" \
+     "xtensa_dump_tdep: tdep->ar_base = 1" \
+     "xtensa_dump_tdep: tdep->a0_base = 155" \
+     "xtensa_dump_tdep: tdep->wb_regnum = 66" \
+     "xtensa_dump_tdep: tdep->ws_regnum = 67" \
+     "xtensa_dump_tdep: tdep->pc_regnum = 0" \
+     "xtensa_dump_tdep: tdep->ps_regnum = 70" \
+     "xtensa_dump_tdep: tdep->lbeg_regnum = -1" \
+     "xtensa_dump_tdep: tdep->lend_regnum = -1" \
+     "xtensa_dump_tdep: tdep->lcount_regnum = -1" \
+     "xtensa_dump_tdep: tdep->sar_regnum = 65" \
+     "xtensa_dump_tdep: tdep->litbase_regnum = -1" \
+     "xtensa_dump_tdep: tdep->threadptr_regnum = 71" \
+     "xtensa_dump_tdep: tdep->interrupt_regnum = -1" \
+     "xtensa_dump_tdep: tdep->interrupt2_regnum = -1" \
+     "xtensa_dump_tdep: tdep->cpenable_regnum = -1" \
+     "xtensa_dump_tdep: tdep->debugcause_regnum = 110" \
+     "xtensa_dump_tdep: tdep->exccause_regnum = 109" \
+     "xtensa_dump_tdep: tdep->excvaddr_regnum = 115" \
+  ]
+set test_cmd "maintenance print architecture"
+
+gdb_start
+gdb_test $test_cmd $expected_output $test_cmd
+gdb_exit

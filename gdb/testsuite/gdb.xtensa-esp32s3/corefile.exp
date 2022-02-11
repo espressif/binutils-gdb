@@ -1,0 +1,27 @@
+set expected_output \
+  [multi_line \
+     ".*" \
+     "#0  0x42004ea9 in recur_func .* at .*\/main\/test_core_dump\.c:70" \
+     "" \
+     "warning: 70	.*\/main\/test_core_dump\.c: No such file or directory" \
+     ".*Current thread is 1 .*process 1070472568.*" \
+     "#0  0x42004ea9 in recur_func .* at .*\/main\/test_core_dump\.c:70" \
+     "#1  0x42004e84 in recur_func .* at .*\/main\/test_core_dump\.c:63" \
+     "#2  0x42004e84 in recur_func .* at .*\/main\/test_core_dump\.c:63" \
+     "#3  0x42004ecf in unaligned_ptr_task .*pvParameter=0x0.* at .*\/main\/test_core_dump\.c:80" \
+     "#4  0x4037b9e4 in vPortTaskWrapper .*pxCode=0x42004eb4 <unaligned_ptr_task>, pvParameters=0x0.* at \/builds\/espressif\/esp-idf\/components\/freertos\/port\/xtensa\/port\.c:130" \
+     "$gdb_prompt $" \
+  ]
+
+set binfile "gdb.xtensa-esp32s3/corefile.elf"
+set corefile "gdb.xtensa-esp32s3/corefile.core"
+
+eval "spawn $GDB $INTERNAL_GDBFLAGS $GDBFLAGS $binfile -core=$corefile -ex \"bt\""
+expect {
+    -re $expected_output	{
+	pass "args: execfile -core=[file tail $corefile]"
+    }
+    timeout 		{ fail "(timeout) read $corefile" }
+}
+
+close
