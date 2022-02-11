@@ -69,9 +69,11 @@ gdb_test "info variables -n" \
 	 "File .*:(" \
 	 "$decimal:.*)+)*"]
 
-gdb_test "info variables -n global" \
+# Appearing of "struct _reent *_global_impure_ptr;" breaks the test.
+# So filter what we are looking for (global_var variable)
+gdb_test "info variables -n global_var" \
     [multi_line \
-	 "All variables matching regular expression \"global\":" \
+	 "All variables matching regular expression \"global_var\":" \
 	 "" \
 	 "File .*${srcfile2}:" \
 	 "18:\[ \t\]+int global_var;" ]
