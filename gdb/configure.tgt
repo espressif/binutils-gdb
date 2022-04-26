@@ -107,7 +107,7 @@ loongarch*-*-*)
 
 riscv*-*-*)
 	cpu_obs="riscv-tdep.o riscv-none-tdep.o arch/riscv.o \
-	         ravenscar-thread.o riscv-ravenscar-thread.o";;
+	         ravenscar-thread.o riscv-ravenscar-thread.o solib-svr4.o";;
 
 x86_64-*-*)
 	cpu_obs="${i386_tobjs} ${amd64_tobjs}";;
