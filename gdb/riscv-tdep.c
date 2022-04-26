@@ -19,6 +19,7 @@
 
 #include "defs.h"
 #include "frame.h"
+#include "solib-svr4.h"
 #include "inferior.h"
 #include "symtab.h"
 #include "value.h"
@@ -4394,6 +4395,10 @@ riscv_gdbarch_init (struct gdbarch_info info,
   gdbarch_init_osabi (info, gdbarch);
 
   register_riscv_ravenscar_ops (gdbarch);
+
+  /* Enable TLS support.  */
+  set_gdbarch_fetch_tls_load_module_address (gdbarch,
+					     svr4_fetch_objfile_link_map);
 
   return gdbarch;
 }
