@@ -28,6 +28,7 @@
 #include "regcache.h"
 #include "reggroups.h"
 #include "regset.h"
+#include "inferior.h"
 
 #include "dwarf2/frame.h"
 #include "frame-base.h"
@@ -3256,6 +3257,10 @@ xtensa_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   /* Hook in the ABI-specific overrides, if they have been registered.  */
   gdbarch_init_osabi (info, gdbarch);
+
+  /* Enable TLS support.  */
+  set_gdbarch_fetch_tls_load_module_address (gdbarch,
+					     svr4_fetch_objfile_link_map);
 
   return gdbarch;
 }
