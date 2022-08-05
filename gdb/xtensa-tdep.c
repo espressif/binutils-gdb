@@ -1262,7 +1262,8 @@ xtensa_frame_cache (frame_info_ptr this_frame, void **this_cache)
       ws = get_frame_register_unsigned (this_frame,
 					tdep->ws_regnum);
 
-      if (safe_read_memory_integer (pc, 1, byte_order, &op1)
+      if (frame_relative_level (this_frame) == 0
+	  && safe_read_memory_integer (pc, 1, byte_order, &op1)
 	  && XTENSA_IS_ENTRY (gdbarch, op1))
 	{
 	  int callinc = CALLINC (ps);
