@@ -327,6 +327,23 @@ ldfile_add_library_path (const char *name, bool cmdline)
     new_dirs->name = concat (ld_sysroot, name + strlen ("$SYSROOT"), (const char *) NULL);
   else
     new_dirs->name = xstrdup (name);
+
+#ifdef ENABLE_POISON_SYSTEM_DIRECTORIES
+  if (command_line.poison_system_directories
+  && ((!strncmp (name, "/lib", 4))
+      || (!strncmp (name, "/usr/lib", 8))
+      || (!strncmp (name, "/usr/local/lib", 14))
+      || (!strncmp (name, "/usr/X11R6/lib", 14))))
+   {
+     if (command_line.error_poison_system_directories)
+       einfo (_("%X%P: error: library search path \"%s\" is unsafe for "
+            "cross-compilation\n"), name);
+     else
+       einfo (_("%P: warning: library search path \"%s\" is unsafe for "
+            "cross-compilation\n"), name);
+   }
+#endif
+
 }
 
 /* Try to open a BFD for a lang_input_statement.  */

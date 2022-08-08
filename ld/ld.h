@@ -161,6 +161,14 @@ typedef struct
   /* If set, display the target memory usage (per memory region).  */
   bool print_memory_usage;
 
+  /* If TRUE (the default) warn for uses of system directories when
+     cross linking.  */
+  bool poison_system_directories;
+
+  /* If TRUE (default FALSE) give an error for uses of system
+     directories when cross linking instead of a warning.  */
+  bool error_poison_system_directories;
+
   /* Should we force section groups to be resolved?  Controlled with
      --force-group-allocation on the command line or FORCE_GROUP_ALLOCATION
      in the linker script.  */
