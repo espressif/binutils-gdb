@@ -467,7 +467,7 @@ _rl_init_terminal_io (const char *terminal_name)
 
   dumbterm = STREQ (term, "dumb");
 
-#ifdef __MSDOS__
+#if defined(__MSDOS__) || defined(__MINGW32__)
   _rl_term_im = _rl_term_ei = _rl_term_ic = _rl_term_IC = (char *)NULL;
   _rl_term_up = _rl_term_dc = _rl_term_DC = _rl_visible_bell = (char *)NULL;
   _rl_term_ku = _rl_term_kd = _rl_term_kl = _rl_term_kr = (char *)NULL;
@@ -484,7 +484,7 @@ _rl_init_terminal_io (const char *terminal_name)
 #endif
 
   _rl_get_screen_size (tty, 0);
-#else  /* !__MSDOS__ */
+#else  /* defined(__MSDOS__) || defined(__MINGW32__) */
   /* I've separated this out for later work on not calling tgetent at all
      if the calling application has supplied a custom redisplay function,
      (and possibly if the application has supplied a custom input function). */
@@ -589,7 +589,7 @@ _rl_init_terminal_io (const char *terminal_name)
   term_has_meta = TGETFLAG ("km");
   if (term_has_meta == 0)
     _rl_term_mm = _rl_term_mo = (char *)NULL;
-#endif /* !__MSDOS__ */
+#endif /* defined(__MSDOS__) || defined(__MINGW32__) */
 
   /* Attempt to find and bind the arrow keys.  Do not override already
      bound keys in an overzealous attempt, however. */
