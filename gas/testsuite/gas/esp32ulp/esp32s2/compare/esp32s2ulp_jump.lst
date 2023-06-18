@@ -87,8 +87,8 @@ ESP32ULP GAS  esp32s2ulp_jump.s 			page 1
   69      0000DE82 
   70              	
   71              	// Jumps commands...
-  72 00f0 04001288 	    jumps 0x4, 0x04, EQ
-  73 00f4 04001288 	    jumps 0x04, check_thres1, EQ
+  72 00f0 04000688 	    jumps 0x4, 0x04, EQ
+  73 00f4 04000688 	    jumps 0x04, check_thres1, EQ
   74 00f8 0400EA8A 	    jumps check_jump1, check_thres1, EQ
   75 00fc 0000EE8A 	    jumps check_jump1, check_thres2, EQ
   76 0100 0400F28A 	    jumps check_jump2, check_thres1, EQ
@@ -111,8 +111,8 @@ ESP32ULP GAS  esp32s2ulp_jump.s 			page 1
   91      00000A82 
   92              	
   93              	    //jumps with negative offset
-  94 0138 0000128A 	    jumps -0x4, 0x00, EQ
-  95 013c 0080108A 	    jumps -0x4, 0x00, LT
-  96 0140 0080118A 	    jumps -0x4, 0x00, GT
-  97 0144 0080128A 	    jumps -0x4, 0x00, LE
-  98 0148 0080138A 	    jumps -0x4, 0x00, GE
+  94 0138 0000068A 	    jumps -0x4, 0x00, EQ
+  95 013c 0080048A 	    jumps -0x4, 0x00, LT
+  96 0140 0080058A 	    jumps -0x4, 0x00, GT
+  97 0144 0080068A 	    jumps -0x4, 0x00, LE
+  98 0148 0080078A 	    jumps -0x4, 0x00, GE
