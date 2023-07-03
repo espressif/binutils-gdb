@@ -733,6 +733,8 @@ enum
 
   option_abi_windowed,
   option_abi_call0,
+
+  option_dynconfig,
 };
 
 const char *md_shortopts = "";
@@ -817,6 +819,7 @@ struct option md_longopts[] =
   { "abi-windowed", no_argument, NULL, option_abi_windowed },
   { "abi-call0", no_argument, NULL, option_abi_call0 },
 
+  { "dynconfig=", required_argument, NULL, option_dynconfig },
   { NULL, no_argument, NULL, 0 }
 };
 
@@ -1053,6 +1056,12 @@ md_parse_option (int c, const char *arg)
       elf32xtensa_abi = XTHAL_ABI_CALL0;
       return 1;
 
+    case option_dynconfig:
+      {
+	    /* Applied in xtensa_init()  */
+	    return 1;
+      }
+
     default:
       return 0;
     }
@@ -1087,7 +1096,9 @@ Xtensa options:\n\
   --[no-]separate-prop-tables\n\
                           [Do not] place Xtensa property records into\n\
                           individual property sections for each section.\n\
-                          Default is to generate single property section.\n", stream);
+                          Default is to generate single property section.\n\
+  --dynconfig=<file>\n\
+                          Use xtensa dynconfig options\n", stream);
 }
 
 
@@ -5268,8 +5279,22 @@ xg_init_global_config (void)
 }
 
 void
-xtensa_init (int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED)
+xtensa_init (int argc, char **argv)
 {
+  /* This function is called before AS arguments parsed.
+   * So, dynconfig file must be set first.
+   */
+  int i;
+  const char * const dynconfig_opt = "--dynconfig=";
+  for (i = 1; i < argc; i++)
+    {
+      if (!strncmp (dynconfig_opt, argv[i], strlen(dynconfig_opt)))
+	    {
+	      extern const char* xtensa_dynconfig_file;
+	      xtensa_dynconfig_file = &argv[i][strlen(dynconfig_opt)];
+	      break;
+	    }
+    }
   xg_init_global_config ();
 }
 

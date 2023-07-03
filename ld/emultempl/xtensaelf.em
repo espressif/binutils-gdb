@@ -1930,6 +1930,7 @@ PARSE_AND_LIST_PROLOGUE='
 #define OPTION_NO_LITERAL_MOVEMENT	(OPTION_LITERAL_MOVEMENT + 1)
 #define OPTION_ABI_WINDOWED		(OPTION_NO_LITERAL_MOVEMENT + 1)
 #define OPTION_ABI_CALL0		(OPTION_ABI_WINDOWED + 1)
+#define OPTION_DYNCONFIG		(OPTION_ABI_CALL0 + 1)
 extern int elf32xtensa_size_opt;
 extern int elf32xtensa_no_literal_movement;
 extern int elf32xtensa_abi;
@@ -1941,6 +1942,7 @@ PARSE_AND_LIST_LONGOPTS='
   { "no-literal-movement", no_argument, NULL, OPTION_NO_LITERAL_MOVEMENT},
   { "abi-windowed", no_argument, NULL, OPTION_ABI_WINDOWED},
   { "abi-call0", no_argument, NULL, OPTION_ABI_CALL0},
+  { "dynconfig=", required_argument, NULL, OPTION_DYNCONFIG},
 '
 
 PARSE_AND_LIST_OPTIONS='
@@ -1951,6 +1953,8 @@ PARSE_AND_LIST_OPTIONS='
   --abi-windowed              Choose windowed ABI for the output object\n"));
   fprintf (file, _("\
   --abi-call0                 Choose call0 ABI for the output object\n"));
+  fprintf (file, _("\
+  --dynconfig=FILE            Choose xtensa dynconfig file\n"));
 '
 
 PARSE_AND_LIST_ARGS_CASES='
@@ -1969,6 +1973,12 @@ PARSE_AND_LIST_ARGS_CASES='
     case OPTION_ABI_CALL0:
       elf32xtensa_abi = XTHAL_ABI_CALL0;
       break;
+    case OPTION_DYNCONFIG:
+      {
+	extern const char* xtensa_dynconfig_file;
+	xtensa_dynconfig_file = optarg;
+	break;
+      }
 '
 
 # Replace some of the standard ELF functions with our own versions.
