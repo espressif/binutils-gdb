@@ -475,6 +475,7 @@ enum option_values
   /* Used by emultempl/elf-i386-glibc.em.  */
   OPTION_GNU_TLS_VERSION_TAG,
   OPTION_NO_GNU_TLS_VERSION_TAG,
+  OPTION_DYNCONFIG,
 };
 
 /* The initial parser states.  */
