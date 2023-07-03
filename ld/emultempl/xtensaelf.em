@@ -61,6 +61,10 @@ static char *
 elf_xtensa_choose_target (int argc ATTRIBUTE_UNUSED,
 			  char **argv ATTRIBUTE_UNUSED)
 {
+  /* This function is called before LD arguments parsed.
+   * So, dynconfig file must be set first.  */
+  xtensa_set_dynconfig_from_argv(argc, argv);
+
   if (XCHAL_HAVE_BE)
     return "${BIG_OUTPUT_FORMAT}";
   else
@@ -1931,6 +1935,7 @@ PARSE_AND_LIST_LONGOPTS='
   { "no-literal-movement", no_argument, NULL, OPTION_NO_LITERAL_MOVEMENT},
   { "abi-windowed", no_argument, NULL, OPTION_ABI_WINDOWED},
   { "abi-call0", no_argument, NULL, OPTION_ABI_CALL0},
+  { "dynconfig=", required_argument, NULL, OPTION_DYNCONFIG},
 '
 
 PARSE_AND_LIST_OPTIONS='
@@ -1941,6 +1946,8 @@ PARSE_AND_LIST_OPTIONS='
   --abi-windowed              Choose windowed ABI for the output object\n"));
   fprintf (file, _("\
   --abi-call0                 Choose call0 ABI for the output object\n"));
+  fprintf (file, _("\
+  --dynconfig=FILE            Choose xtensa dynconfig file\n"));
 '
 
 PARSE_AND_LIST_ARGS_CASES='
@@ -1958,6 +1965,9 @@ PARSE_AND_LIST_ARGS_CASES='
       break;
     case OPTION_ABI_CALL0:
       elf32xtensa_abi = XTHAL_ABI_CALL0;
+      break;
+    case OPTION_DYNCONFIG:
+      /* Applied in elf_xtensa_choose_target()  */
       break;
 '
 
