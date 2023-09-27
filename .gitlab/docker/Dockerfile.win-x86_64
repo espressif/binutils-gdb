@@ -3,12 +3,6 @@
 ARG DOCKER_REGISTRY
 ARG TOOLCHAIN_TAG
 
-ARG GMP_VERSION=6.2.1
-ARG MPFR_VERSION=4.1.0
-ARG MPC_VERSION=1.2.0
-ARG EXPAT_VERSION=2.4.1
-ARG NCURSES_VERSION=6.2
-ARG NCURSES_SHA256=30306e0c76e0f9f1f0de987cf1c82a5c21e1ce6568b9227f7da5b71cbea86c9d
 # Needed to build for mingw, see
 # http://lists.gnu.org/archive/html/info-gnu/2011-02/msg00020.html
 ARG NCURSES_TARGET_OPTS="--enable-term-driver --enable-sp-funcs"
@@ -19,5 +13,6 @@ FROM ${DOCKER_REGISTRY}/esp32-toolchain-win64-cross:${TOOLCHAIN_TAG}
 ARG TARGET_HOST="x86_64-w64-mingw32"
 ARG WIN_PLATFORM="amd64"
 
+INCLUDE+ ./common/Dockerfile.update-apt-sources
 INCLUDE+ ./common/Dockerfile.gdb-deps
 INCLUDE+ ./common/Dockerfile.win-python

@@ -2,3 +2,6 @@
 	path = xtensaconfig
 	url = ../esp-xtensaconfig-lib.git
 	branch = based_on_gdb-12
+[submodule "esp-toolchain-bin-wrappers"]
+	path = esp-toolchain-bin-wrappers
+	url = ../esp-toolchain-bin-wrappers

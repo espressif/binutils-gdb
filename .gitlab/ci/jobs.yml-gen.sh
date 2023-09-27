@@ -29,7 +29,15 @@ declare -a ARCHITECTURES_ARRAY=(${LINUX_x86_64_TRIPLET}
                                 ${MACOS_x86_64_TRIPLET}
                                 ${MACOS_AARCH64_TRIPLET})
 
-
+declare -a RUST_TARGET_TRIPLET_ARRAY=("x86_64-unknown-linux-gnu"
+                                "i586-unknown-linux-gnu"
+                                "arm-unknown-linux-gnueabi"
+                                "arm-unknown-linux-gnueabihf"
+                                "aarch64-unknown-linux-gnu"
+                                "i686-pc-windows-gnu"
+                                "x86_64-pc-windows-gnu"
+                                "x86_64-apple-darwin"
+                                "aarch64-apple-darwin")
 
 # e.g. a postfix of image for "arm-linux-gnueabi" is "arm-cross".
 # Note that sequence of array is important
@@ -45,6 +53,7 @@ declare -a IMAGE_POSTFIX_ARRAY=("linux-x86_64"
 
 ARCHITECTURES_ARRAY_LENGTH=${#ARCHITECTURES_ARRAY[@]}
 
+test $ARCHITECTURES_ARRAY_LENGTH != ${#RUST_TARGET_TRIPLET_ARRAY[@]} && echo "Bad arrays initialization" && exit 1
 test $ARCHITECTURES_ARRAY_LENGTH != ${#IMAGE_POSTFIX_ARRAY[@]} && echo "Bad arrays initialization" && exit 1
 
 read -r -d '' build_arch_python <<-EOF
@@ -56,6 +65,7 @@ EOF
 function build_arch() {
   BUILD_ARCH_TRIPLET=$1
   IMAGE_SUFFIX=$2
+  RUST_TARGET_TRIPLET=$3
   PYTHON_VERSIONS_TO_BUILD=$PYTHON_VERSIONS
   if [ "$MACOS_AARCH64_TRIPLET" = "$BUILD_ARCH_TRIPLET" ]; then
     PYTHON_VERSIONS_TO_BUILD=$PYTHON_MACOS_AARCH64_VERSIONS
@@ -69,7 +79,8 @@ function build_arch() {
       echo "    BUILD_ARCH_TRIPLET: $BUILD_ARCH_TRIPLET"
       echo "    ESP_CHIP_ARCH: $ESP_CHIP_ARCH"
       echo "    PYTHON_VERSION: $PYTHON_VERSION"
-      echo "  image: \$CI_REGISTRY_IMAGE/gdb-build-$IMAGE_SUFFIX:\$CI_COMMIT_SHA"
+      echo "    RUST_TARGET_TRIPLET: $RUST_TARGET_TRIPLET"
+      echo "  image: \$CI_REGISTRY_IMAGE/gdb-build-$IMAGE_SUFFIX:latest"
       echo "  extends: .build_template"
     done;
   done;
@@ -127,24 +138,6 @@ function test_macos() {
   done;
 }
 
-function test_macos_simple() {
-  TAGS=$1
-  MACOS_ARCH=$2
-  for ((i = 0; i < ${#TEST_ESP_CHIPS[@]}; i++)); do
-    ESP_CHIP=${TEST_ESP_CHIPS[$i]}
-    ESP_CHIP_ARCH=${TEST_ESP_CHIPS_ARCH[$i]}
-    echo "$ESP_CHIP_ARCH-$ESP_CHIP-test-simple-$MACOS_ARCH:"
-    echo "  tags: [ $TAGS ]"
-    echo "  variables:"
-    echo "    ESP_CHIP: $ESP_CHIP"
-    echo "    ESP_CHIP_ARCH: $ESP_CHIP_ARCH"
-    echo "  needs:"
-    echo "    - sign-$ESP_CHIP_ARCH-$MACOS_ARCH"
-    echo "  extends: .test_simple_template"
-    echo ""
-  done;
-}
-
 function test_windows() {
   echo ""
   echo ""
@@ -160,31 +153,6 @@ function test_windows() {
     echo "  extends: .test_windows_template"
     echo ""
   done;
-}
-
-function sign_macos() {
-  ARCH_TRIPLET=$1
-  PYTHON_VERSIONS_TO_SIGN=$PYTHON_VERSIONS
-  if [ "$MACOS_AARCH64_TRIPLET" = "$ARCH_TRIPLET" ]; then
-    PYTHON_VERSIONS_TO_SIGN=$PYTHON_MACOS_AARCH64_VERSIONS
-  fi
-  for ESP_CHIP_ARCH in $ESP_ARCHITECTURES_ALL; do
-    BINARIES_WILDCARD="\$GDB_DIST_DIR/bin/*"
-    if [ $ESP_CHIP_ARCH = "xtensa" ]; then
-      BINARIES_WILDCARD+=" \$GDB_DIST_DIR/lib/*"
-    fi
-    echo ""
-    echo "sign-$ESP_CHIP_ARCH-$ARCH_TRIPLET:"
-    echo "  variables:"
-    echo "    BINARIES_WILDCARD: \"$BINARIES_WILDCARD\""
-    echo "  needs:"
-    for PYTHON_VERSION in $PYTHON_VERSIONS_TO_SIGN; do
-      echo "    - $ESP_CHIP_ARCH-$ARCH_TRIPLET-$PYTHON_VERSION"
-    done;
-    echo "  extends: .macos_codesign"
-  done;
-  echo ""
-  echo ""
 }
 
 function pack_output() {
@@ -210,13 +178,9 @@ function pack_output() {
     fi
     echo "  tags: $RUNNER_TAGS"
     echo "  needs:"
-    if [ "$MACOS_x86_64_TRIPLET" = "$BUILD_ARCH_TRIPLET" ] || [ "$MACOS_AARCH64_TRIPLET" = "$BUILD_ARCH_TRIPLET" ]; then
-      echo "    - sign-$ESP_CHIP_ARCH-$BUILD_ARCH_TRIPLET"
-    else
-      for PYTHON_VERSION in $PYTHON_VERSIONS_TO_PACK; do
-        echo "    - $ESP_CHIP_ARCH-$BUILD_ARCH_TRIPLET-$PYTHON_VERSION"
-      done;
-    fi
+    for PYTHON_VERSION in $PYTHON_VERSIONS_TO_PACK; do
+      echo "    - $ESP_CHIP_ARCH-$BUILD_ARCH_TRIPLET-$PYTHON_VERSION"
+    done;
     echo "  extends: .pack_template"
   done;
   echo ""
@@ -238,7 +202,7 @@ echo ""
 
 for (( i=0; i<${ARCHITECTURES_ARRAY_LENGTH}; i++ )); do
   echo "# BUILD ${ARCHITECTURES_ARRAY[$i]}"
-  build_arch ${ARCHITECTURES_ARRAY[$i]} ${IMAGE_POSTFIX_ARRAY[$i]}
+  build_arch ${ARCHITECTURES_ARRAY[$i]} ${IMAGE_POSTFIX_ARRAY[$i]} ${RUST_TARGET_TRIPLET_ARRAY[i]}
 done
 
 echo "# TEST ${LINUX_x86_64_TRIPLET}"
@@ -247,20 +211,8 @@ test_arch_linux ${LINUX_x86_64_TRIPLET} "" "[ \"amd64\", \"build\" ]"
 echo "# TEST ${MACOS_x86_64_TRIPLET}"
 test_macos
 
-echo "# TEST signed ${MACOS_x86_64_TRIPLET}"
-test_macos_simple "\"darwin\", \"amd64\"" "$MACOS_x86_64_TRIPLET"
-
-echo "# TEST signed ${MACOS_AARCH64_TRIPLET}"
-test_macos_simple "\"darwin\", \"aarch64\"" "$MACOS_AARCH64_TRIPLET"
-
 echo "# TEST ${WIN_x86_64_TRIPLET}"
 test_windows
-
-echo "# SIGN ${MACOS_x86_64_TRIPLET}"
-sign_macos ${MACOS_x86_64_TRIPLET}
-
-echo "# SIGN ${MACOS_AARCH64_TRIPLET}"
-sign_macos ${MACOS_AARCH64_TRIPLET}
 
 
 for (( i=0; i<${ARCHITECTURES_ARRAY_LENGTH}; i++ )); do

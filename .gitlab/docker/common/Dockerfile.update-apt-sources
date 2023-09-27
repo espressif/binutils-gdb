@@ -1,0 +1,13 @@
+RUN if grep -q jessie /etc/apt/sources.list; then \
+    find /etc/apt/ -name "*.list" -exec rm {} + && \
+    echo "deb http://archive.debian.org/debian/ jessie main contrib non-free" > /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian-security jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
+elif grep -q stretch /etc/apt/sources.list; then \
+    find /etc/apt/ -name "*.list" -exec rm {} + && \
+    echo "deb http://archive.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian/ stretch-proposed-updates main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian-security stretch/updates main contrib non-free" >> /etc/apt/sources.list; \
+else \
+    echo "Error: /etc/apt/sources.list does not contain 'jessie' or 'stretch' or does not exist." && \
+    exit 1; \
+fi

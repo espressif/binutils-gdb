@@ -7,7 +7,7 @@ ARG PYTHON_VERSIONS="3.6.0 3.7.0 3.8.0 3.9.0 3.10.0 3.11.0"
 ARG OPENSSL_VERSION="OpenSSL_1_1_1l"
 
 # install python build dependencies
-RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y \
+RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --force-yes \
     lzip \
     git \
     build-essential \

@@ -3,13 +3,6 @@
 ARG DOCKER_REGISTRY
 ARG TOOLCHAIN_TAG
 
-ARG GMP_VERSION=6.2.1
-ARG MPFR_VERSION=4.1.0
-ARG MPC_VERSION=1.2.0
-ARG EXPAT_VERSION=2.4.1
-ARG NCURSES_VERSION=6.2
-ARG NCURSES_SHA256=30306e0c76e0f9f1f0de987cf1c82a5c21e1ce6568b9227f7da5b71cbea86c9d
-
 FROM ${DOCKER_REGISTRY}/esp32-toolchain-macos-cross:${TOOLCHAIN_TAG}
 
 # Download built python versions for linking when cross-compile
@@ -24,8 +17,9 @@ ARG PYTHON_DOWNLOAD_LINKS="https://www.python.org/ftp/python/3.6.0/python-3.6.0-
 
 ARG TARGET_HOST="x86_64-apple-darwin14"
 
-RUN rm /bin/sh && ln -s bash /bin/sh
+INCLUDE+ ./common/Dockerfile.update-apt-sources
 
+RUN rm /bin/sh && ln -s bash /bin/sh
 RUN which $TARGET_HOST-gcc || \
     (set +H && \
     echo  -e "#!/bin/bash\n$TARGET_HOST-clang++ \"\$@\"" > /opt/osxcross/target/bin/$TARGET_HOST-g++ && \
