@@ -8,6 +8,7 @@ stages:
   - build
   - sign
   - pack
+  - macos_codesign
   - private_deploy
   - test
   - release_submit
@@ -81,10 +82,8 @@ before_script:
     - pack-riscv32-i686-w64-mingw32
     - pack-xtensa-x86_64-w64-mingw32
     - pack-riscv32-x86_64-w64-mingw32
-    - pack-xtensa-x86_64-apple-darwin14
-    - pack-riscv32-x86_64-apple-darwin14
-    - pack-xtensa-aarch64-apple-darwin21.1
-    - pack-riscv32-aarch64-apple-darwin21.1
+    - macos_codesign_x86_64
+    - macos_codesign_arm64
 
 
 .use_ci_tools: &use_ci_tools |
@@ -227,7 +226,7 @@ before_script:
     GIT_SUBMODULE_STRATEGY: none
   artifacts:
     paths:
-      - ${GDB_DIST_DIR}/*.${ARCHIVE_EXT}
+      - ${GDB_DIST_DIR}
     when: always
     expire_in: 1 week
   script:
@@ -238,6 +237,45 @@ before_script:
     - ${ARCHIVE_TOOL} ${ARCHIVE_NAME} ${GDB_BASE_NAME}
     - mkdir ${GDB_DIST_DIR}
     - mv ${ARCHIVE_NAME} ${GDB_DIST_DIR}/
+    - test -z ${PLATFORM_NAME/*apple*} && echo "${ARCHIVE_NAME}" > ${GDB_DIST_DIR}/dist_name_${GDB_BASE_NAME}-${ESP_GDB_VERSION}-${PLATFORM_NAME} || true
+
+.macos_codesign: &macos_codesign
+  stage: macos_codesign
+  resource_group: macos_codesign
+  tags: [ "darwin", "codesign" ]
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: '$CI_COMMIT_TAG =~ "/^$/"'
+      when: manual
+  artifacts:
+    paths:
+      - ${GDB_DIST_DIR}
+  variables:
+    # directory with distro archives
+    DIST_ART_DIR: ${GDB_DIST_DIR}
+    # command to archive distro
+    ARCHIVE_TOOL: "tar czf"
+    # command to unarchive distro
+    UNARCHIVE_TOOL: "tar xzf"
+    # URL to macos codesign repo
+    NOTARIZATION_SCRIPTS_GIT: "${CI_SERVER_PROTOCOL}://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/espressif/macos_codesign_notarization.git"
+  script:
+    - git clone -q --depth=1 ${NOTARIZATION_SCRIPTS_GIT} -b ${CI_COMMIT_REF_NAME} ||
+      git clone -q --depth=1 ${NOTARIZATION_SCRIPTS_GIT}
+    - ./macos_codesign_notarization/run.sh
+    - rm -f ${GDB_DIST_DIR}/dist_name_*
+
+macos_codesign_x86_64:
+  extends: .macos_codesign
+  needs:
+    - pack-xtensa-x86_64-apple-darwin14
+    - pack-riscv32-x86_64-apple-darwin14
+
+macos_codesign_arm64:
+  extends: .macos_codesign
+  needs:
+    - pack-xtensa-aarch64-apple-darwin21.1
+    - pack-riscv32-aarch64-apple-darwin21.1
 
 upload_to_http:
   stage: private_deploy
