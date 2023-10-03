@@ -1,7 +1,7 @@
 #!/bin/bash
 
-PYTHON_VERSIONS="without_python 3.6.0 3.7.0 3.8.0 3.9.0 3.10.0 3.11.0"
-PYTHON_MACOS_AARCH64_VERSIONS="without_python 3.8.10 3.9.13 3.10.0 3.11.0"
+PYTHON_VERSIONS="without_python 3.6.0 3.7.0 3.8.0 3.9.0 3.10.0 3.11.0 3.12.0"
+PYTHON_MACOS_AARCH64_VERSIONS="without_python 3.8.10 3.9.13 3.10.0 3.11.0 3.12.0"
 MACOS_TESTS_PYTHON_VERSIONS="3.6.13 3.7.10 3.8.10 3.9.5 3.10.2"
 declare -a TEST_ESP_CHIPS=(         "esp32"
                                     "esp32s2"
