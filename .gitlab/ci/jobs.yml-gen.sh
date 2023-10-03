@@ -110,7 +110,7 @@ function test_arch_linux() {
       echo "    ESP_CHIP: $ESP_CHIP"
       echo "    ESP_CHIP_ARCH: $ESP_CHIP_ARCH"
       echo "    PYTHON_VERSION: $PYTHON_VERSION"
-      echo "  image: \$CI_DOCKER_REGISTRY/esp32-dejagnu$IMAGE_SUFFIX:\$DEJAGNU_IMAGE_TAG"
+      echo "  image: \$CI_REGISTRY_IMAGE/gdb-test-dejagnu:latest"
       echo "  needs: [ $ESP_CHIP_ARCH-$BUILD_ARCH_TRIPLET-$PYTHON_VERSION ]"
       echo "  extends: $TEST_TEMPLATE"
       echo ""

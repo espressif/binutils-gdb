@@ -7,6 +7,7 @@
     - changes:
       - .gitlab/docker/**/*
   variables:
+    QEMU_IMAGE: qemu-v5.2:2-20230522
     TOOLCHAIN_TAG: 4
     EXTRA_BUILD_ARGS: ""
   artifacts:
@@ -93,4 +94,11 @@ image_macos_arm64:
     DOCKERFILE_NAME: Dockerfile.macos
     IMAGE_NAME: gdb-build-macos-arm64
     EXTRA_BUILD_ARGS: "--build-arg TARGET_HOST=aarch64-apple-darwin21.1"
+  extends: .build_image
+
+image_dejagnu:
+  variables:
+    DOCKERFILE_NAME: Dockerfile.dejagnu
+    IMAGE_NAME: gdb-test-dejagnu
+    EXTRA_BUILD_ARGS: "--build-arg QEMU_IMAGE=$QEMU_IMAGE"
   extends: .build_image

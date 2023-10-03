@@ -17,8 +17,6 @@ stages:
 image: $CI_REGISTRY_IMAGE/gdb-build-linux-x86_64:latest
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  TOOLCHAIN_IMAGE_TAG: 4
-  DEJAGNU_IMAGE_TAG: 20220802-4
   GDB_DIST_DIR: ${CI_PROJECT_DIR}/dist
 
   GITHUB_IMAGE_TAG: 2
@@ -114,12 +112,12 @@ before_script:
   script:
     # Load variables with tests to remove and to ignore
     - set -a; source <(grep -v "^#" ".gitlab/ci/gdb-test-suites.env"); set +a
+    - set +u; . ~/.profile; set -u
     - cd gdb/testsuite
     - cp -R ${GDB_DIST_DIR}/share/gdb/* ../data-directory/
     - ./configure --target=${ESP_CHIP_ARCH}-${ESP_CHIP}-elf --host=${ESP_CHIP_ARCH}-${ESP_CHIP}-elf
     - make site.exp
     - test "${CI_JOB_NAME##*-}" != "without_python" && pyenv local ${PYTHON_VERSION}
-    - test "${CI_JOB_NAME##*-}" == "without_python" && export ESPTOOL_PATH="/opt/pyenv/pyenv-2.2.2/versions/3.6.0/bin/esptool.py"
     - test "${CI_JOB_NAME##*-}" == "without_python" && export REMOVE_TESTS="gdb.python $REMOVE_TESTS"
     - ESP_DEBUG_TRACE=1 ${GDB_DIST_DIR}/bin/${ESP_CHIP_ARCH}-${ESP_CHIP}-elf-gdb --version
     # Run chip specific test first. It will be removed by next step.
@@ -135,6 +133,7 @@ before_script:
     paths:
       - ${CI_PROJECT_DIR}/gdb/testsuite/gdb.log
   script:
+    - set +u; . ~/.profile; set -u
     - cd gdb/testsuite
     - cp -R ${GDB_DIST_DIR}/share/gdb/* ../data-directory/
     - ./configure --target=${ESP_CHIP_ARCH}-${ESP_CHIP}-elf --host=${ESP_CHIP_ARCH}-${ESP_CHIP}-elf 

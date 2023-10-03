@@ -1,0 +1,84 @@
+ARG DOCKER_REGISTRY
+ARG QEMU_IMAGE
+
+FROM ${DOCKER_REGISTRY}/${QEMU_IMAGE}
+
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    curl \
+    zip \
+    autoconf \
+    make \
+    texinfo \
+    expect \
+    libpixman-1-0 \
+    libnuma1 \
+    libglib2.0-0 \
+    libffi-dev \
+    libncursesw5 \
+    libssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    zlib1g-dev \
+    gcc \
+    liblzma-dev \
+    patch \
+  && apt remove --purge -y python3 \
+  && apt autoremove -y \
+  && rm -rf /var/lib/apt/lists/*
+
+# instal dejagnu
+ARG DEJAGNU_VERSION=1.6.3
+ARG DEJAGNU_SHA256=87daefacd7958b4a69f88c6856dbd1634261963c414079d0c371f589cd66a2e3
+RUN curl -LO http://ftp.gnu.org/gnu/dejagnu/dejagnu-${DEJAGNU_VERSION}.tar.gz && \
+    tar -xf dejagnu-${DEJAGNU_VERSION}.tar.gz && \
+    echo "${DEJAGNU_SHA256} dejagnu-${DEJAGNU_VERSION}.tar.gz" | sha256sum --check --strict - && \
+    cd dejagnu-${DEJAGNU_VERSION} && \
+    ./configure && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -fr dejagnu*
+
+# Install esp-toolchains for esp DejaGNU tests
+ARG ESP_TOOLCHAIN_CHECKSUM_URL="https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/crosstool-NG-esp-2022r1-checksum.sha256"
+ARG ESP_TOOLCHAIN_URLS=" \
+https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-linux-amd64.tar.xz  \
+https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-linux-amd64.tar.xz"
+RUN set -e; \
+    curl -LO $ESP_TOOLCHAIN_CHECKSUM_URL && \
+    export ESP_TOOLCHAIN_CHECKSUM_FILE=${ESP_TOOLCHAIN_CHECKSUM_URL##*/} && \
+    for ESP_TOOLCHAIN_URL in $ESP_TOOLCHAIN_URLS; do \
+        curl -LO ${ESP_TOOLCHAIN_URL} && \
+        export ESP_TOOLCHAIN_ARCHIVE=${ESP_TOOLCHAIN_URL##*/} && \
+        grep "*$ESP_TOOLCHAIN_ARCHIVE" $ESP_TOOLCHAIN_CHECKSUM_FILE | sha256sum --check --strict - && \
+        tar -xf $ESP_TOOLCHAIN_ARCHIVE -C /opt && \
+        rm -fr $ESP_TOOLCHAIN_ARCHIVE; \
+    done; \
+    rm $ESP_TOOLCHAIN_CHECKSUM_FILE
+
+ENV PATH=/opt/xtensa-esp32-elf/bin/:$PATH
+ENV PATH=/opt/xtensa-esp32s2-elf/bin/:$PATH
+
+# install pyenv
+ARG PYENV_DIST_VERSION="v2.3.28"
+RUN mkdir -p /opt/pyenv \
+    && git clone -b ${PYENV_DIST_VERSION} --single-branch --depth 1 https://github.com/pyenv/pyenv.git /opt/pyenv/pyenv-${PYENV_DIST_VERSION} \
+    && echo "export PYENV_ROOT=\"/opt/pyenv/pyenv-${PYENV_DIST_VERSION}\"" >> ~/.profile \
+    && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.profile \
+    && echo 'eval "$(pyenv init --path)"' >> ~/.profile \
+    && echo 'if command -v pyenv 1>/dev/null 2>&1; then' >> ~/.bashrc \
+    && echo '  eval "$(pyenv init --path)"' >> ~/.bashrc \
+    && echo 'fi' >> ~/.bashrc
+
+
+# install pythons
+ARG PYTHON_VERSIONS="3.6.0 3.7.0 3.8.0 3.9.0 3.10.0 3.11.0 3.12.0"
+RUN . ~/.profile && \
+    export PYTHON_CONFIGURE_OPTS="--enable-shared" && \
+    for PYTHON_VERSION in $PYTHON_VERSIONS; do \
+        pyenv install $PYTHON_VERSION; \
+    done; \
+    pyenv local --unset
