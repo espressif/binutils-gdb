@@ -54,14 +54,31 @@ fi
 # Clean build and dist directories
 rm -fr $GDB_BUILD_DIR $GDB_DIST
 
-# Build xtensa-config libs
-pushd xtensaconfig
-make clean
-CROSS_COMPILE="$TARGET_HOST-" TARGET_ESP_ARCH=${ESP_CHIP_ARCHITECTURE} DESTDIR=$GDB_DIST PLATFORM=$PLATFORM make install
-popd
+#build xtensaconfig
+if [ $ESP_CHIP_ARCHITECTURE == "xtensa" ]; then
+  # Build xtensa-config libs
+  pushd xtensaconfig
+  make clean
+  CROSS_COMPILE="$TARGET_HOST-" DESTDIR=$GDB_DIST make install
+  popd
+fi
 
-# Temporary rename wrapper
-mv $GDB_DIST/bin/${ESP_CHIP_ARCHITECTURE}-esp-elf-gdb${EXE} ${GDB_DIST}/bin/${ESP_CHIP_ARCHITECTURE}-esp-elf-gdb-wrapper${EXE} 2> /dev/null || true
+# build wrapper
+if [[ ${PLATFORM} == "windows" ]] ; then
+  pushd esp-toolchain-bin-wrappers/gnu-debugger/windows
+  TARGET_ESP_ARCH=${ESP_CHIP_ARCHITECTURE^^} CROSS_COMPILE=$TARGET_HOST- DESTDIR=$GDB_DIST make install
+  popd
+else # unix
+  if [ "${RUST_TARGET_TRIPLET:-}" != "" ]; then
+    pushd esp-toolchain-bin-wrappers/gnu-debugger/unix
+    # Can not use rust version > 1.69.0 because of https://github.com/rust-lang/rust/issues/112368
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh  -s -- -y --default-toolchain 1.69.0
+    source "$HOME/.cargo/env"
+    rustup target add $RUST_TARGET_TRIPLET
+    cargo install --target=$RUST_TARGET_TRIPLET --config target.$RUST_TARGET_TRIPLET.linker=\"$TARGET_HOST-gcc\" --no-track --path ./ --root $GDB_DIST
+    popd
+  fi
+fi
 
 PYTHON_CONFIG_OPTS=
 if [ $BUILD_PYTHON_VERSION != "without_python" ]; then
@@ -146,8 +163,25 @@ else
   GDB_PROGRAM_SUFFIX=${BUILD_PYTHON_VERSION%.*}
 fi
 
+# Change path to the libpython for macos
+if [[ $BUILD_PYTHON_VERSION != "without_python" && ${PLATFORM} == "macos" ]]; then
+  # Python versions less than 3.8 have 'm' postfix in library name. See https://bugs.python.org/issue36707
+  LIB_VERSION=${BUILD_PYTHON_VERSION%.*}
+  LIBPOSTFIX=
+  if [[ $LIB_VERSION == "3.6" ||  $LIB_VERSION == "3.7" ]]; then
+    LIBPOSTFIX="m"
+  fi
+  ${TARGET_HOST}-install_name_tool -change /Library/Frameworks/Python.framework/Versions/${LIB_VERSION}/Python @executable_path/../lib/libpython${LIB_VERSION}${LIBPOSTFIX}.dylib $GDB_DIST/bin/${ESP_CHIP_ARCHITECTURE}-esp-elf-gdb${EXE}
+fi
+
 # rename gdb to have python version in filename
 mv $GDB_DIST/bin/${ESP_CHIP_ARCHITECTURE}-esp-elf-gdb${EXE} $GDB_DIST/bin/${ESP_CHIP_ARCHITECTURE}-esp-elf-gdb-${GDB_PROGRAM_SUFFIX}${EXE}
 
 # rename wrapper to original gdb name
-mv $GDB_DIST/bin/${ESP_CHIP_ARCHITECTURE}-esp-elf-gdb-wrapper${EXE} $GDB_DIST/bin/${ESP_CHIP_ARCHITECTURE}-esp-elf-gdb${EXE} 2> /dev/null || true
+if [ $ESP_CHIP_ARCHITECTURE == "xtensa" ]; then
+  cp $GDB_DIST/bin/esp-elf-gdb-wrapper${EXE} $GDB_DIST/bin/${ESP_CHIP_ARCHITECTURE}-esp32-elf-gdb${EXE} 2> /dev/null || true
+  cp $GDB_DIST/bin/esp-elf-gdb-wrapper${EXE} $GDB_DIST/bin/${ESP_CHIP_ARCHITECTURE}-esp32s2-elf-gdb${EXE} 2> /dev/null || true
+  mv $GDB_DIST/bin/esp-elf-gdb-wrapper${EXE} $GDB_DIST/bin/${ESP_CHIP_ARCHITECTURE}-esp32s3-elf-gdb${EXE} 2> /dev/null || true
+else
+  mv $GDB_DIST/bin/esp-elf-gdb-wrapper${EXE} $GDB_DIST/bin/${ESP_CHIP_ARCHITECTURE}-esp-elf-gdb${EXE} 2> /dev/null || true
+fi
