@@ -415,6 +415,303 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 	    }
 	  break;
 
+	  case 'G':
+	    switch (*++oparg)
+	      {
+	      case 'o':
+		switch (*++oparg)
+		  {
+		  case '4':
+		    switch (*++oparg)
+		      {
+		      case '4':
+			switch (*++oparg)
+			  {
+			  case '0':	/* Go440 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_16_16_0 (l));
+			    break;	/* Go440 */
+			  case '1':	/* Go441 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_16_16_1 (l));
+			    break;	/* Go441 */
+			  case '2':	/* Go442 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_16_16_2 (l));
+			    break;	/* Go442 */
+			  default:	/* Go44[.] */
+			    goto undefined_modifier;
+			  }
+			break;
+		      default:	/* Go4[.] */
+			goto undefined_modifier;
+		      }
+		    break;
+		  case '8':
+		    switch (*++oparg)
+		      {
+		      case '4':
+			switch (*++oparg)
+			  {
+			  case '0':	/* Go840 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_256_16_0 (l));
+			    break;	/* Go840 */
+			  case '1':	/* Go841 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_256_16_1 (l));
+			    break;	/* Go841 */
+			  case '2':	/* Go842 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_256_16_2 (l));
+			    break;	/* Go842 */
+			  case '3':	/* Go843 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_256_16_3 (l));
+			    break;	/* Go843 */
+			  default:	/* Go84[.] */
+			    goto undefined_modifier;
+			  }
+			break;
+		      case '2':
+			switch (*++oparg)
+			  {
+			  case '0':	/* Go820 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_256_4_0 (l));
+			    break;	/* Go820 */
+			  case '1':	/* Go821 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_256_4_1 (l));
+			    break;	/* Go821 */
+			  default:	/* Go82[.] */
+			    goto undefined_modifier;
+			  }
+			break;
+		      case '3':
+			switch (*++oparg)
+			  {
+			  case '0':	/* Go830 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_256_8_0 (l));
+			    break;	/* Go830 */
+			  case '1':	/* Go831 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_256_8_1 (l));
+			    break;	/* Go831 */
+			  case '2':	/* Go832 */
+			    print (info->stream, dis_style_immediate, "%d",
+				   (int) EXTRACT_ESPPIE_OFFSET_256_8_2 (l));
+			    break;	/* Go832 */
+			  default:	/* Go83[.] */
+			    goto undefined_modifier;
+			  }
+			break;
+		      default:	/* Go8[.] */
+			goto undefined_modifier;
+		      }
+		    break;
+		  default:	/* Go[.] */
+		    goto undefined_modifier;
+		  }
+		break;
+	      case 'q':
+		switch (*++oparg)
+		  {
+		  case 'u':	/* Gqu */
+		    print (info->stream, dis_style_register, "%s",
+			   riscv_esppier_names[EXTRACT_ESPPIE_QU (l)]);
+		    break;	/* Gqu */
+		  case 'v':	/* Gqv */
+		    print (info->stream, dis_style_register, "%s",
+			   riscv_esppier_names[EXTRACT_ESPPIE_QV (l)]);
+		    break;	/* Gqv */
+		  case 'w':	/* Gqw */
+		    print (info->stream, dis_style_register, "%s",
+			   riscv_esppier_names[EXTRACT_ESPPIE_QW (l)]);
+		    break;	/* Gqw */
+		  case 'x':	/* Gqx */
+		    print (info->stream, dis_style_register, "%s",
+			   riscv_esppier_names[EXTRACT_ESPPIE_QX (l)]);
+		    break;	/* Gqx */
+		  case 'y':	/* Gqy */
+		    print (info->stream, dis_style_register, "%s",
+			   riscv_esppier_names[EXTRACT_ESPPIE_QY (l)]);
+		    break;	/* Gqy */
+		  case 'z':	/* Gqz */
+		    print (info->stream, dis_style_register, "%s",
+			   riscv_esppier_names[EXTRACT_ESPPIE_QZ (l)]);
+		    break;	/* Gqz */
+		  default:	/* Gq[.] */
+		    goto undefined_modifier;
+		  }
+		break;
+	      case 'd':
+		switch (*++oparg)
+		  {
+		  case '0':	/* Gd0 */
+		    /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
+		    print (info->stream, dis_style_register, "%s",
+			   riscv_gpr_names[EXTRACT_ESPPIE_RD_0 (l) | 1 << 3]);
+		    break;	/* Gd0 */
+		  default:	/* Gd[.] */
+		    goto undefined_modifier;
+		  }
+		break;
+	      case 's':
+		switch (*++oparg)
+		  {
+		  case '0':	/* Gs0 */
+		    /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
+		    print (info->stream, dis_style_register, "%s",
+			   riscv_gpr_names[EXTRACT_ESPPIE_RS1_0 (l) | 1 <<
+					   3]);
+		    break;	/* Gs0 */
+		  default:	/* Gs[.] */
+		    goto undefined_modifier;
+		  }
+		break;
+	      case 't':
+		switch (*++oparg)
+		  {
+		  case '0':	/* Gt0 */
+		    /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
+		    print (info->stream, dis_style_register, "%s",
+			   riscv_gpr_names[EXTRACT_ESPPIE_RS2_0 (l) | 1 <<
+					   3]);
+		    break;	/* Gt0 */
+		  default:	/* Gt[.] */
+		    goto undefined_modifier;
+		  }
+		break;
+	      case 'x':
+		switch (*++oparg)
+		  {
+		  case '4':
+		    switch (*++oparg)
+		      {
+		      case '0':	/* Gx40 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_16_0 (l));
+			break;	/* Gx40 */
+		      case '1':	/* Gx41 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_16_1 (l));
+			break;	/* Gx41 */
+		      case '2':	/* Gx42 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_16_2 (l));
+			break;	/* Gx42 */
+		      case '3':	/* Gx43 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_16_3 (l));
+			break;	/* Gx43 */
+		      case '4':	/* Gx44 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_16_4 (l));
+			break;	/* Gx44 */
+		      default:	/* Gx4[.] */
+			goto undefined_modifier;
+		      }
+		    break;
+		  case '1':
+		    switch (*++oparg)
+		      {
+		      case '0':	/* Gx10 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_2_0 (l));
+			break;	/* Gx10 */
+		      case '1':	/* Gx11 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_2_1 (l));
+			break;	/* Gx11 */
+		      case '2':	/* Gx12 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_2_2 (l));
+			break;	/* Gx12 */
+		      case '3':	/* Gx13 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_2_3 (l));
+			break;	/* Gx13 */
+		      case '4':	/* Gx14 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_2_4 (l));
+			break;	/* Gx14 */
+		      case '5':	/* Gx15 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_2_5 (l));
+			break;	/* Gx15 */
+		      default:	/* Gx1[.] */
+			goto undefined_modifier;
+		      }
+		    break;
+		  case '2':
+		    switch (*++oparg)
+		      {
+		      case '0':	/* Gx20 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_4_0 (l));
+			break;	/* Gx20 */
+		      case '1':	/* Gx21 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_4_1 (l));
+			break;	/* Gx21 */
+		      case '2':	/* Gx22 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_4_2 (l));
+			break;	/* Gx22 */
+		      case '3':	/* Gx23 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_4_3 (l));
+			break;	/* Gx23 */
+		      case '4':	/* Gx24 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_4_4 (l));
+			break;	/* Gx24 */
+		      case '5':	/* Gx25 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_4_5 (l));
+			break;	/* Gx25 */
+		      case '6':	/* Gx26 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_4_6 (l));
+			break;	/* Gx26 */
+		      default:	/* Gx2[.] */
+			goto undefined_modifier;
+		      }
+		    break;
+		  case '3':
+		    switch (*++oparg)
+		      {
+		      case '0':	/* Gx30 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_8_0 (l));
+			break;	/* Gx30 */
+		      case '1':	/* Gx31 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_8_1 (l));
+			break;	/* Gx31 */
+		      case '2':	/* Gx32 */
+			print (info->stream, dis_style_immediate, "%d",
+			       (int) EXTRACT_ESPPIE_SELECT_8_2 (l));
+			break;	/* Gx32 */
+		      default:	/* Gx3[.] */
+			goto undefined_modifier;
+		      }
+		    break;
+		  default:	/* Gx[.] */
+		    goto undefined_modifier;
+		  }
+		break;
+	      case 'u':	/* Gu */
+		print (info->stream, dis_style_immediate, "%d",
+		       (int) EXTRACT_ESPPIE_UPD_4 (l));
+		break;		/* Gu */
+	      default:		/* G[.] */
+		goto undefined_modifier;
+	      }
+	    break;
+
 	case ',':
 	case '(':
 	case ')':

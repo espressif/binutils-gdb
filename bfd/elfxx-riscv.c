@@ -1364,6 +1364,7 @@ static struct riscv_supported_ext riscv_supported_vendor_x_ext[] =
   {"xtheadmempair",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadsync",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xventanacondops",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+  {"xesppie",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {NULL, 0, 0, 0, 0}
 };
 
@@ -2575,6 +2576,8 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
       return riscv_subset_supports (rps, "xtheadsync");
     case INSN_CLASS_XVENTANACONDOPS:
       return riscv_subset_supports (rps, "xventanacondops");
+    case INSN_CLASS_XESPPIE:
+      return riscv_subset_supports (rps, "xesppie");
     default:
       rps->error_handler
         (_("internal: unreachable INSN_CLASS_*"));
@@ -2813,6 +2816,8 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
       return "xtheadmempair";
     case INSN_CLASS_XTHEADSYNC:
       return "xtheadsync";
+    case INSN_CLASS_XESPPIE:
+      return "xesppie";
     default:
       rps->error_handler
         (_("internal: unreachable INSN_CLASS_*"));
