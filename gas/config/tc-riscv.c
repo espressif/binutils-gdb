@@ -960,6 +960,7 @@ enum reg_class
   RCLASS_FPR,
   RCLASS_VECR,
   RCLASS_VECM,
+  RCLASS_ESPV,
   RCLASS_MAX,
 
   RCLASS_CSR
@@ -1758,6 +1759,169 @@ validate_riscv_insn (const struct riscv_opcode *opc, int length)
 		    goto unknown_validate_operand;
 		}
 		break;
+	    case 'e':
+	      switch (*++oparg)
+		{
+		case 'o':
+		  switch (*++oparg)
+		    {
+		    case '4':
+		      switch (*++oparg)
+			{
+			case '4':
+			  switch (*++oparg)
+			    {
+			    case '0': used_bits |= ENCODE_ESP_OFFSET_16_16_0 (-1U); break;	/* Xeo440 */
+			    case '1': used_bits |= ENCODE_ESP_OFFSET_16_16_1 (-1U); break;	/* Xeo441 */
+			    case '2': used_bits |= ENCODE_ESP_OFFSET_16_16_2 (-1U); break;	/* Xeo442 */
+			    default:	/* Xeo44[.] */
+			      goto unknown_validate_operand;
+			    }
+			  break;
+			default:	/* Xeo4[.] */
+			  goto unknown_validate_operand;
+			}
+		      break;
+		    case '8':
+		      switch (*++oparg)
+			{
+			case '4':
+			  switch (*++oparg)
+			    {
+			    case '0': used_bits |= ENCODE_ESP_OFFSET_256_16_0 (-1U); break;	/* Xeo840 */
+			    case '1': used_bits |= ENCODE_ESP_OFFSET_256_16_1 (-1U); break;	/* Xeo841 */
+			    case '2': used_bits |= ENCODE_ESP_OFFSET_256_16_2 (-1U); break;	/* Xeo842 */
+			    case '3': used_bits |= ENCODE_ESP_OFFSET_256_16_3 (-1U); break;	/* Xeo843 */
+			    default:	/* Xeo84[.] */
+			      goto unknown_validate_operand;
+			    }
+			  break;
+			case '0':
+			  switch (*++oparg)
+			    {
+			    case '0': used_bits |= ENCODE_ESP_OFFSET_256_1_0 (-1U); break;	/* Xeo800 */
+			    default:	/* Xeo80[.] */
+			      goto unknown_validate_operand;
+			    }
+			  break;
+			case '1':
+			  switch (*++oparg)
+			    {
+			    case '0': used_bits |= ENCODE_ESP_OFFSET_256_2_0 (-1U); break;	/* Xeo810 */
+			    default:	/* Xeo81[.] */
+			      goto unknown_validate_operand;
+			    }
+			  break;
+			case '2':
+			  switch (*++oparg)
+			    {
+			    case '0': used_bits |= ENCODE_ESP_OFFSET_256_4_0 (-1U); break;	/* Xeo820 */
+			    default:	/* Xeo82[.] */
+			      goto unknown_validate_operand;
+			    }
+			  break;
+			case '3':
+			  switch (*++oparg)
+			    {
+			    case '0': used_bits |= ENCODE_ESP_OFFSET_256_8_0 (-1U); break;	/* Xeo830 */
+			    case '1': used_bits |= ENCODE_ESP_OFFSET_256_8_1 (-1U); break;	/* Xeo831 */
+			    case '2': used_bits |= ENCODE_ESP_OFFSET_256_8_2 (-1U); break;	/* Xeo832 */
+			    default:	/* Xeo83[.] */
+			      goto unknown_validate_operand;
+			    }
+			  break;
+			default:	/* Xeo8[.] */
+			  goto unknown_validate_operand;
+			}
+		      break;
+		    default:	/* Xeo[.] */
+		      goto unknown_validate_operand;
+		    }
+		  break;
+		case 'q':
+		  switch (*++oparg)
+		    {
+		    case 'u': used_bits |= ENCODE_ESP_QU (-1U); break;	/* Xequ */
+		    case 'v': used_bits |= ENCODE_ESP_QV (-1U); break;	/* Xeqv */
+		    case 'w': used_bits |= ENCODE_ESP_QW (-1U); break;	/* Xeqw */
+		    case 'x': used_bits |= ENCODE_ESP_QX (-1U); break;	/* Xeqx */
+		    case 'y': used_bits |= ENCODE_ESP_QY (-1U); break;	/* Xeqy */
+		    case 'z': used_bits |= ENCODE_ESP_QZ (-1U); break;	/* Xeqz */
+		    default:	/* Xeq[.] */
+		      goto unknown_validate_operand;
+		    }
+		  break;
+		case 'r':
+		  switch (*++oparg)
+		    {
+		    case 'c': used_bits |= ENCODE_ESP_RD (-1U); break;	/* Xerc */
+		    case 'a': used_bits |= ENCODE_ESP_RS1 (-1U); break;	/* Xera */
+		    case 'b': used_bits |= ENCODE_ESP_RS2 (-1U); break;	/* Xerb */
+		    default:	/* Xer[.] */
+		      goto unknown_validate_operand;
+		    }
+		  break;
+		case 's':
+		  switch (*++oparg)
+		    {
+		    case '4':
+		      switch (*++oparg)
+			{
+			case '0': used_bits |= ENCODE_ESP_SELECT_16_0 (-1U); break;	/* Xes40 */
+			case '1': used_bits |= ENCODE_ESP_SELECT_16_1 (-1U); break;	/* Xes41 */
+			case '2': used_bits |= ENCODE_ESP_SELECT_16_2 (-1U); break;	/* Xes42 */
+			case '3': used_bits |= ENCODE_ESP_SELECT_16_3 (-1U); break;	/* Xes43 */
+			case '4': used_bits |= ENCODE_ESP_SELECT_16_4 (-1U); break;	/* Xes44 */
+			default:	/* Xes4[.] */
+			  goto unknown_validate_operand;
+			}
+		      break;
+		    case '1':
+		      switch (*++oparg)
+			{
+			case '0': used_bits |= ENCODE_ESP_SELECT_2_0 (-1U); break;	/* Xes10 */
+			case '1': used_bits |= ENCODE_ESP_SELECT_2_1 (-1U); break;	/* Xes11 */
+			case '2': used_bits |= ENCODE_ESP_SELECT_2_2 (-1U); break;	/* Xes12 */
+			case '3': used_bits |= ENCODE_ESP_SELECT_2_3 (-1U); break;	/* Xes13 */
+			case '4': used_bits |= ENCODE_ESP_SELECT_2_4 (-1U); break;	/* Xes14 */
+			case '5': used_bits |= ENCODE_ESP_SELECT_2_5 (-1U); break;	/* Xes15 */
+			default:	/* Xes1[.] */
+			  goto unknown_validate_operand;
+			}
+		      break;
+		    case '2':
+		      switch (*++oparg)
+			{
+			case '0': used_bits |= ENCODE_ESP_SELECT_4_0 (-1U); break;	/* Xes20 */
+			case '1': used_bits |= ENCODE_ESP_SELECT_4_1 (-1U); break;	/* Xes21 */
+			case '2': used_bits |= ENCODE_ESP_SELECT_4_2 (-1U); break;	/* Xes22 */
+			case '3': used_bits |= ENCODE_ESP_SELECT_4_3 (-1U); break;	/* Xes23 */
+			case '4': used_bits |= ENCODE_ESP_SELECT_4_4 (-1U); break;	/* Xes24 */
+			case '5': used_bits |= ENCODE_ESP_SELECT_4_5 (-1U); break;	/* Xes25 */
+			case '6': used_bits |= ENCODE_ESP_SELECT_4_6 (-1U); break;	/* Xes26 */
+			default:	/* Xes2[.] */
+			  goto unknown_validate_operand;
+			}
+		      break;
+		    case '3':
+		      switch (*++oparg)
+			{
+			case '0': used_bits |= ENCODE_ESP_SELECT_8_0 (-1U); break;	/* Xes30 */
+			case '1': used_bits |= ENCODE_ESP_SELECT_8_1 (-1U); break;	/* Xes31 */
+			case '2': used_bits |= ENCODE_ESP_SELECT_8_2 (-1U); break;	/* Xes32 */
+			default:	/* Xes3[.] */
+			  goto unknown_validate_operand;
+			}
+		      break;
+		    default:	/* Xes[.] */
+		      goto unknown_validate_operand;
+		    }
+		  break;
+		case 'u': used_bits |= ENCODE_ESP_UPD_4 (-1U); break;	/* Xeu */
+		default:	/* Xe[.] */
+		  goto unknown_validate_operand;
+		}
+	      break;
 	    default:
 	      goto unknown_validate_operand;
 	    }
@@ -1906,6 +2070,7 @@ md_begin (void)
   hash_reg_names (RCLASS_FPR, riscv_fpr_names_abi, NFPR);
   hash_reg_names (RCLASS_VECR, riscv_vecr_names_numeric, NVECR);
   hash_reg_names (RCLASS_VECM, riscv_vecm_names_numeric, NVECM);
+  hash_reg_names (RCLASS_ESPV, riscv_espv_qr_names_numeric, 8);
   /* Add "fp" as an alias for "s0".  */
   hash_reg_name (RCLASS_GPR, "fp", 8);
 
@@ -4176,6 +4341,780 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 		    }
 #undef UIMM_BITFIELD_VAL
 #undef ENCODE_UIMM_BIT_FIELD
+		  break;
+		case 'e':
+		  switch (*++oparg)
+		    {
+		    case 'o':
+		      switch (*++oparg)
+			{
+			case '4':
+			  switch (*++oparg)
+			    {
+			    case '4':
+			      switch (*++oparg)
+				{
+				case '0':	/* Xeo440 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 112
+				      || imm_expr->X_add_number < -128
+				      || !VALID_ESP_OFFSET_16_16_0 (imm_expr->
+								    X_add_number))
+				    {
+				      as_bad (_("bad value for offset_16_16, "
+						"must be in range -128..112 with step 16"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_16_16_0 (imm_expr->
+							       X_add_number);
+				esp_imm_done:
+				  asarg = expr_parse_end;
+				  imm_expr->X_op = O_absent;
+				  continue;
+				case '1':	/* Xeo441 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 112
+				      || imm_expr->X_add_number < -128
+				      || !VALID_ESP_OFFSET_16_16_1 (imm_expr->
+								    X_add_number))
+				    {
+				      as_bad (_("bad value for offset_16_16, "
+						"must be in range -128..112 with step 16"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_16_16_1 (imm_expr->
+							       X_add_number);
+				  goto esp_imm_done;
+				case '2':	/* Xeo442 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 112
+				      || imm_expr->X_add_number < -128
+				      || !VALID_ESP_OFFSET_16_16_2 (imm_expr->
+								    X_add_number))
+				    {
+				      as_bad (_("bad value for offset_16_16, "
+						"must be in range -128..112 with step 16"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_16_16_2 (imm_expr->
+							       X_add_number);
+				  goto esp_imm_done;
+				default:	/* Xeo44[.] */
+				  goto unknown_riscv_ip_operand;
+				}
+			      break;
+			    default:	/* Xeo4[.] */
+			      goto unknown_riscv_ip_operand;
+			    }
+			  break;
+			case '8':
+			  switch (*++oparg)
+			    {
+			    case '4':
+			      switch (*++oparg)
+				{
+				case '0':	/* Xeo840 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 2032
+				      || imm_expr->X_add_number < -2048
+				      ||
+				      !VALID_ESP_OFFSET_256_16_0 (imm_expr->
+								  X_add_number))
+				    {
+				      as_bad (_
+					      ("bad value for offset_256_16, "
+					       "must be in range -2048..2032 with step 16"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_256_16_0 (imm_expr->
+								X_add_number);
+				  goto esp_imm_done;
+				case '1':	/* Xeo841 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 2032
+				      || imm_expr->X_add_number < -2048
+				      ||
+				      !VALID_ESP_OFFSET_256_16_1 (imm_expr->
+								  X_add_number))
+				    {
+				      as_bad (_
+					      ("bad value for offset_256_16, "
+					       "must be in range -2048..2032 with step 16"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_256_16_1 (imm_expr->
+								X_add_number);
+				  goto esp_imm_done;
+				case '2':	/* Xeo842 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 2032
+				      || imm_expr->X_add_number < -2048
+				      ||
+				      !VALID_ESP_OFFSET_256_16_2 (imm_expr->
+								  X_add_number))
+				    {
+				      as_bad (_
+					      ("bad value for offset_256_16, "
+					       "must be in range -2048..2032 with step 16"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_256_16_2 (imm_expr->
+								X_add_number);
+				  goto esp_imm_done;
+				case '3':	/* Xeo843 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 2032
+				      || imm_expr->X_add_number < -2048
+				      ||
+				      !VALID_ESP_OFFSET_256_16_3 (imm_expr->
+								  X_add_number))
+				    {
+				      as_bad (_
+					      ("bad value for offset_256_16, "
+					       "must be in range -2048..2032 with step 16"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_256_16_3 (imm_expr->
+								X_add_number);
+				  goto esp_imm_done;
+				default:	/* Xeo84[.] */
+				  goto unknown_riscv_ip_operand;
+				}
+			      break;
+			    case '0':
+			      switch (*++oparg)
+				{
+				case '0':	/* Xeo800 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 127
+				      || imm_expr->X_add_number < -128
+				      || !VALID_ESP_OFFSET_256_1_0 (imm_expr->
+								    X_add_number))
+				    {
+				      as_bad (_("bad value for offset_256_1, "
+						"must be in range -128..127 with step 1"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_256_1_0 (imm_expr->
+							       X_add_number);
+				  goto esp_imm_done;
+				default:	/* Xeo80[.] */
+				  goto unknown_riscv_ip_operand;
+				}
+			      break;
+			    case '1':
+			      switch (*++oparg)
+				{
+				case '0':	/* Xeo810 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 254
+				      || imm_expr->X_add_number < -256
+				      || !VALID_ESP_OFFSET_256_2_0 (imm_expr->
+								    X_add_number))
+				    {
+				      as_bad (_("bad value for offset_256_2, "
+						"must be in range -256..254 with step 2"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_256_2_0 (imm_expr->
+							       X_add_number);
+				  goto esp_imm_done;
+				default:	/* Xeo81[.] */
+				  goto unknown_riscv_ip_operand;
+				}
+			      break;
+			    case '2':
+			      switch (*++oparg)
+				{
+				case '0':	/* Xeo820 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 508
+				      || imm_expr->X_add_number < -512
+				      || !VALID_ESP_OFFSET_256_4_0 (imm_expr->
+								    X_add_number))
+				    {
+				      as_bad (_("bad value for offset_256_4, "
+						"must be in range -512..508 with step 4"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_256_4_0 (imm_expr->
+							       X_add_number);
+				  goto esp_imm_done;
+				default:	/* Xeo82[.] */
+				  goto unknown_riscv_ip_operand;
+				}
+			      break;
+			    case '3':
+			      switch (*++oparg)
+				{
+				case '0':	/* Xeo830 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 1016
+				      || imm_expr->X_add_number < -1024
+				      || !VALID_ESP_OFFSET_256_8_0 (imm_expr->
+								    X_add_number))
+				    {
+				      as_bad (_("bad value for offset_256_8, "
+						"must be in range -1024..1016 with step 8"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_256_8_0 (imm_expr->
+							       X_add_number);
+				  goto esp_imm_done;
+				case '1':	/* Xeo831 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 1016
+				      || imm_expr->X_add_number < -1024
+				      || !VALID_ESP_OFFSET_256_8_1 (imm_expr->
+								    X_add_number))
+				    {
+				      as_bad (_("bad value for offset_256_8, "
+						"must be in range -1024..1016 with step 8"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_256_8_1 (imm_expr->
+							       X_add_number);
+				  goto esp_imm_done;
+				case '2':	/* Xeo832 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 1016
+				      || imm_expr->X_add_number < -1024
+				      || !VALID_ESP_OFFSET_256_8_2 (imm_expr->
+								    X_add_number))
+				    {
+				      as_bad (_("bad value for offset_256_8, "
+						"must be in range -1024..1016 with step 8"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_OFFSET_256_8_2 (imm_expr->
+							       X_add_number);
+				  goto esp_imm_done;
+				default:	/* Xeo83[.] */
+				  goto unknown_riscv_ip_operand;
+				}
+			      break;
+			    default:	/* Xeo8[.] */
+			      goto unknown_riscv_ip_operand;
+			    }
+			  break;
+			default:	/* Xeo[.] */
+			  goto unknown_riscv_ip_operand;
+			}
+		      break;
+		    case 'q':
+		      switch (*++oparg)
+			{
+			case 'u':	/* Xequ */
+			  if (!reg_lookup (&asarg, RCLASS_ESPV, &regno))
+			    break;
+			  INSERT_OPERAND (ESP_QU, *ip, regno);
+			  continue;
+			case 'v':	/* Xeqv */
+			  if (!reg_lookup (&asarg, RCLASS_ESPV, &regno))
+			    break;
+			  INSERT_OPERAND (ESP_QV, *ip, regno);
+			  continue;
+			case 'w':	/* Xeqw */
+			  if (!reg_lookup (&asarg, RCLASS_ESPV, &regno))
+			    break;
+			  ip->insn_opcode |= ENCODE_ESP_QW (regno);
+			  continue;
+			case 'x':	/* Xeqx */
+			  if (!reg_lookup (&asarg, RCLASS_ESPV, &regno))
+			    break;
+			  INSERT_OPERAND (ESP_QX, *ip, regno);
+			  continue;
+			case 'y':	/* Xeqy */
+			  if (!reg_lookup (&asarg, RCLASS_ESPV, &regno))
+			    break;
+			  INSERT_OPERAND (ESP_QY, *ip, regno);
+			  continue;
+			case 'z':	/* Xeqz */
+			  if (!reg_lookup (&asarg, RCLASS_ESPV, &regno))
+			    break;
+			  INSERT_OPERAND (ESP_QZ, *ip, regno);
+			  continue;
+			default:	/* Xeq[.] */
+			  goto unknown_riscv_ip_operand;
+			}
+		      break;
+		    case 'r':
+		      switch (*++oparg)
+			{
+			case 'c':	/* Xerc */
+			  if (!reg_lookup (&asarg, RCLASS_GPR, &regno)
+			      || !((regno >= 8 && regno <= 15)
+				   || (regno >= 24 && regno <= 31)))
+			    break;
+			  ip->insn_opcode |= ENCODE_ESP_RD (regno);
+			  continue;
+			case 'a':	/* Xera */
+			  if (!reg_lookup (&asarg, RCLASS_GPR, &regno)
+			      || !((regno >= 8 && regno <= 15)
+				   || (regno >= 24 && regno <= 31)))
+			    break;
+			  ip->insn_opcode |= ENCODE_ESP_RS1 (regno);
+			  continue;
+			case 'b':	/* Xerb */
+			  if (!reg_lookup (&asarg, RCLASS_GPR, &regno)
+			      || !((regno >= 8 && regno <= 15)
+				   || (regno >= 24 && regno <= 31)))
+			    break;
+			  ip->insn_opcode |= ENCODE_ESP_RS2 (regno);
+			  continue;
+			default:	/* Xer[.] */
+			  goto unknown_riscv_ip_operand;
+			}
+		      break;
+		    case 's':
+		      switch (*++oparg)
+			{
+			case '4':
+			  switch (*++oparg)
+			    {
+			    case '0':	/* Xes40 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 15
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_16_0 (imm_expr->
+							     X_add_number))
+				{
+				  as_bad (_("bad value for select_16, "
+					    "must be in range 0..15 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_16_0 (imm_expr->
+							X_add_number);
+			      goto esp_imm_done;
+			    case '1':	/* Xes41 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 15
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_16_1 (imm_expr->
+							     X_add_number))
+				{
+				  as_bad (_("bad value for select_16, "
+					    "must be in range 0..15 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_16_1 (imm_expr->
+							X_add_number);
+			      goto esp_imm_done;
+			    case '2':	/* Xes42 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 15
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_16_2 (imm_expr->
+							     X_add_number))
+				{
+				  as_bad (_("bad value for select_16, "
+					    "must be in range 0..15 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_16_2 (imm_expr->
+							X_add_number);
+			      goto esp_imm_done;
+			    case '3':	/* Xes43 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 15
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_16_3 (imm_expr->
+							     X_add_number))
+				{
+				  as_bad (_("bad value for select_16, "
+					    "must be in range 0..15 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_16_3 (imm_expr->
+							X_add_number);
+			      goto esp_imm_done;
+			    case '4':	/* Xes44 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 15
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_16_4 (imm_expr->
+							     X_add_number))
+				{
+				  as_bad (_("bad value for select_16, "
+					    "must be in range 0..15 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_16_4 (imm_expr->
+							X_add_number);
+			      goto esp_imm_done;
+			    default:	/* Xes4[.] */
+			      goto unknown_riscv_ip_operand;
+			    }
+			  break;
+			case '1':
+			  switch (*++oparg)
+			    {
+			    case '0':	/* Xes10 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 1
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_2_0 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_2, "
+					    "must be in range 0..1 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_2_0 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '1':	/* Xes11 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 1
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_2_1 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_2, "
+					    "must be in range 0..1 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_2_1 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '2':	/* Xes12 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 1
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_2_2 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_2, "
+					    "must be in range 0..1 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_2_2 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '3':	/* Xes13 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 1
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_2_3 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_2, "
+					    "must be in range 0..1 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_2_3 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '4':	/* Xes14 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 1
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_2_4 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_2, "
+					    "must be in range 0..1 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_2_4 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '5':	/* Xes15 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 1
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_2_5 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_2, "
+					    "must be in range 0..1 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_2_5 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    default:	/* Xes1[.] */
+			      goto unknown_riscv_ip_operand;
+			    }
+			  break;
+			case '2':
+			  switch (*++oparg)
+			    {
+			    case '0':	/* Xes20 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 3
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_4_0 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_4, "
+					    "must be in range 0..3 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_4_0 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '1':	/* Xes21 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 3
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_4_1 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_4, "
+					    "must be in range 0..3 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_4_1 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '2':	/* Xes22 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 3
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_4_2 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_4, "
+					    "must be in range 0..3 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_4_2 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '3':	/* Xes23 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 3
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_4_3 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_4, "
+					    "must be in range 0..3 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_4_3 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '4':	/* Xes24 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 3
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_4_4 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_4, "
+					    "must be in range 0..3 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_4_4 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '5':	/* Xes25 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 3
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_4_5 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_4, "
+					    "must be in range 0..3 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_4_5 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '6':	/* Xes26 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 3
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_4_6 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_4, "
+					    "must be in range 0..3 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_4_6 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    default:	/* Xes2[.] */
+			      goto unknown_riscv_ip_operand;
+			    }
+			  break;
+			case '3':
+			  switch (*++oparg)
+			    {
+			    case '0':	/* Xes30 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 7
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_8_0 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_8, "
+					    "must be in range 0..7 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_8_0 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '1':	/* Xes31 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 7
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_8_1 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_8, "
+					    "must be in range 0..7 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_8_1 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    case '2':	/* Xes32 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 7
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SELECT_8_2 (imm_expr->
+							    X_add_number))
+				{
+				  as_bad (_("bad value for select_8, "
+					    "must be in range 0..7 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SELECT_8_2 (imm_expr->
+						       X_add_number);
+			      goto esp_imm_done;
+			    default:	/* Xes3[.] */
+			      goto unknown_riscv_ip_operand;
+			    }
+			  break;
+			default:	/* Xes[.] */
+			  goto unknown_riscv_ip_operand;
+			}
+		      break;
+		    case 'u':	/* Xeu */
+		      if (my_getSmallExpression
+			  (imm_expr, imm_reloc, asarg, p)
+			  || imm_expr->X_op != O_constant
+			  || imm_expr->X_add_number > 3
+			  || imm_expr->X_add_number < 0
+			  || !VALID_ESP_UPD_4 (imm_expr->X_add_number))
+			{
+			  as_bad (_("bad value for upd_4, "
+				    "must be in range 0..3 with step 1"));
+			  break;
+			}
+		      ip->insn_opcode |=
+			ENCODE_ESP_UPD_4 (imm_expr->X_add_number);
+		      goto esp_imm_done;
+		    default:	/* Xe[.] */
+		      goto unknown_riscv_ip_operand;
+		    }
 		  break;
 
 		default:
