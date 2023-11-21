@@ -2345,7 +2345,7 @@ py_initialize_catch_abort ()
 
   TRY_SJLJ
     {
-      Py_Initialize ();
+      Py_InitializeEx (0);
       py_isinitialized = true;
     }
   CATCH_SJLJ (e, RETURN_MASK_ERROR)
@@ -2445,6 +2445,7 @@ py_initialize ()
 
   config.write_bytecode = !python_dont_write_bytecode_at_python_initialization;
   config.use_environment = !python_ignore_environment_at_python_initialization;
+  config.install_signal_handlers = 0;
 
   status = PyConfig_Read (&config);
   if (PyStatus_Exception (status))
