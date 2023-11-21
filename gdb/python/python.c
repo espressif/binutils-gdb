@@ -2248,7 +2248,7 @@ do_start_initialization ()
      remain alive for the duration of the program's execution, so
      it is not freed after this call.  */
   Py_SetProgramName (progname_copy);
-  Py_Initialize ();
+  Py_InitializeEx (0);
 #else
   PyConfig config;
 
@@ -2260,6 +2260,7 @@ do_start_initialization ()
 
   config.write_bytecode = python_write_bytecode ();
   config.use_environment = !python_ignore_environment;
+  config.install_signal_handlers = 0;
 
   status = PyConfig_Read (&config);
   if (PyStatus_Exception (status))
@@ -2273,7 +2274,7 @@ init_done:
     return false;
 #endif
 #else
-  Py_Initialize ();
+  Py_InitializeEx (0);
 #endif
 
 #if PY_VERSION_HEX < 0x03090000
