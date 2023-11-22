@@ -22,7 +22,7 @@
 
 #include "arch/xtensa.h"
 #include "gdbarch.h"
-#include "xtensa-config.h"
+#include "xtensa-dynconfig.h"
 
 /* XTENSA_TDEP_VERSION can/should be changed along with XTENSA_CONFIG_VERSION
    whenever the "tdep" structure changes in an incompatible way.  */
@@ -169,9 +169,12 @@ struct ctype_cache
 
 struct xtensa_gdbarch_tdep : gdbarch_tdep_base
 {
-  xtensa_gdbarch_tdep (xtensa_register_t *regmap)
-    : regmap (regmap)
-  {}
+  xtensa_gdbarch_tdep ()
+  {
+    extern xtensa_register_t xtensa_rmap_default[];
+    regmap = (xtensa_register_t *) xtensa_load_config ("rmap", NULL, NULL);
+    regmap = regmap ? regmap : xtensa_rmap_default;
+  }
 
   unsigned int target_flags = 0;
 

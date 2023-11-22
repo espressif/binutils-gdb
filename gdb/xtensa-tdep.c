@@ -42,7 +42,7 @@
 
 #include "xtensa-isa.h"
 #include "xtensa-tdep.h"
-#include "xtensa-config.h"
+#include "xtensa-dynconfig.h"
 #include <algorithm>
 
 
@@ -3162,8 +3162,6 @@ xtensa_derive_tdep (xtensa_gdbarch_tdep *tdep)
 
 /* Module "constructor" function.  */
 
-extern xtensa_register_t xtensa_rmap[];
-
 static struct gdbarch *
 xtensa_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 {
@@ -3177,7 +3175,7 @@ xtensa_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   gdbarch *gdbarch
     = gdbarch_alloc (&info,
-		     gdbarch_tdep_up (new xtensa_gdbarch_tdep (xtensa_rmap)));
+		     gdbarch_tdep_up (new xtensa_gdbarch_tdep ()));
   xtensa_gdbarch_tdep *tdep = gdbarch_tdep<xtensa_gdbarch_tdep> (gdbarch);
   xtensa_derive_tdep (tdep);
 
