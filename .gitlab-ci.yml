@@ -1,0 +1,418 @@
+stages:
+  - generate_version
+  - build
+  - macos_codesign
+  - internal_deploy
+  - test
+  - release_submit
+  - update_idf_tools
+
+image: $CI_DOCKER_REGISTRY/esp32-toolchain:4
+
+variables:
+
+  #
+  # System environment
+
+  # Common parameters for the 'make' during CI tests
+  MAKEFLAGS: "-j4 --no-keep-going"
+
+  # Binutils configure options
+  BINUTILS_CONFIGURE_OPTS: "--disable-doc --disable-gdb --disable-libdecnumber --disable-readline --disable-sim"
+
+  # GitHub Tool options
+  GITHUB_USER: "${GH_USER}"
+  GITHUB_REPO: "${GH_REPO}"
+  GITHUB_TOKEN: "${GH_TOKEN}"
+  GITHUB_IMAGE_TAG: 2
+
+  #
+  # CI settings
+
+  GIT_DEPTH: 1
+  GIT_SUBMODULE_STRATEGY: none
+
+  #
+  # Customization of jobs
+
+  CONF_TARGET: "esp32ulp-elf"
+  DIST_INSTALLED_DIR: "${CONF_TARGET}"
+  ARCHIVE_TOOL: "tar czf"
+  UNARCHIVE_TOOL: "tar xf"
+  ARCHIVE_EXT: "tar.gz"
+  GH_TOOL_NAME: github-release
+  GH_TOOL: "./dist/${GH_TOOL_NAME}"
+  RELEASE_DESC: "New release"
+  HTTP_UPLOAD_DIR: "${HTTP_UPLOAD_DIR}/${CONF_TARGET}/${REL_VERSION}"
+  HTTP_PUBLIC_DIR: "${HTTP_PUBLIC_DIR}/${CONF_TARGET}/${REL_VERSION}"
+  ARCHIVE_PATH: "dist/${CONF_TARGET}-${REL_VERSION}-${PLATFORM_NAME}.${ARCHIVE_EXT}"
+  SHA256_FILE: "${CONF_TARGET}-${REL_VERSION}-checksum.sha256"
+
+
+.use_ci_tools: &use_ci_tools |
+  curl -sSL ${CIT_LOADER_URL} -o cit_loader.sh && sh cit_loader.sh
+  source citools/import_functions
+
+before_script:
+  - *use_ci_tools
+
+generate_version:
+  stage: generate_version
+  tags: [ "build", "amd64" ]
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  artifacts:
+    reports:
+      dotenv: version.env
+  script:
+    - REL_VERSION=${CI_COMMIT_TAG:-""}
+    - REL_VERSION=${REL_VERSION#"esp32ulp-elf-"}
+    - REL_VERSION=${REL_VERSION:-${CI_COMMIT_SHORT_SHA}}
+    - PLATFORM_NAME=${PLATFORM_NAME:-unknown}
+    - echo "REL_VERSION=$REL_VERSION" > version.env
+    - echo "IDF_TOOLS_ULP_VERSION=${REL_VERSION}" >> version.env
+    - cat version.env
+
+.set_displayed_version: &set_displayed_version |
+  # Use the REL_VERSION for the "--version" text
+  # The substitution will be made in the 'make' step
+  export ESP_VERSION=${REL_VERSION}
+  sed -ri 's/(.*)(bfd_version_string=)(.*)( ;\\)$/\1\2"\\"$(ESP_VERSION)\\""\4/' bfd/Makefile.in
+
+.dist_archive: &dist_archive |
+  mkdir -p $(dirname ${ARCHIVE_PATH})
+  echo "$(basename ${ARCHIVE_PATH})" > ./dist/dist_name_${PLATFORM_NAME}_${CONF_TARGET}
+  ${ARCHIVE_TOOL} ${ARCHIVE_PATH} ${DIST_INSTALLED_DIR}
+
+.dist_unarchive: &dist_unarchive |
+  ARCHIVE_PATH=$(ls dist/*.${ARCHIVE_EXT})
+  ${UNARCHIVE_TOOL} ${ARCHIVE_PATH}
+
+.release_tag_filter: &release_tag_filter
+  only:
+    - /^esp32ulp-elf-.*$/
+
+.manual_action: &manual_action
+  when: manual
+  allow_failure: true
+
+.configure: &configure |
+  ./configure \
+  --host=${CONF_HOST} \
+  --target=${CONF_TARGET} \
+  --prefix="${PWD}/${DIST_INSTALLED_DIR}" \
+  ${BINUTILS_CONFIGURE_OPTS}
+
+.build_dist: &build_dist |
+  make
+  MAKEFLAGS= make install-strip
+
+.gen_sha256_file: &gen_sha256_file |
+  DIST_FILE_LIST=$(find . -name dist_name_\* -exec cat {} \+)
+  for n in $DIST_FILE_LIST; do
+    sz=$(stat -c%s "${n}") >> ${SHA256_FILE};
+    printf "# %s: %s bytes\n" "${n}" "${sz}" >> ${SHA256_FILE};
+    sha256sum -b "${n}" >> ${SHA256_FILE};
+  done
+
+.release_submit_action: &release_submit_action
+  image: espressif/github-hub:${GITHUB_IMAGE_TAG}
+  when: manual
+  allow_failure: true
+  before_script:
+    - set -o errexit; set -o pipefail; set -o nounset
+    - test "${DEBUG_SHELL:-''}" = "1" && set -x
+    - git remote remove github || true
+    - git remote add github ${GH_REPO_HTTPS}
+  variables:
+    GIT_STRATEGY: fetch
+    GH_REL_TAG: ${CI_COMMIT_TAG}
+
+# Builds
+
+.build_template: &build_template
+  stage: build
+  tags: [amd64, build]
+  artifacts:
+    paths:
+      - dist
+      - config.log
+    when: always
+    expire_in: 6 weeks
+  script:
+    - *set_displayed_version
+    - *configure
+    - *build_dist
+    - *dist_archive
+
+linux_amd64:
+  extends: .build_template
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-arm-cross:3
+  variables:
+    PLATFORM_NAME: "linux-amd64"
+    CONF_HOST: "x86_64-linux-gnu"
+
+linux_i686:
+  extends: .build_template
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-x86:3
+  variables:
+    PLATFORM_NAME: "linux-i686"
+    CONF_HOST: "i586-linux-gnu"
+
+win:
+  extends: .build_template
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross:4
+  variables:
+    PLATFORM_NAME: "win32"
+    CONF_HOST: "i686-w64-mingw32"
+    ARCHIVE_TOOL: "zip -r"
+    ARCHIVE_EXT: "zip"
+
+win64:
+  extends: .build_template
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-win64-cross:4
+  variables:
+    PLATFORM_NAME: "win64"
+    CONF_HOST: "x86_64-w64-mingw32"
+    ARCHIVE_TOOL: "zip -r"
+    ARCHIVE_EXT: "zip"
+
+macos:
+  extends: .build_template
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-macos-cross:3
+  variables:
+    PLATFORM_NAME: "macos"
+    CONF_HOST: "x86_64-apple-darwin14"
+    CC: "$CONF_HOST-clang"
+    CXX: "$CONF_HOST-clang++"
+
+macos_arm64:
+  extends: .build_template
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-macos-cross:5
+  variables:
+    PLATFORM_NAME: "macos-arm64"
+    CONF_HOST: "aarch64-apple-darwin21.1"
+    CC: "$CONF_HOST-clang"
+    CXX: "$CONF_HOST-clang++"
+
+linux_armel:
+  extends: .build_template
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-arm-cross:3
+  variables:
+    PLATFORM_NAME: "linux-armel"
+    CONF_HOST: "arm-linux-gnueabi"
+
+linux_arm64:
+  extends: .build_template
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-arm-cross:3
+  variables:
+    PLATFORM_NAME: "linux-arm64"
+    CONF_HOST: "aarch64-linux-gnu"
+
+linux_armhf:
+  extends: .build_template
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-arm-cross:3
+  variables:
+    PLATFORM_NAME: "linux-armhf"
+    CONF_HOST: "arm-linux-gnueabihf"
+
+# Sign macos binaries
+
+.template_macos_codesign:
+  stage: macos_codesign
+  when: manual
+  resource_group: macos_codesign
+  tags: [ "darwin", "codesign" ]
+  artifacts:
+    paths:
+      - ${DIST_ART_DIR}
+  variables:
+    # directory with distro archives
+    DIST_ART_DIR: dist
+    # URL to macos codesign repo
+    NOTARIZATION_SCRIPTS_GIT: "${CI_SERVER_PROTOCOL}://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/espressif/macos_codesign_notarization.git"
+  script:
+    - git clone -q --depth=1 ${NOTARIZATION_SCRIPTS_GIT} -b ${CI_COMMIT_REF_NAME} ||
+      git clone -q --depth=1 ${NOTARIZATION_SCRIPTS_GIT}
+    - ./macos_codesign_notarization/run.sh
+
+macos_codesign:
+  extends: .template_macos_codesign
+  needs: [ macos ]
+
+macos_codesign_arm64:
+  extends: .template_macos_codesign
+  needs: [ macos_arm64 ]
+
+# Tests
+
+.test_template: &test_template
+  stage: test
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain:4
+  artifacts:
+    paths:
+      - ${TEST_CMP_DIR}
+    expire_in: 6 weeks
+  after_script:
+    - git add -f ${TEST_CMP_DIR}
+    - git clean -ffxdq
+  script:
+    - *dist_unarchive
+    - ${TEST_SCRIPT} ${TEST_PREFIX}
+    - cd ${TEST_CMP_DIR}
+    - git diff --exit-code -- . || (echo 'Differences found. Please check changes and commit new check files.'; exit 1)
+    - echo "Compare test done"
+
+linux_amd64_test_esp32:
+  extends: .test_template
+  needs: [ linux_amd64 ]
+  variables:
+    PLATFORM_NAME: "linux-amd64"
+    TEST_PREFIX: "${CI_PROJECT_DIR}/${DIST_INSTALLED_DIR}/bin/esp32ulp-elf-"
+    TEST_SCRIPT: "./gas/testsuite/gas/esp32ulp/esp32/check_all.sh"
+    TEST_CMP_DIR: "gas/testsuite/gas/esp32ulp/esp32/compare"
+
+linux_amd64_test_esp32s2:
+  extends: .test_template
+  needs: [ linux_amd64 ]
+  variables:
+    PLATFORM_NAME: "linux-amd64"
+    TEST_PREFIX: "${CI_PROJECT_DIR}/${DIST_INSTALLED_DIR}/bin/esp32ulp-elf-"
+    TEST_SCRIPT: "./gas/testsuite/gas/esp32ulp/esp32s2/check_all.sh"
+    TEST_CMP_DIR: "gas/testsuite/gas/esp32ulp/esp32s2/compare"
+
+linux_i686_test_esp32:
+  extends: .test_template
+  needs: [ linux_i686 ]
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-x86:3
+  variables:
+    PLATFORM_NAME: "linux-i686"
+    TEST_PREFIX: "${CI_PROJECT_DIR}/${DIST_INSTALLED_DIR}/bin/esp32ulp-elf-"
+    TEST_SCRIPT: "./gas/testsuite/gas/esp32ulp/esp32/check_all.sh"
+    TEST_CMP_DIR: "gas/testsuite/gas/esp32ulp/esp32/compare"
+
+linux_i686_test_esp32s2:
+  extends: .test_template
+  needs: [ linux_i686 ]
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-x86:3
+  variables:
+    PLATFORM_NAME: "linux-i686"
+    TEST_PREFIX: "${CI_PROJECT_DIR}/${DIST_INSTALLED_DIR}/bin/esp32ulp-elf-"
+    TEST_SCRIPT: "./gas/testsuite/gas/esp32ulp/esp32s2/check_all.sh"
+    TEST_CMP_DIR: "gas/testsuite/gas/esp32ulp/esp32s2/compare"
+
+linux_armel_test_esp32:
+  extends: .test_template
+  image: $CI_DOCKER_REGISTRY/rpi-esp-idf-env:1
+  tags: [arm, linux]
+  needs: [ linux_armel ]
+  variables:
+    PLATFORM_NAME: "linux-armel"
+    TEST_PREFIX: "${CI_PROJECT_DIR}/${DIST_INSTALLED_DIR}/bin/esp32ulp-elf-"
+    TEST_SCRIPT: "./gas/testsuite/gas/esp32ulp/esp32/check_all.sh"
+    TEST_CMP_DIR: "gas/testsuite/gas/esp32ulp/esp32/compare"
+
+linux_armel_test_esp32s2:
+  extends: .test_template
+  image: $CI_DOCKER_REGISTRY/rpi-esp-idf-env:1
+  tags: [arm, linux]
+  needs: [ linux_armel ]
+  variables:
+    PLATFORM_NAME: "linux-armel"
+    TEST_PREFIX: "${CI_PROJECT_DIR}/${DIST_INSTALLED_DIR}/bin/esp32ulp-elf-"
+    TEST_SCRIPT: "./gas/testsuite/gas/esp32ulp/esp32s2/check_all.sh"
+    TEST_CMP_DIR: "gas/testsuite/gas/esp32ulp/esp32s2/compare"
+
+# Simple execution tests
+
+.test_simple_template: &test_simple_template
+  stage: test
+  inherit:
+    default: false
+  script:
+    - *dist_unarchive
+    - ./${DIST_INSTALLED_DIR}/bin/${CONF_TARGET}-as --version
+
+test_simple_macos:
+  tags: [ "darwin", "amd64" ]
+  needs: [ macos_codesign ]
+  extends: .test_simple_template
+
+test_simple_macos_arm64:
+  tags: [ "darwin", "aarch64" ]
+  needs: [ macos_codesign_arm64 ]
+  extends: .test_simple_template
+
+test_simple_win64:
+  tags: [ windows, powershell ]
+  needs: [ win64 ]
+  extends: .test_simple_template
+  script:
+    - Expand-Archive -DestinationPath . -path .\dist\*.zip
+    - .\esp32ulp-elf\bin\esp32ulp-elf-as --version
+
+test_simple_win:
+  needs: [ win ]
+  extends: test_simple_win64
+
+upload_to_internal:
+  stage: internal_deploy
+  tags: [deploy, shiny]
+  when: manual
+  allow_failure: true
+  script:
+    - cit_add_ssh_key "${HTTP_UPLOAD_KEY}" "$(cit_parse_url_host ${HTTP_UPLOAD_DIR})"
+    - cd dist
+    - *gen_sha256_file
+    - FILES="$SHA256_FILE $(find . -type f -name "${CONF_TARGET}*")"
+    - ssh ${HTTP_UPLOAD_DIR%:*} "mkdir -p ${HTTP_UPLOAD_DIR#*:}"
+    - scp ${FILES} ${HTTP_UPLOAD_DIR}
+    - echo -e "\nArchives were published there:\n\n$(for n in ${FILES}; do echo "${HTTP_PUBLIC_DIR}/${n}"; done)\n"
+
+release_tag:
+  stage: release_submit
+  tags: [ "amd64", "internet" ]
+  <<: *release_tag_filter
+  <<: *release_submit_action
+  artifacts:
+    reports:
+      dotenv: dist/build.env
+  script:
+    - hub release delete ${GH_REL_TAG} || true
+    - cd dist
+    - *gen_sha256_file
+    - FILES_LIST=$(find * -type f -name "${CONF_TARGET}*")
+    - ATTACH_FILE_OPTIONS=$(printf -- "-a %s " $FILES_LIST)
+    # Create pre-release with archives attached
+    - hub release create --prerelease -m "${CI_COMMIT_TAG}" ${ATTACH_FILE_OPTIONS} ${GH_REL_TAG}
+
+.update_idf_tools:
+  allow_failure: true
+  variables:
+    TOOL_NAME: ${CONF_TARGET}
+    TOOL_MEMBERS: ${CONF_TARGET}
+    TOOL_VERSION: ${IDF_TOOLS_ULP_VERSION}
+  trigger:
+    project: idf/idf-tools-updater
+    strategy: depend
+
+internal_update_idf_tools:
+  extends: .update_idf_tools
+  stage: internal_deploy
+  needs: [ generate_version, upload_to_internal ]
+  when: manual
+  variables:
+    REL_VERSION: ${REL_VERSION}
+    TOOL_SHA256_URL: ${HTTP_PUBLIC_DIR}/esp32ulp-elf/${REL_VERSION}/${SHA256_FILE}
+
+github_update_idf_tools:
+  extends: .update_idf_tools
+  stage: release_submit
+  needs: [ generate_version, release_tag ]
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: manual
+  variables:
+    REL_VERSION: ${REL_VERSION}
+    TOOL_SHA256_URL: ${GH_REPO_URL}/releases/download/${CI_COMMIT_TAG}/${SHA256_FILE}
