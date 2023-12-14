@@ -108,13 +108,18 @@ START_RELOC_NUMBERS (elf_esp32ulp_reloc_type)
 #define	EF_ESP32ULP_PIC_FLAGS	(EF_ESP32ULP_PIC | EF_ESP32ULP_FDPIC)
 
 #define DR_REG_MAX_DIRECT                       0x3ff
-#define DR_REG_RTCCNTL_BASE                     0x3ff48000
-#define DR_REG_IO_MUX_BASE                      0x3ff49000
+#define DR_REG_RTCCNTL_BASE_ESP32               0x3ff48000
+#define DR_REG_RTCCNTL_BASE_ESP32S2             0x3f408000
+#define DR_REG_RTCCNTL_BASE_ESP32S3             0x60008000
 
+#define DR_REG_RTCCNTL_BASE dr_reg_rtccntl_base
+#define DR_REG_IO_MUX_BASE (dr_reg_rtccntl_base + 0x1000)
 
 #define CPU_TYPE_ESP32ULP                 		0 // --mcpu=esp32
-#define CPU_TYPE_ESP32ULP_S2                  	1 // --mcpu=esp32s2
+#define CPU_TYPE_ESP32ULP_S2                  	1 // --mcpu=esp32s2, --mcpu=esp32s3
 
 #define NEXT_INSTRUCTION_STEP  					4 // Step in bytes for next instruction
+
+extern unsigned int dr_reg_rtccntl_base;
 
 #endif /* _ELF_ESP32ULP_H */

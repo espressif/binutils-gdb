@@ -48,6 +48,8 @@ int last_insn_size;
 extern struct obstack mempool;
 FILE *errorf;
 
+unsigned int dr_reg_rtccntl_base;
+
 /* Flags to set in the elf header */
 #define DEFAULT_FLAGS 0
 
@@ -117,7 +119,6 @@ size_t md_longopts_size = sizeof (md_longopts);
 int
 md_parse_option (int c, const char *arg)
 {
-//      printf("md_parse_option: arg - %s\n", arg);
   switch (c)
     {
     case OPTION_MCPU:
@@ -125,10 +126,17 @@ md_parse_option (int c, const char *arg)
 	if (strcasecmp (arg, "esp32") == 0)
 	  {
 	    ulp_cpu_type = CPU_TYPE_ESP32ULP;
+	    dr_reg_rtccntl_base = DR_REG_RTCCNTL_BASE_ESP32;
 	  }
 	else if (strcasecmp (arg, "esp32s2") == 0)
 	  {
 	    ulp_cpu_type = CPU_TYPE_ESP32ULP_S2;
+	    dr_reg_rtccntl_base = DR_REG_RTCCNTL_BASE_ESP32S2;
+	  }
+	else if (strcasecmp (arg, "esp32s3") == 0)
+	  {
+	    ulp_cpu_type = CPU_TYPE_ESP32ULP_S2;
+	    dr_reg_rtccntl_base = DR_REG_RTCCNTL_BASE_ESP32S3;
 	  }
 	else
 	  {
@@ -347,7 +355,9 @@ check_reg_range (fixS * fixP, long value)
 	{
 	  as_bad_where (fixP->fx_file, fixP->fx_line,
 			_
-			("Register address out of range. Must be in range of 0..0x3ff or 0x3ff48000..0x3ff49000."));
+			("Register address out of range. Must be in range of %x..%x or %x..%x."),
+			0, DR_REG_MAX_DIRECT, DR_REG_RTCCNTL_BASE,
+			DR_REG_IO_MUX_BASE);
 	}
     }
   return result;
