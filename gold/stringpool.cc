@@ -25,7 +25,9 @@
 #include <cstring>
 #include <algorithm>
 #include <vector>
+#if !defined(__APPLE__)
 #include <uchar.h>
+#endif
 
 #include "output.h"
 #include "parameters.h"

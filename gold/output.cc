@@ -29,7 +29,9 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <algorithm>
+#if !defined(__APPLE__)
 #include <uchar.h>
+#endif
 
 #ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
