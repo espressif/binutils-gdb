@@ -58,6 +58,10 @@ static char *
 elf_xtensa_choose_target (int argc ATTRIBUTE_UNUSED,
 			  char **argv ATTRIBUTE_UNUSED)
 {
+  /* This function is called before LD arguments parsed.
+   * So, dynconfig file must be set first.  */
+  xtensa_set_dynconfig_from_argv(argc, argv);
+
   if (XCHAL_HAVE_BE)
     return "${BIG_OUTPUT_FORMAT}";
   else
@@ -1974,11 +1978,8 @@ PARSE_AND_LIST_ARGS_CASES='
       elf32xtensa_abi = XTHAL_ABI_CALL0;
       break;
     case OPTION_DYNCONFIG:
-      {
-	extern const char* xtensa_dynconfig_file;
-	xtensa_dynconfig_file = optarg;
-	break;
-      }
+      /* Applied in elf_xtensa_choose_target()  */
+      break;
 '
 
 # Replace some of the standard ELF functions with our own versions.

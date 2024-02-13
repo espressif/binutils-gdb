@@ -5282,19 +5282,9 @@ void
 xtensa_init (int argc, char **argv)
 {
   /* This function is called before AS arguments parsed.
-   * So, dynconfig file must be set first.
-   */
-  int i;
-  const char * const dynconfig_opt = "--dynconfig=";
-  for (i = 1; i < argc; i++)
-    {
-      if (!strncmp (dynconfig_opt, argv[i], strlen(dynconfig_opt)))
-	    {
-	      extern const char* xtensa_dynconfig_file;
-	      xtensa_dynconfig_file = &argv[i][strlen(dynconfig_opt)];
-	      break;
-	    }
-    }
+   * So, dynconfig file must be set first.  */
+  xtensa_set_dynconfig_from_argv(argc, argv);
+
   xg_init_global_config ();
 }
 

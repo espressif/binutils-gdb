@@ -110,6 +110,9 @@ extern const void *xtensa_load_config (const char *name,
 extern const struct xtensa_config_v1 *xtensa_get_config_v1 (void);
 extern const struct xtensa_config_v2 *xtensa_get_config_v2 (void);
 
+
+void xtensa_set_dynconfig_from_argv(int argc, char **argv);
+
 #ifdef XTENSA_CONFIG_DEFINITION
 
 #ifndef XCHAL_HAVE_MUL32_HIGH

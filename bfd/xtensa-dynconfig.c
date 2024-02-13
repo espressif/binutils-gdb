@@ -70,6 +70,19 @@ const char *xtensa_dynconfig_file = "";
 
 #ifdef BFD_SUPPORTS_PLUGINS
 
+void xtensa_set_dynconfig_from_argv(int argc, char **argv)
+{
+  const char * const dynconfig_opt = "--dynconfig=";
+  for (int i = 1; i < argc; i++)
+    {
+      if (!strncmp (dynconfig_opt, argv[i], strlen(dynconfig_opt)))
+           {
+             xtensa_dynconfig_file = &argv[i][strlen(dynconfig_opt)];
+             break;
+           }
+    }
+}
+
 static char *get_xtensa_dynconfig_file (void)
 {
   const char *xtensa_dynconfig_env = getenv (CONFIG_ENV_NAME);
