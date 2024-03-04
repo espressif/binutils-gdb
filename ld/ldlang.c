@@ -5811,8 +5811,9 @@ size_input_section
 			   output_section_statement->region->name_list.name, i,
 			   i->output_section);
 
-		  if (i->rawsize && i->rawsize != i->size)
-		    fatal (_("%P: Relaxation not supported with "
+		  if ((i->flags & SEC_RELOC) != 0 &&
+		      i->rawsize && i->rawsize != i->size)
+		    einfo (_("%P: Relaxation not supported with "
 			     "--enable-non-contiguous-regions (section `%pA' "
 			     "would overflow `%pA' after it changed size).\n"),
 			   i, i->output_section);
@@ -8495,6 +8496,35 @@ lang_propagate_lma_regions (void)
     }
 }
 
+/* After lang_size_sections, report sections discarded by
+   --enable-non-contiguous-regions and abort before relaxation.  RISC-V
+   relax would otherwise dereference a NULL output_section.  */
+
+static void
+lang_check_non_contiguous_discards (void)
+{
+  unsigned long discard = 0;
+  LANG_FOR_EACH_INPUT_STATEMENT (file)
+    {
+      if ((file->the_bfd->flags & (BFD_LINKER_CREATED | DYNAMIC)) != 0
+	  || file->flags.just_syms)
+	continue;
+
+      for (asection *s = file->the_bfd->sections; s != NULL; s = s->next)
+	if (s->output_section == NULL
+	    && (s->flags & SEC_LINKER_CREATED) == 0)
+	  {
+	    einfo (_("%P: error: --enable-non-contiguous-regions "
+		     "discards section `%pA' from `%pB'\n"),
+		   s, file->the_bfd);
+	    discard += s->size;
+	  }
+    }
+  if (discard > 0)
+    fatal (_("%P: error: Total discarded sections size is %lu bytes\n"),
+	   discard);
+}
+
 /* Checks whether any input section was not allocated to an output section.
    If such a case is found, emits an error for the corresponding input section
    and stops the link process.  */
@@ -8921,6 +8951,10 @@ lang_process (void)
 
   /* Size up the sections.  */
   lang_size_sections (NULL, !RELAXATION_ENABLED);
+
+  /* Check if has no discarded sections.  */
+  if (link_info.non_contiguous_regions)
+    lang_check_non_contiguous_discards ();
 
   /* See if anything special should be done now we know how big
      everything is.  This is where relaxation is done.  */
