@@ -119,6 +119,7 @@ proc run_relax_twice_test {} {
 }
 
 if [istarget "riscv*-*-*"] {
+    run_dump_test "non-contiguous-merged-sections"
     run_dump_test "align-small-region"
     run_dump_test "call-relax"
     run_dump_test "pcgp-relax-01"
