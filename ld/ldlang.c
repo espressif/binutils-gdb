@@ -5452,7 +5452,7 @@ size_input_section
 			     "the linker-created stubs section `%pA'.\n"),
 			   i->output_section, i);
 
-		  if (i->rawsize && i->rawsize != i->size)
+		  if (i->flags & SEC_RELOC && i->rawsize && i->rawsize != i->size)
 		    einfo (_("%F%P: Relaxation not supported with "
 			     "--enable-non-contiguous-regions (section `%pA' "
 			     "would overflow `%pA' after it changed size).\n"),
@@ -8047,8 +8047,9 @@ lang_propagate_lma_regions (void)
 }
 
 static void
-warn_non_contiguous_discards (void)
+lang_check_non_contiguous_discards (void)
 {
+  unsigned long discard = 0;
   LANG_FOR_EACH_INPUT_STATEMENT (file)
     {
       if ((file->the_bfd->flags & (BFD_LINKER_CREATED | DYNAMIC)) != 0
@@ -8057,11 +8058,16 @@ warn_non_contiguous_discards (void)
 
       for (asection *s = file->the_bfd->sections; s != NULL; s = s->next)
 	if (s->output_section == NULL
-	    && (s->flags & SEC_LINKER_CREATED) == 0)
-	  einfo (_("%P: warning: --enable-non-contiguous-regions "
+	    && (s->flags & SEC_LINKER_CREATED) == 0) {
+	  einfo (_("%P: error: --enable-non-contiguous-regions "
 		   "discards section `%pA' from `%pB'\n"),
 		 s, file->the_bfd);
+	  discard += s->size;
+	}
     }
+  if (discard > 0)
+    einfo ("%F%P: error: Total discarded sections size is %lu bytes\n",
+	   discard);
 }
 
 static void
@@ -8384,6 +8390,10 @@ lang_process (void)
   /* Size up the sections.  */
   lang_size_sections (NULL, !RELAXATION_ENABLED);
 
+  /* Check if has no discarded sections.  */
+  if (link_info.non_contiguous_regions)
+    lang_check_non_contiguous_discards ();
+
   /* See if anything special should be done now we know how big
      everything is.  This is where relaxation is done.  */
   ldemul_after_allocation ();
@@ -8406,10 +8416,6 @@ lang_process (void)
   /* Make sure that the section addresses make sense.  */
   if (command_line.check_section_addresses)
     lang_check_section_addresses ();
-
-  if (link_info.non_contiguous_regions
-      && link_info.non_contiguous_regions_warnings)
-    warn_non_contiguous_discards ();
 
   /* Check any required symbols are known.  */
   ldlang_check_require_defined_symbols ();
