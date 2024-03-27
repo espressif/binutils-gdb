@@ -77,7 +77,7 @@ typedef wint_t gdb_wint_t;
    this but which do not support "wchar_t" as an encoding argument to
    iconv_open.  We put the endianness into the encoding name to avoid
    hosts that emit a BOM when the unadorned name is used.  */
-#if defined (__STDC_ISO_10646__)
+#if defined (__STDC_ISO_10646__) || defined(__APPLE__)
 #define USE_INTERMEDIATE_ENCODING_FUNCTION
 #define INTERMEDIATE_ENCODING intermediate_encoding ()
 const char *intermediate_encoding (void);
