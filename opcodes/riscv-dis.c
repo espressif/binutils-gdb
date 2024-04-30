@@ -488,6 +488,50 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 	  case 'G':
 	    switch (*++oparg)
 	      {
+	      case 'l':
+		switch (*++oparg)
+		  {
+		  case 'c':	/* Glc */
+		    print (info->stream, dis_style_immediate, "%d",
+			   (int) EXTRACT_ESPPIE_LP_COUNT (l));
+		    break;	/* Glc */
+		  case 'i':	/* Gli */
+		    print (info->stream, dis_style_immediate, "%d",
+			   (int) EXTRACT_ESPPIE_LP_ID (l));
+		    break;	/* Gli */
+		  case 'o':
+		    switch (*++oparg)
+		      {
+		      case '1':
+			switch (*++oparg)
+			  {
+			  case '2':	/* Glo12 */
+			    maybe_print_address (pd, 0,
+						 EXTRACT_ESPPIE_LP_OFFSET_12
+						 (l) + pc, 0);
+			    print (info->stream, dis_style_address_offset,
+				   "%d",
+				   (int) EXTRACT_ESPPIE_LP_OFFSET_12 (l));
+			    break;	/* Glo12 */
+			  default:	/* Glo1[.] */
+			    goto undefined_modifier;
+			  }
+			break;
+		      case '9':	/* Glo9 */
+			maybe_print_address (pd, 0,
+					     EXTRACT_ESPPIE_LP_OFFSET_9 (l) +
+					     pc, 0);
+			print (info->stream, dis_style_address_offset, "%d",
+			       (int) EXTRACT_ESPPIE_LP_OFFSET_9 (l));
+			break;	/* Glo9 */
+		      default:	/* Glo[.] */
+			goto undefined_modifier;
+		      }
+		    break;
+		  default:	/* Gl[.] */
+		    goto undefined_modifier;
+		  }
+		break;
 	      case 'o':
 		switch (*++oparg)
 		  {
