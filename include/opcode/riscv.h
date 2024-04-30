@@ -113,6 +113,14 @@ static inline unsigned int riscv_insn_length (insn_t insn)
   (RV_X(x, 20, 10))
 #define EXTRACT_RVV_VC_IMM(x) \
   (RV_X(x, 20, 11))
+#define EXTRACT_ESPPIE_LP_COUNT(x) \
+  (RV_X(x, 20, 12))
+#define EXTRACT_ESPPIE_LP_ID(x) \
+  (RV_X(x, 7, 1))
+#define EXTRACT_ESPPIE_LP_OFFSET_12(x) \
+  (RV_X(x, 20, 12) << 1)
+#define EXTRACT_ESPPIE_LP_OFFSET_9(x) \
+  ((RV_X(x, 15, 5) << 1) | (RV_X(x, 8, 4) << 6))
 #define EXTRACT_ESPPIE_OFFSET_16_16_0(x) \
   ( ( ((RV_X(x, 19, 3) << 1) | (RV_X(x, 9, 1))) << (sizeof(x) * 8 - 4) ) >> (sizeof(x) * 8 - 8) )
 #define EXTRACT_ESPPIE_OFFSET_16_16_1(x) \
@@ -246,6 +254,14 @@ static inline unsigned int riscv_insn_length (insn_t insn)
   (RV_X(x, 0, 11) << 20)
 #define ENCODE_RVV_VI_UIMM6(x) \
   (RV_X(x, 0, 5) << 15 | RV_X(x, 5, 1) << 26)
+#define ENCODE_ESPPIE_LP_COUNT(x) \
+  (RV_X(x, 0, 12) << 20)
+#define ENCODE_ESPPIE_LP_ID(x) \
+  (RV_X(x, 0, 1) << 7)
+#define ENCODE_ESPPIE_LP_OFFSET_12(x) \
+  (RV_X(x, 1, 12) << 20)
+#define ENCODE_ESPPIE_LP_OFFSET_9(x) \
+  ((RV_X(x, 1, 5) << 15) | (RV_X(x, 6, 4) << 8))
 #define ENCODE_ESPPIE_OFFSET_16_16_0(x) \
   ((RV_X((x >> 4), 1, 3) << 19) | (RV_X((x >> 4), 0, 1) << 9))
 #define ENCODE_ESPPIE_OFFSET_16_16_1(x) \
@@ -357,6 +373,10 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define VALID_CJTYPE_IMM(x) (EXTRACT_CJTYPE_IMM(ENCODE_CJTYPE_IMM(x)) == (x))
 #define VALID_RVV_VB_IMM(x) (EXTRACT_RVV_VB_IMM(ENCODE_RVV_VB_IMM(x)) == (x))
 #define VALID_RVV_VC_IMM(x) (EXTRACT_RVV_VC_IMM(ENCODE_RVV_VC_IMM(x)) == (x))
+#define VALID_ESPPIE_LP_COUNT(x) (EXTRACT_ESPPIE_LP_COUNT(ENCODE_ESPPIE_LP_COUNT(x)) == (x))
+#define VALID_ESPPIE_LP_ID(x) (EXTRACT_ESPPIE_LP_ID(ENCODE_ESPPIE_LP_ID(x)) == (x))
+#define VALID_ESPPIE_LP_OFFSET_12(x) (EXTRACT_ESPPIE_LP_OFFSET_12(ENCODE_ESPPIE_LP_OFFSET_12(x)) == (x))
+#define VALID_ESPPIE_LP_OFFSET_9(x) (EXTRACT_ESPPIE_LP_OFFSET_9(ENCODE_ESPPIE_LP_OFFSET_9(x)) == (x))
 #define VALID_ESPPIE_OFFSET_16_16_0(x) (EXTRACT_ESPPIE_OFFSET_16_16_0(ENCODE_ESPPIE_OFFSET_16_16_0(x)) == (x))
 #define VALID_ESPPIE_OFFSET_16_16_1(x) (EXTRACT_ESPPIE_OFFSET_16_16_1(ENCODE_ESPPIE_OFFSET_16_16_1(x)) == (x))
 #define VALID_ESPPIE_OFFSET_16_16_2(x) (EXTRACT_ESPPIE_OFFSET_16_16_2(ENCODE_ESPPIE_OFFSET_16_16_2(x)) == (x))

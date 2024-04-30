@@ -1353,6 +1353,31 @@ validate_riscv_insn (const struct riscv_opcode *opc, int length)
 	case 'G': /* RV_XESPPIE */
 	    switch (*++oparg)
 	      {
+	      case 'l':
+		switch (*++oparg)
+		  {
+		  case 'c': used_bits |= ENCODE_ESPPIE_LP_COUNT (-1U); break;	/* Glc */
+		  case 'i': used_bits |= ENCODE_ESPPIE_LP_ID (-1U); break;	/* Gli */
+		  case 'o':
+		    switch (*++oparg)
+		      {
+		      case '1':
+			switch (*++oparg)
+			  {
+			  case '2': used_bits |= ENCODE_ESPPIE_LP_OFFSET_12 (-1U); break;	/* Glo12 */
+			  default:	/* Glo1[.] */
+			    goto unknown_validate_operand;
+			  }
+			break;
+		      case '9': used_bits |= ENCODE_ESPPIE_LP_OFFSET_9 (-1U); break;	/* Glo9 */
+		      default:	/* Glo[.] */
+			goto unknown_validate_operand;
+		      }
+		    break;
+		  default:	/* Gl[.] */
+		    goto unknown_validate_operand;
+		  }
+		break;
 	      case 'o':
 		switch (*++oparg)
 		  {
@@ -3285,6 +3310,91 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 	      case 'G':
 		switch (*++oparg)
 		  {
+		  case 'l':
+		    switch (*++oparg)
+		      {
+		      case 'c':	/* Glc */
+			if (my_getSmallExpression
+			    (imm_expr, imm_reloc, asarg, p)
+			    || imm_expr->X_op != O_constant
+			    || imm_expr->X_add_number > 4095
+			    || imm_expr->X_add_number < 0
+			    || !VALID_ESPPIE_LP_COUNT (imm_expr->
+						       X_add_number))
+			  {
+			    as_bad (_("bad value for lp_count, "
+				      "must be in range 0..4095 with step 1"));
+			    break;
+			  }
+			ip->insn_opcode |=
+			  ENCODE_ESPPIE_LP_COUNT (imm_expr->X_add_number);
+		      esp_imm_done:
+			asarg = expr_parse_end;
+			imm_expr->X_op = O_absent;
+			continue;
+		      case 'i':	/* Gli */
+			if (my_getSmallExpression
+			    (imm_expr, imm_reloc, asarg, p)
+			    || imm_expr->X_op != O_constant
+			    || imm_expr->X_add_number > 1
+			    || imm_expr->X_add_number < 0
+			    || !VALID_ESPPIE_LP_ID (imm_expr->X_add_number))
+			  {
+			    as_bad (_("bad value for lp_id, "
+				      "must be in range 0..1 with step 1"));
+			    break;
+			  }
+			ip->insn_opcode |=
+			  ENCODE_ESPPIE_LP_ID (imm_expr->X_add_number);
+			goto esp_imm_done;
+		      case 'o':
+			switch (*++oparg)
+			  {
+			  case '1':
+			    switch (*++oparg)
+			      {
+			      case '2':	/* Glo12 */
+				if (my_getSmallExpression
+				    (imm_expr, imm_reloc, asarg, p)
+				    || imm_expr->X_add_number > 8190
+				    || imm_expr->X_add_number < 0
+				    || !VALID_ESPPIE_LP_OFFSET_12 (imm_expr->
+								   X_add_number))
+				  {
+				    as_bad (_("bad value for lp_offset_12, "
+					      "must be in range 0..8190 with step 2"));
+				    break;
+				  }
+				*imm_reloc = BFD_RELOC_RISCV_ESP_LP_OFFSET_12;
+				asarg = expr_parse_end;
+				continue;
+			      default:	/* Glo1[.] */
+				goto unknown_riscv_ip_operand;
+			      }
+			    break;
+			  case '9':	/* Glo9 */
+			    if (my_getSmallExpression
+				(imm_expr, imm_reloc, asarg, p)
+				|| imm_expr->X_add_number > 1022
+				|| imm_expr->X_add_number < 0
+				|| !VALID_ESPPIE_LP_OFFSET_9 (imm_expr->
+							      X_add_number))
+			      {
+				as_bad (_("bad value for lp_offset_9, "
+					  "must be in range 0..1022 with step 2"));
+				break;
+			      }
+			    *imm_reloc = BFD_RELOC_RISCV_ESP_LP_OFFSET_9;
+			    asarg = expr_parse_end;
+			    continue;
+			  default:	/* Glo[.] */
+			    goto unknown_riscv_ip_operand;
+			  }
+			break;
+		      default:	/* Gl[.] */
+			goto unknown_riscv_ip_operand;
+		      }
+		    break;
 		  case 'o':
 		    switch (*++oparg)
 		      {
@@ -3311,10 +3421,7 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 				ip->insn_opcode |=
 				  ENCODE_ESPPIE_OFFSET_16_16_0 (imm_expr->
 								X_add_number);
-			      esp_imm_done:
-				asarg = expr_parse_end;
-				imm_expr->X_op = O_absent;
-				continue;
+				goto esp_imm_done;
 			      case '1':	/* Go441 */
 				if (my_getSmallExpression
 				    (imm_expr, imm_reloc, asarg, p)
@@ -5136,6 +5243,36 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
       break;
 
     case BFD_RELOC_RISCV_ALIGN:
+      break;
+
+    case BFD_RELOC_RISCV_ESP_LP_OFFSET_9:
+      if (fixP->fx_addsy)
+	{
+	  /* Fill in a tentative value to improve objdump readability.  */
+	  bfd_vma target = S_GET_VALUE (fixP->fx_addsy) + *valP;
+	  bfd_vma delta = target - md_pcrel_from (fixP);
+	  if (!VALID_ESPPIE_LP_OFFSET_9 (delta))
+	    {
+	      as_bad_where (fixP->fx_file, fixP->fx_line,
+			    _("bad value for lp_offset_9, must be in range 0..1022 with step 2"));
+	    }
+	  bfd_putl32 (bfd_getl32 (buf) | ENCODE_ESPPIE_LP_OFFSET_9 (delta), buf);
+	}
+      break;
+
+    case BFD_RELOC_RISCV_ESP_LP_OFFSET_12:
+      if (fixP->fx_addsy)
+	{
+	  /* Fill in a tentative value to improve objdump readability.  */
+	  bfd_vma target = S_GET_VALUE (fixP->fx_addsy) + *valP;
+	  bfd_vma delta = target - md_pcrel_from (fixP);
+	  if (!VALID_ESPPIE_LP_OFFSET_12 (delta))
+	    {
+	      as_bad_where (fixP->fx_file, fixP->fx_line,
+			    _("bad value for lp_offset_12, must be in range 0..8190 with step 2"));
+	    }
+	  bfd_putl32 (bfd_getl32 (buf) | ENCODE_ESPPIE_LP_OFFSET_12 (delta), buf);
+	}
       break;
 
     default:

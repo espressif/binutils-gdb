@@ -2497,6 +2497,13 @@ const struct riscv_opcode riscv_opcodes[] =
 {"esp.vsrd.8",                    0, INSN_CLASS_XESPPIE, "Gqu,Gqy,Gqw",                      MATCH_ESP_VSRD_8,                    MASK_ESP_VSRD_8,                    match_opcode, 0 },
 {"esp.st.s.xacc.ip",              0, INSN_CLASS_XESPPIE, "Gs0,Go831",                        MATCH_ESP_ST_S_XACC_IP,              MASK_ESP_ST_S_XACC_IP,              match_opcode, 0 },
 {"esp.st.u.xacc.ip",              0, INSN_CLASS_XESPPIE, "Gs0,Go831",                        MATCH_ESP_ST_U_XACC_IP,              MASK_ESP_ST_U_XACC_IP,              match_opcode, 0 },
+{"esp.lp.setupi",                 0, INSN_CLASS_XESPPIE, "Gli,Glc,Glo9",                     MATCH_ESP_LP_SETUPI,                 MASK_ESP_LP_SETUPI,                 match_opcode, 0 },
+{"esp.lp.setup",                  0, INSN_CLASS_XESPPIE, "Gli,s,Glo12",                      MATCH_ESP_LP_SETUP,                  MASK_ESP_LP_SETUP,                  match_opcode, 0 },
+{"esp.lp.starti",                 0, INSN_CLASS_XESPPIE, "Gli,Glo12",                        MATCH_ESP_LP_STARTI,                 MASK_ESP_LP_STARTI,                 match_opcode, 0 },
+{"esp.lp.endi",                   0, INSN_CLASS_XESPPIE, "Gli,Glo12",                        MATCH_ESP_LP_ENDI,                   MASK_ESP_LP_ENDI,                   match_opcode, 0 },
+{"esp.lp.counti",                 0, INSN_CLASS_XESPPIE, "Gli,Glc",                          MATCH_ESP_LP_COUNTI,                 MASK_ESP_LP_COUNTI,                 match_opcode, 0 },
+{"esp.lp.count",                  0, INSN_CLASS_XESPPIE, "Gli,s",                            MATCH_ESP_LP_COUNT,                  MASK_ESP_LP_COUNT,                  match_opcode, 0 },
+
 
 /* Terminate the list.  */
 {0, 0, INSN_CLASS_NONE, 0, 0, 0, 0, 0}
