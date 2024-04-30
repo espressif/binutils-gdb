@@ -883,6 +883,54 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 	    case 'e':
 	      switch (*++oparg)
 		{
+		case 'l':
+		  switch (*++oparg)
+		    {
+		    case 'c':	/* Xelc */
+		      print (info->stream, dis_style_immediate, "%d",
+			     EXTRACT_ESP_LP_COUNT ((int32_t) l));
+		      break;	/* Xelc */
+		    case 'i':	/* Xeli */
+		      print (info->stream, dis_style_immediate, "%d",
+			     EXTRACT_ESP_LP_ID ((int32_t) l));
+		      break;	/* Xeli */
+		    case 'o':
+		      switch (*++oparg)
+			{
+			case '1':
+			  switch (*++oparg)
+			    {
+			    case '2':	/* Xelo12 */
+			      maybe_print_address (pd, 0,
+						   EXTRACT_ESP_LP_OFFSET_12
+						   (l) + pc, 0);
+			      print (info->stream, dis_style_address_offset,
+				     "%d",
+				     (int) EXTRACT_ESP_LP_OFFSET_12 (l));
+			      print (info->stream, dis_style_immediate, "%d",
+				     EXTRACT_ESP_LP_OFFSET_12 ((int32_t) l));
+			      break;	/* Xelo12 */
+			    default:	/* Xelo1[.] */
+			      goto undefined_modifier;
+			    }
+			  break;
+			case '9':	/* Xelo9 */
+			  maybe_print_address (pd, 0,
+					       EXTRACT_ESP_LP_OFFSET_9 (l) +
+					       pc, 0);
+			  print (info->stream, dis_style_address_offset, "%d",
+				 (int) EXTRACT_ESP_LP_OFFSET_9 (l));
+			  print (info->stream, dis_style_immediate, "%d",
+				 EXTRACT_ESP_LP_OFFSET_9 ((int32_t) l));
+			  break;	/* Xelo9 */
+			default:	/* Xelo[.] */
+			  goto undefined_modifier;
+			}
+		      break;
+		    default:	/* Xel[.] */
+		      goto undefined_modifier;
+		    }
+		  break;
 		case 'o':
 		  switch (*++oparg)
 		    {

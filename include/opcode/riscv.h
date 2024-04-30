@@ -138,6 +138,14 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define EXTRACT_CV_SIMD_UIMM6(x) \
   ((RV_X(x, 25, 1)) | (RV_X(x, 20, 5) << 1))
 /* Vendor-specific (Espressif) extract macros.  */
+#define EXTRACT_ESP_LP_COUNT(x) \
+  (RV_X(x, 20, 12))
+#define EXTRACT_ESP_LP_ID(x) \
+  (RV_X(x, 7, 1))
+#define EXTRACT_ESP_LP_OFFSET_12(x) \
+  (RV_X(x, 20, 12) << 1)
+#define EXTRACT_ESP_LP_OFFSET_9(x) \
+  ((RV_X(x, 15, 5) << 1) | (RV_X(x, 8, 4) << 6))
 #define EXTRACT_ESP_OFFSET_16_16_0(x) \
   ( ( ((RV_X(x, 19, 3) << 1) | (RV_X(x, 9, 1))) << (sizeof(x) * 8 - 4) ) >> (sizeof(x) * 8 - 8) )
 #define EXTRACT_ESP_OFFSET_16_16_1(x) \
@@ -295,6 +303,14 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define ENCODE_CV_SIMD_UIMM6(x) \
   ((RV_X(x, 0, 1) << 25) | (RV_X(x, 1, 5) << 20))
 /* Vendor-specific (Espressif) encode macros.  */
+#define ENCODE_ESP_LP_COUNT(x) \
+  (RV_X(x, 0, 12) << 20)
+#define ENCODE_ESP_LP_ID(x) \
+  (RV_X(x, 0, 1) << 7)
+#define ENCODE_ESP_LP_OFFSET_12(x) \
+  (RV_X(x, 1, 12) << 20)
+#define ENCODE_ESP_LP_OFFSET_9(x) \
+  ((RV_X(x, 1, 5) << 15) | (RV_X(x, 6, 4) << 8))
 #define ENCODE_ESP_OFFSET_16_16_0(x) \
   ((RV_X((x >> 4), 1, 3) << 19) | (RV_X((x >> 4), 0, 1) << 9))
 #define ENCODE_ESP_OFFSET_16_16_1(x) \
@@ -412,6 +428,10 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define VALID_ZCB_HALFWORD_UIMM(x) (EXTRACT_ZCB_HALFWORD_UIMM(ENCODE_ZCB_HALFWORD_UIMM(x)) == (x))
 #define VALID_ZCMP_SPIMM(x) (EXTRACT_ZCMP_SPIMM(ENCODE_ZCMP_SPIMM(x)) == (x))
 /* Vendor-specific (Espressif) validation macros.  */
+#define VALID_ESP_LP_COUNT(x) (EXTRACT_ESP_LP_COUNT(ENCODE_ESP_LP_COUNT(x)) == (x))
+#define VALID_ESP_LP_ID(x) (EXTRACT_ESP_LP_ID(ENCODE_ESP_LP_ID(x)) == (x))
+#define VALID_ESP_LP_OFFSET_12(x) (EXTRACT_ESP_LP_OFFSET_12(ENCODE_ESP_LP_OFFSET_12(x)) == (x))
+#define VALID_ESP_LP_OFFSET_9(x) (EXTRACT_ESP_LP_OFFSET_9(ENCODE_ESP_LP_OFFSET_9(x)) == (x))
 #define VALID_ESP_OFFSET_16_16_0(x) (EXTRACT_ESP_OFFSET_16_16_0(ENCODE_ESP_OFFSET_16_16_0(x)) == (x))
 #define VALID_ESP_OFFSET_16_16_1(x) (EXTRACT_ESP_OFFSET_16_16_1(ENCODE_ESP_OFFSET_16_16_1(x)) == (x))
 #define VALID_ESP_OFFSET_16_16_2(x) (EXTRACT_ESP_OFFSET_16_16_2(ENCODE_ESP_OFFSET_16_16_2(x)) == (x))
@@ -802,6 +822,7 @@ enum riscv_insn_class
   INSN_CLASS_XSFVQMACCDOD,
   INSN_CLASS_XSFVFNRCLIPXFQF,
   INSN_CLASS_XESPV,
+  INSN_CLASS_XESPLOOP,
 };
 
 /* This structure holds information for a particular instruction.  */

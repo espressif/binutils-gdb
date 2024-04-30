@@ -876,7 +876,34 @@ static reloc_howto_type howto_table[] =
 	 false,				/* partial_inplace */
 	 0,				/* src_mask */
 	 ENCODE_ITYPE_IMM (-1U),	/* dst_mask */
-	 false) 			/* pcrel_offset */
+	 false), 			/* pcrel_offset */
+
+  HOWTO (R_RISCV_ESP_LP_OFFSET_9,	/* type */
+	 0,				/* rightshift */
+	 4,				/* size */
+	 32,				/* bitsize */
+	 true,				/* pc_relative */
+	 0,				/* bitpos */
+	 complain_overflow_dont,	/* complain_on_overflow */
+	 bfd_elf_generic_reloc,		/* special_function */
+	 "R_RISCV_ESP_LP_OFFSET_9",	/* name */
+	 false,				/* partial_inplace */
+	 0,				/* src_mask */
+	 ENCODE_ESP_LP_OFFSET_9 (-1U),	/* dst_mask */
+	 true),				/* pcrel_offset */
+  HOWTO (R_RISCV_ESP_LP_OFFSET_12,	/* type */
+	 0,				/* rightshift */
+	 4,				/* size */
+	 32,				/* bitsize */
+	 true,				/* pc_relative */
+	 0,				/* bitpos */
+	 complain_overflow_dont,	/* complain_on_overflow */
+	 bfd_elf_generic_reloc,		/* special_function */
+	 "R_RISCV_ESP_LP_OFFSET_12",	/* name */
+	 false,				/* partial_inplace */
+	 0,				/* src_mask */
+	 ENCODE_ESP_LP_OFFSET_12 (-1U),	/* dst_mask */
+	 true),				/* pcrel_offset */
 };
 
 static reloc_howto_type howto_table_internal[] =
@@ -1020,6 +1047,8 @@ static const struct elf_reloc_map riscv_reloc_map[] =
   { BFD_RELOC_RISCV_32_PCREL, R_RISCV_32_PCREL },
   { BFD_RELOC_RISCV_SET_ULEB128, R_RISCV_SET_ULEB128 },
   { BFD_RELOC_RISCV_SUB_ULEB128, R_RISCV_SUB_ULEB128 },
+  { BFD_RELOC_RISCV_ESP_LP_OFFSET_9, R_RISCV_ESP_LP_OFFSET_9 },
+  { BFD_RELOC_RISCV_ESP_LP_OFFSET_12, R_RISCV_ESP_LP_OFFSET_12 },
 };
 
 /* Given a BFD reloc type, return a howto structure.  */
@@ -1514,6 +1543,7 @@ static struct riscv_supported_ext riscv_supported_vendor_x_ext[] =
   {"xsfvqmaccdod",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0},
   {"xsfvfnrclipxfqf",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0},
   {"xespv",			ISA_SPEC_CLASS_DRAFT,	2, 1, 0 },
+  {"xesploop",			ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {NULL, 0, 0, 0, 0}
 };
 
@@ -2775,6 +2805,8 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
       return riscv_subset_supports (rps, "xcvsimd");
     case INSN_CLASS_XESPV:
       return riscv_subset_supports (rps, "xespv");
+    case INSN_CLASS_XESPLOOP:
+      return riscv_subset_supports (rps, "xesploop");
     case INSN_CLASS_XTHEADBA:
       return riscv_subset_supports (rps, "xtheadba");
     case INSN_CLASS_XTHEADBB:
@@ -3082,6 +3114,8 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
       return "xcvsimd";
     case INSN_CLASS_XESPV:
       return "xespv";
+    case INSN_CLASS_XESPLOOP:
+      return "xesploop";
     case INSN_CLASS_XTHEADBA:
       return "xtheadba";
     case INSN_CLASS_XTHEADBB:

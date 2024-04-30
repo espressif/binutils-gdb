@@ -3871,6 +3871,13 @@ const struct riscv_opcode riscv_opcodes[] =
 {"esp.vsrd.8",                    0, INSN_CLASS_XESPV, "Xequ,Xeqy,Xeqw",                           MATCH_ESP_VSRD_8,                    MASK_ESP_VSRD_8,                    match_opcode, 0 },
 {"esp.st.s.xacc.ip",              0, INSN_CLASS_XESPV, "Xera,Xeo831",                              MATCH_ESP_ST_S_XACC_IP,              MASK_ESP_ST_S_XACC_IP,              match_opcode, 0 },
 {"esp.st.u.xacc.ip",              0, INSN_CLASS_XESPV, "Xera,Xeo831",                              MATCH_ESP_ST_U_XACC_IP,              MASK_ESP_ST_U_XACC_IP,              match_opcode, 0 },
+/* Vendor-specific (Espressif Systems) XESPLOOP instructions */
+{"esp.lp.setupi", 0, INSN_CLASS_XESPLOOP, "Xeli,Xelc,Xelo9", MATCH_ESP_LP_SETUPI, MASK_ESP_LP_SETUPI, match_opcode, 0 },
+{"esp.lp.setup",  0, INSN_CLASS_XESPLOOP, "Xeli,s,Xelo12",   MATCH_ESP_LP_SETUP,  MASK_ESP_LP_SETUP,  match_opcode, 0 },
+{"esp.lp.starti", 0, INSN_CLASS_XESPLOOP, "Xeli,Xelo12",     MATCH_ESP_LP_STARTI, MASK_ESP_LP_STARTI, match_opcode, 0 },
+{"esp.lp.endi",   0, INSN_CLASS_XESPLOOP, "Xeli,Xelo12",     MATCH_ESP_LP_ENDI,   MASK_ESP_LP_ENDI,   match_opcode, 0 },
+{"esp.lp.counti", 0, INSN_CLASS_XESPLOOP, "Xeli,Xelc",       MATCH_ESP_LP_COUNTI, MASK_ESP_LP_COUNTI, match_opcode, 0 },
+{"esp.lp.count",  0, INSN_CLASS_XESPLOOP, "Xeli,s",          MATCH_ESP_LP_COUNT,  MASK_ESP_LP_COUNT,  match_opcode, 0 },
 
 /* Terminate the list.  */
 {0, 0, INSN_CLASS_NONE, 0, 0, 0, 0, 0}

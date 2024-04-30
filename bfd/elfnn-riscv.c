@@ -1938,6 +1938,18 @@ perform_relocation (const reloc_howto_type *howto,
     case R_RISCV_DELETE:
       return bfd_reloc_ok;
 
+    case R_RISCV_ESP_LP_OFFSET_9:
+      if (!VALID_ESP_LP_OFFSET_9 (value))
+	return bfd_reloc_overflow;
+      value = ENCODE_ESP_LP_OFFSET_9 (value);
+      break;
+
+    case R_RISCV_ESP_LP_OFFSET_12:
+      if (!VALID_ESP_LP_OFFSET_12 (value))
+	return bfd_reloc_overflow;
+      value = ENCODE_ESP_LP_OFFSET_12 (value);
+      break;
+
     default:
       return bfd_reloc_notsupported;
     }
@@ -2587,6 +2599,8 @@ riscv_elf_relocate_section (bfd *output_bfd,
 	case R_RISCV_SET32:
 	case R_RISCV_32_PCREL:
 	case R_RISCV_DELETE:
+	case R_RISCV_ESP_LP_OFFSET_9:
+	case R_RISCV_ESP_LP_OFFSET_12:
 	  /* These require no special handling beyond perform_relocation.  */
 	  break;
 
