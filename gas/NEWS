@@ -1,5 +1,8 @@
 -*- text -*-
 
+* Add support for RISC-V Zcmp (cm.mva01s, cm.mvsa01) and CORE-V (XCvBitmanip)
+  extensions with version 1.0.
+
 Changes in 2.43:
 
 * Add support for LoongArch .option for fine-grained control of assembly
