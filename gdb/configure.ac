@@ -1332,6 +1332,8 @@ AC_SUBST(SRCHIGH_CFLAGS)
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ \
+  asm/termios.h \
+  IOKit/serial/ioss.h \
   machine/reg.h \
   nlist.h \
   ptrace.h \
