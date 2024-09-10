@@ -29173,7 +29173,8 @@ for ac_header in nlist.h machine/reg.h \
 		  sys/file.h sys/filio.h sys/ioctl.h sys/param.h \
 		  sys/procctl.h sys/resource.h sys/ptrace.h ptrace.h \
 		  sys/reg.h sys/debugreg.h \
-		  termios.h elf_hp.h
+		  termios.h asm/termios.h IOKit/serial/ioss.h \
+		  elf_hp.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
