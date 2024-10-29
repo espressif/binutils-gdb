@@ -1673,3 +1673,7 @@
 .*Info: macro .*
 .*Warning: read-only CSR is written `csrw vlenb,a1'
 .*Info: macro .*
+.*Warning: invalid CSR `jvt', needs `zcmt' extension
+.*Info: macro .*
+.*Warning: invalid CSR `jvt', needs `zcmt' extension
+.*Info: macro .*

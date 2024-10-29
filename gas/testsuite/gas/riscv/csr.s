@@ -522,3 +522,6 @@
 	csr vl
 	csr vtype
 	csr vlenb
+
+	# Zcmt
+	csr jvt
