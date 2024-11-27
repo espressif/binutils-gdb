@@ -83,6 +83,63 @@ void xtensa_set_dynconfig_from_argv(int argc, char **argv)
     }
 }
 
+#ifdef HAVE_WINDOWS_H
+
+static int
+is_8dot3_filename (const char *shortPath)
+{
+  TCHAR *longPath = NULL;
+  DWORD bufferSize = MAX_PATH;
+  DWORD result;
+  int ret;
+
+  // Allocate initial buffer
+  longPath = (char *) malloc (bufferSize);
+  if (!longPath)
+    {
+      _bfd_error_handler (_("Memory allocation failed."));
+      abort ();
+    }
+
+  // Call GetLongPathNameA in a loop to handle buffer resizing
+  while (1)
+    {
+      result = GetLongPathNameA (shortPath, longPath, bufferSize);
+      if (result == 0)
+	{
+	  // Error occurred
+	  _bfd_error_handler (_
+			      ("Failed to retrieve the long path. Error code: %lu (%s)"),
+			      GetLastError (), longPath);
+        free (longPath);
+	  abort ();
+	}
+      else if (result > bufferSize)
+	{
+	  // Buffer too small, reallocate with the new size
+	  bufferSize = result;
+	  char *newBuffer = (char *) realloc (longPath, bufferSize);
+	  if (!newBuffer)
+	    {
+	      free (longPath);
+	      _bfd_error_handler (_("Memory allocation failed."));
+	      abort ();
+	    }
+	  longPath = newBuffer;
+	}
+      else
+	{
+	  // Successfully retrieved the long path
+	  break;
+	}
+    }
+  ret = !strcmp (lbasename (longPath), lbasename (xtensa_dynconfig_file));
+  free (longPath);
+  return ret;
+}
+
+#endif // HAVE_WINDOWS_H
+
 static char *get_xtensa_dynconfig_file (void)
 {
   const char *xtensa_dynconfig_env = getenv (CONFIG_ENV_NAME);
@@ -119,9 +176,16 @@ static char *get_xtensa_dynconfig_file (void)
   if (strcmp (lbasename (xtensa_dynconfig_env),
               lbasename (xtensa_dynconfig_file)))
     {
-      _bfd_error_handler (_("Both %s and \"-dynconfig=\" specified but pointed different files: \"%s\" \"%s\""),
-			      CONFIG_ENV_NAME, xtensa_dynconfig_env, xtensa_dynconfig_file);
-      abort ();
+#ifdef HAVE_WINDOWS_H
+      if (!is_8dot3_filename (xtensa_dynconfig_env))
+#endif
+	{
+	  _bfd_error_handler (_
+			      ("Both %s and \"-dynconfig=\" specified but pointed different files: \"%s\" \"%s\""),
+			      CONFIG_ENV_NAME, xtensa_dynconfig_env,
+			      xtensa_dynconfig_file);
+	  abort ();
+	}
     }
   /* XTENSA_GNU_CONFIG and mdynconfig option point to the same file */
   return xstrdup (xtensa_dynconfig_env);
@@ -149,8 +213,8 @@ const void *xtensa_load_config (const char *name ATTRIBUTE_UNUSED,
       free (path);
       if (!handle)
 	{
-	  _bfd_error_handler (_("%s is defined but could not be loaded: %s"),
-			      CONFIG_ENV_NAME, dlerror ());
+	  _bfd_error_handler (_("%s is defined but could not be loaded (%s): %s"),
+			      CONFIG_ENV_NAME, path, dlerror ());
 	  abort ();
 	}
     }
