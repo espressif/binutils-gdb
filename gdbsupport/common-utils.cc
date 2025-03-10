@@ -18,9 +18,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common-utils.h"
+#include "filenames.h"
 #include "host-defs.h"
 #include "gdbsupport/gdb-safe-ctype.h"
 #include "gdbsupport/gdb-xfree.h"
+
+static const char characters_to_escape[] =
+#ifdef HAVE_DOS_BASED_FILE_SYSTEM
+  "\\\"' \t\n"; /* hotfix for https://sourceware.org/bugzilla/show_bug.cgi?id=32774 */
+#else
+  "\"' \t\n";
+#endif
 
 void *
 xzalloc (size_t size)
@@ -235,7 +243,7 @@ make_quoted_string (const char *str)
     {
       const char ch = *str;
 
-      if (strchr ("\"' \t\n", ch) != nullptr)
+      if (strchr (characters_to_escape, ch) != nullptr)
        result.push_back ('\\');
       result.push_back (ch);
     }
