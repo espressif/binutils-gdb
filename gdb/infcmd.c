@@ -2433,6 +2433,41 @@ info_vector_command (const char *args, int from_tty)
 
   print_vector_info (gdb_stdout, get_selected_frame (nullptr), args);
 }
+
+static void
+print_esppie_info (struct ui_file *file,
+		   const frame_info_ptr &frame, const char *args)
+{
+  struct gdbarch *gdbarch = get_frame_arch (frame);
+
+  if (gdbarch_print_vector_info_p (gdbarch))
+    gdbarch_print_vector_info (gdbarch, file, frame, args);
+  else
+    {
+      int regnum;
+      int printed_something = 0;
+
+      for (regnum = 0; regnum < gdbarch_num_cooked_regs (gdbarch); regnum++)
+	{
+	  if (gdbarch_register_reggroup_p (gdbarch, regnum, esppie_reggroup))
+	    {
+	      printed_something = 1;
+	      gdbarch_print_registers_info (gdbarch, file, frame, regnum, 1);
+	    }
+	}
+      if (!printed_something)
+	gdb_printf (file, "No esppie information\n");
+    }
+}
+
+static void
+info_esppie_command (const char *args, int from_tty)
+{
+  if (!target_has_registers ())
+    error (_("The program has no registers now."));
+
+  print_esppie_info (gdb_stdout, get_selected_frame (nullptr), args);
+}
 
 /* Kill the inferior process.  Make us have no inferior.  */
 
@@ -3360,6 +3395,9 @@ in the named register groups."));
 
   add_info ("vector", info_vector_command,
 	    _("Print the status of the vector unit."));
+
+  add_info ("esppie", info_esppie_command,
+	    _("Print the status of the esppie unit."));
 
   add_prefix_cmd ("proc", class_info, info_proc_cmd,
 		  _("\

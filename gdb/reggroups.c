@@ -58,6 +58,7 @@ struct reggroups
     add (float_reggroup);
     add (system_reggroup);
     add (vector_reggroup);
+    add (esppie_reggroup);
     add (all_reggroup);
     add (save_reggroup);
     add (restore_reggroup);
@@ -163,6 +164,8 @@ default_register_reggroup_p (struct gdbarch *gdbarch, int regnum,
     return float_p;
   if (group == vector_reggroup)
     return vector_p;
+  if (group == esppie_reggroup)
+    return vector_p;
   if (group == general_reggroup)
     return (!vector_p && !float_p);
   if (group == save_reggroup || group == restore_reggroup)
@@ -247,6 +250,7 @@ static const reggroup general_group = { "general", USER_REGGROUP };
 static const reggroup float_group = { "float", USER_REGGROUP };
 static const reggroup system_group = { "system", USER_REGGROUP };
 static const reggroup vector_group = { "vector", USER_REGGROUP };
+static const reggroup esppie_group = { "esppie", USER_REGGROUP };
 static const reggroup all_group = { "all", USER_REGGROUP };
 static const reggroup save_group = { "save", INTERNAL_REGGROUP };
 static const reggroup restore_group = { "restore", INTERNAL_REGGROUP };
@@ -255,6 +259,7 @@ const reggroup *const general_reggroup = &general_group;
 const reggroup *const float_reggroup = &float_group;
 const reggroup *const system_reggroup = &system_group;
 const reggroup *const vector_reggroup = &vector_group;
+const reggroup *const esppie_reggroup = &esppie_group;
 const reggroup *const all_reggroup = &all_group;
 const reggroup *const save_reggroup = &save_group;
 const reggroup *const restore_reggroup = &restore_group;

@@ -1,2 +1,2 @@
-gdbarch_dump: num_regs = 4194
+gdbarch_dump: num_regs = 4211
 gdbarch_dump: num_pseudo_regs = 0

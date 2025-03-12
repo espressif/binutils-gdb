@@ -68,6 +68,7 @@ extern const reggroup *const general_reggroup;
 extern const reggroup *const float_reggroup;
 extern const reggroup *const system_reggroup;
 extern const reggroup *const vector_reggroup;
+extern const reggroup *const esppie_reggroup;
 extern const reggroup *const all_reggroup;
 
 /* Pre-defined, internal, register groups.  */
