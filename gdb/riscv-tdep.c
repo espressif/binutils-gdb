@@ -133,6 +133,7 @@ static const char *riscv_feature_name_cpu = "org.gnu.gdb.riscv.cpu";
 static const char *riscv_feature_name_fpu = "org.gnu.gdb.riscv.fpu";
 static const char *riscv_feature_name_virtual = "org.gnu.gdb.riscv.virtual";
 static const char *riscv_feature_name_vector = "org.gnu.gdb.riscv.vector";
+static const char *riscv_feature_name_esppie = "org.gnu.gdb.riscv.esppie";
 
 /* The current set of options to be passed to the disassembler.  */
 static std::string riscv_disassembler_options;
@@ -720,6 +721,70 @@ struct riscv_vector_feature : public riscv_register_feature
 /* An instance of the v-register feature set.  */
 
 static const struct riscv_vector_feature riscv_vector_feature;
+
+/* Class representing the v-registers feature set.  */
+
+struct riscv_esppie_feature : public riscv_register_feature
+{
+  riscv_esppie_feature ()
+    : riscv_register_feature (riscv_feature_name_esppie)
+  {
+    m_registers =  {
+      { RISCV_FIRST_ESPPIE_REGNUM + 0, { "q0" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 1, { "q1" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 2, { "q2" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 3, { "q3" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 4, { "q4" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 5, { "q5" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 6, { "q6" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 7, { "q7" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 8, { "qacc_l_l" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 9, { "qacc_l_h" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 10, { "qacc_h_l" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 11, { "qacc_h_h" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 12, { "ua_state" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 13, { "xacc" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 14, { "sar" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 15, { "sar_bytes" } },
+      { RISCV_FIRST_ESPPIE_REGNUM + 16, { "fft_bit_width" } },
+    };
+  }
+
+  /* Return the preferred name for the register with gdb register number
+     REGNUM, which must be in the inclusive range RISCV_FIRST_ESPPIE_REGNUM to
+     RISCV_LAST_ESPPIE_REGNUM.  */
+  const char *register_name (int regnum) const
+  {
+    gdb_assert (regnum >= RISCV_FIRST_ESPPIE_REGNUM
+		&& regnum <= RISCV_LAST_ESPPIE_REGNUM);
+    regnum -= RISCV_V0_REGNUM;
+    return m_registers[regnum].names[0];
+  }
+
+  bool check (const struct target_desc *tdesc,
+	      struct tdesc_arch_data *tdesc_data,
+	      std::vector<riscv_pending_register_alias> *aliases,
+	      struct riscv_gdbarch_features *features) const
+  {
+    const struct tdesc_feature *feature_esppie = tdesc_feature (tdesc);
+
+    /* It's fine if this feature is missing.  */
+    if (feature_esppie == nullptr)
+      return true;
+
+    /* We don't check the return value from the call to check here, all the
+       registers in this feature are optional.  */
+    for (const auto &reg : m_registers)
+      reg.check (tdesc_data, feature_esppie, true, aliases);
+
+    return true;
+  }
+
+};
+
+/* An instance of the esppie-register feature set.  */
+
+static const struct riscv_esppie_feature riscv_esppie_feature;
 
 /* Controls whether we place compressed breakpoints or not.  When in auto
    mode GDB tries to determine if the target supports compressed
@@ -1457,6 +1522,8 @@ riscv_register_reggroup_p (struct gdbarch  *gdbarch, int regnum,
     }
   else if (reggroup == vector_reggroup)
     return (regnum >= RISCV_V0_REGNUM && regnum <= RISCV_V31_REGNUM);
+  else if (reggroup == esppie_reggroup)
+    return (regnum >= RISCV_FIRST_ESPPIE_REGNUM && regnum <= RISCV_LAST_ESPPIE_REGNUM);
   else
     return 0;
 }
@@ -4008,6 +4075,9 @@ riscv_dwarf_reg_to_regnum (struct gdbarch *gdbarch, int reg)
   else if (reg >= RISCV_DWARF_REGNUM_V0 && reg <= RISCV_DWARF_REGNUM_V31)
     return RISCV_V0_REGNUM + (reg - RISCV_DWARF_REGNUM_V0);
 
+  else if (reg >= RISCV_DWARF_FIRST_ESPPIE && reg <= RISCV_DWARF_LAST_ESPPIE)
+    return RISCV_FIRST_ESPPIE_REGNUM + (reg - RISCV_DWARF_FIRST_ESPPIE);
+
   return -1;
 }
 
@@ -4273,6 +4343,8 @@ riscv_gdbarch_init (struct gdbarch_info info,
 		  && riscv_csr_feature.check (tdesc, tdesc_data.get (),
 					      &pending_aliases, &features)
 		  && riscv_vector_feature.check (tdesc, tdesc_data.get (),
+						 &pending_aliases, &features)
+		  && riscv_esppie_feature.check (tdesc, tdesc_data.get (),
 						 &pending_aliases, &features));
   if (!valid_p)
     {
