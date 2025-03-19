@@ -1682,10 +1682,12 @@
 	th.vmand.mm v4, v8, v12
 	th.vmnand.mm v4, v8, v12
 	th.vmandnot.mm v4, v8, v12
+	th.vmandn.mm v4, v8, v12
 	th.vmxor.mm v4, v8, v12
 	th.vmor.mm v4, v8, v12
 	th.vmnor.mm v4, v8, v12
 	th.vmornot.mm v4, v8, v12
+	th.vmorn.mm v4, v8, v12
 	th.vmxnor.mm v4, v8, v12
 
 	th.vmpopc.m a0, v12

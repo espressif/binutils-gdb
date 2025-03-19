@@ -337,6 +337,8 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define OP_MASK_XTHEADVTYPE_RES	0xf
 #define OP_SH_XTHEADVTYPE_RES	7
 
+#define SIZE_OF_XT_EXTEND_IMM   6
+
 #define NVECR 32
 #define NVECM 1
 
@@ -345,6 +347,16 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define OP_SH_XSO2              26
 #define OP_MASK_XSO1            0x1
 #define OP_SH_XSO1              26
+
+/* P extension fields.  */
+#define OP_MASK_PD              0x1f
+#define OP_SH_PD                7
+#define OP_MASK_PS1             0x1f
+#define OP_SH_PS1               15
+#define OP_MASK_PS2             0x1f
+#define OP_SH_PS2               20
+#define OP_MASK_PS3             0x1f
+#define OP_SH_PS3               27
 
 /* ABI names for selected x-registers.  */
 
@@ -420,6 +432,7 @@ enum riscv_insn_class
   INSN_CLASS_ZIHINTNTL,
   INSN_CLASS_ZIHINTNTL_AND_C,
   INSN_CLASS_ZIHINTPAUSE,
+  INSN_CLASS_ZIMOP,
   INSN_CLASS_ZMMUL,
   INSN_CLASS_ZAWRS,
   INSN_CLASS_F_INX,
@@ -430,6 +443,7 @@ enum riscv_insn_class
   INSN_CLASS_ZFHMIN_INX,
   INSN_CLASS_ZFHMIN_AND_D_INX,
   INSN_CLASS_ZFHMIN_AND_Q_INX,
+  INSN_CLASS_ZFBFMIN,
   INSN_CLASS_ZFA,
   INSN_CLASS_D_AND_ZFA,
   INSN_CLASS_Q_AND_ZFA,
@@ -454,6 +468,8 @@ enum riscv_insn_class
   INSN_CLASS_ZVEF,
   INSN_CLASS_ZVBB,
   INSN_CLASS_ZVBC,
+  INSN_CLASS_ZVFBFMIN,
+  INSN_CLASS_ZVFBFWMA,
   INSN_CLASS_ZVKB,
   INSN_CLASS_ZVKG,
   INSN_CLASS_ZVKNED,
@@ -464,11 +480,16 @@ enum riscv_insn_class
   INSN_CLASS_ZCB_AND_ZBA,
   INSN_CLASS_ZCB_AND_ZBB,
   INSN_CLASS_ZCB_AND_ZMMUL,
+  INSN_CLASS_ZCMOP,
   INSN_CLASS_SVINVAL,
   INSN_CLASS_ZICBOM,
   INSN_CLASS_ZICBOP,
   INSN_CLASS_ZICBOZ,
   INSN_CLASS_H,
+  INSN_CLASS_P,
+  INSN_CLASS_P_OR_ZPN,
+  INSN_CLASS_P_OR_ZPSFOPERAND,
+  INSN_CLASS_P_OR_ZPRVSFEXTRA,
   INSN_CLASS_XCVMAC,
   INSN_CLASS_XCVALU,
   INSN_CLASS_XTHEADBA,
@@ -484,7 +505,17 @@ enum riscv_insn_class
   INSN_CLASS_XTHEADMEMPAIR,
   INSN_CLASS_XTHEADSYNC,
   INSN_CLASS_XTHEADVECTOR,
+  INSN_CLASS_XTHEADVDOT,
   INSN_CLASS_XTHEADZVAMO,
+  INSN_CLASS_XTHEADVSFA,
+  INSN_CLASS_XTHEADVSFU,
+  INSN_CLASS_XTHEADVFCVT,
+  INSN_CLASS_XTHEADVREDUCTION,
+  INSN_CLASS_XTHEADLPW,
+  INSN_CLASS_XTHEADMATRIX,
+  INSN_CLASS_XXTCCEI,
+  INSN_CLASS_XXTCCEF,
+  INSN_CLASS_XXTCCEV,
   INSN_CLASS_XVENTANACONDOPS,
   INSN_CLASS_XSFVCP,
 };
@@ -519,7 +550,7 @@ struct riscv_opcode
 
   /* A function to determine if a word corresponds to this instruction.
      Usually, this computes ((word & mask) == match).  */
-  int (*match_func) (const struct riscv_opcode *op, insn_t word);
+  int (*match_func) (const struct riscv_opcode *op, insn_t word, unsigned xlen);
 
   /* For a macro, this is INSN_MACRO.  Otherwise, it is a collection
      of bits describing the instruction, notably any relevant hazard
@@ -600,6 +631,7 @@ extern const char * const riscv_rm[8];
 extern const char * const riscv_pred_succ[16];
 extern const char riscv_vecr_names_numeric[NVECR][NRC];
 extern const char riscv_vecm_names_numeric[NVECM][NRC];
+extern const char riscv_xuantie_mr_names_numeric[NMR][5];
 extern const char * const riscv_vsew[8];
 extern const char * const riscv_vlmul[8];
 extern const char * const riscv_vta[2];

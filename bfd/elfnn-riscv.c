@@ -3665,9 +3665,9 @@ riscv_merge_std_ext (bfd *ibfd,
       return false;
     }
 
-  riscv_update_subset_version(in, out);
-  riscv_add_subset (&merged_subsets,
-		    out->name, out->major_version, out->minor_version);
+  riscv_update_subset_version (in, out);
+  riscv_add_subset (&merged_subsets, out->name, out->major_version,
+		    out->minor_version);
 
   in = in->next;
   out = out->next;
@@ -3875,6 +3875,26 @@ riscv_merge_attributes (bfd *ibfd, struct bfd_link_info *info)
 	 initialized.  */
       out_attr[0].i = 1;
 
+      /* Check v0p7, if exist, update to xtheadvector.  */
+      if (out_attr[Tag_RISCV_arch].s)
+	{
+	  /* parse subset from out_attr[Tag_RISCV_arch].s,
+	     it will update v0p7 to xtheadvector.
+	     regenerate out_attr[Tag_RISCV_arch].s
+	     */
+	  unsigned xlen_out;
+	  riscv_subset_list_t first_out_subsets = { 0 };
+	  riscv_parse_subset_t riscv_rps_ld_out
+	      = { &first_out_subsets, _bfd_error_handler, &xlen_out, NULL,
+		  false };
+	  if (riscv_parse_subset (&riscv_rps_ld_out,
+				  out_attr[Tag_RISCV_arch].s))
+	    {
+	      out_attr[Tag_RISCV_arch].s
+		  = riscv_arch_str (ARCH_SIZE, &first_out_subsets);
+	    }
+	}
+
       return true;
     }
 
@@ -3917,6 +3937,7 @@ riscv_merge_attributes (bfd *ibfd, struct bfd_link_info *info)
 	    unsigned int Tag_c = Tag_RISCV_priv_spec_revision;
 	    enum riscv_spec_class in_priv_spec = PRIV_SPEC_CLASS_NONE;
 	    enum riscv_spec_class out_priv_spec = PRIV_SPEC_CLASS_NONE;
+	    struct riscv_elf_link_hash_table *htab = riscv_elf_hash_table (info);
 
 	    /* Get the privileged spec class from elf attributes.  */
 	    riscv_get_priv_spec_class_from_numbers (in_attr[Tag_a].i,
@@ -3938,16 +3959,13 @@ riscv_merge_attributes (bfd *ibfd, struct bfd_link_info *info)
 	    else if (in_priv_spec != PRIV_SPEC_CLASS_NONE
 		     && in_priv_spec != out_priv_spec)
 	      {
-		_bfd_error_handler
-		  (_("warning: %pB use privileged spec version %u.%u.%u but "
-		     "the output use version %u.%u.%u"),
-		   ibfd,
-		   in_attr[Tag_a].i,
-		   in_attr[Tag_b].i,
-		   in_attr[Tag_c].i,
-		   out_attr[Tag_a].i,
-		   out_attr[Tag_b].i,
-		   out_attr[Tag_c].i);
+		if (htab->params->warn_priv_version)
+		  _bfd_error_handler (_ ("warning: %pB use privileged spec "
+					 "version %u.%u.%u but "
+					 "the output use version %u.%u.%u"),
+				      ibfd, in_attr[Tag_a].i, in_attr[Tag_b].i,
+				      in_attr[Tag_c].i, out_attr[Tag_a].i,
+				      out_attr[Tag_b].i, out_attr[Tag_c].i);
 
 		/* The privileged spec v1.9.1 can not be linked with others
 		   since the conflicts, so we plan to drop it in a year or
@@ -4495,6 +4513,72 @@ typedef bool (*relax_func_t) (bfd *, asection *, asection *,
 			      bfd_vma, bfd_vma, bfd_vma, bool *,
 			      riscv_pcgp_relocs *,
 			      bool undefined_weak);
+/* Relax JAL into C.JAL.  */
+
+static bool
+_bfd_riscv_relax_jal (bfd *abfd, asection *sec, asection *sym_sec,
+		       struct bfd_link_info *link_info,
+		       Elf_Internal_Rela *rel,
+		       bfd_vma symval,
+		       bfd_vma max_alignment,
+		       bfd_vma reserve_size ATTRIBUTE_UNUSED,
+		       bool *again,
+		       riscv_pcgp_relocs *pcgp_relocs ATTRIBUTE_UNUSED,
+		       bool undefined_weak ATTRIBUTE_UNUSED)
+{
+  bfd_byte *contents = elf_section_data (sec)->this_hdr.contents;
+  bfd_vma foff = symval - (sec_addr (sec) + rel->r_offset);
+  bfd_vma jal;
+  int rvc = elf_elfheader (abfd)->e_flags & EF_RISCV_RVC;
+  int rd;
+
+  /* Next pass should be align.  */
+  *again = true;
+
+  /* C.JAL is RV32-only.  */
+  if (!rvc || ARCH_SIZE != 32)
+    goto keep_jal;
+
+  jal = bfd_getl32 (contents + rel->r_offset);
+  rd = (jal >> OP_SH_RD) & OP_MASK_RD;
+  if (rd != X_RA)
+    goto keep_jal;
+
+  /* If the call crosses section boundaries, an alignment directive could
+     cause the PC-relative offset to later increase, so we need to add in the
+     max alignment of any section inclusive from the call to the target.
+     Otherwise, we only need to use the alignment of the current section.  */
+  if (VALID_CJTYPE_IMM (foff))
+    {
+      if (sym_sec->output_section == sec->output_section
+	  && sym_sec->output_section != bfd_abs_section_ptr)
+	max_alignment = (bfd_vma) 1 << sym_sec->output_section->alignment_power;
+      foff += ((bfd_signed_vma) foff < 0 ? -max_alignment : max_alignment);
+    }
+
+  /* See if this function call can be shortened.  */
+  if (!VALID_CJTYPE_IMM (foff))
+    goto keep_jal;
+
+  /* Shorten the function call.  */
+  BFD_ASSERT (rel->r_offset + 4 <= sec->size);
+
+  /* Relax to C.J[AL] rd, addr.  */
+  jal = MATCH_C_JAL;
+
+  /* Replace the R_RISCV_JAL reloc.  */
+  rel->r_info = ELFNN_R_INFO (ELFNN_R_SYM (rel->r_info), R_RISCV_RVC_JUMP);
+  /* Replace the JAL.  */
+  riscv_put_insn (8 * 2, jal, contents + rel->r_offset);
+
+  /* Delete unnecessary JALR and reuse the R_RISCV_RELAX reloc.  */
+  *again = true;
+  return riscv_relax_delete_bytes (abfd, sec, rel->r_offset + 2, 2,
+				   link_info, NULL, NULL);
+keep_jal:
+  rel->r_info = ELFNN_R_INFO (ELFNN_R_SYM (rel->r_info), R_RISCV_JAL);
+  return true;
+}
 
 /* Relax AUIPC + JALR into JAL.  */
 
@@ -4552,7 +4636,7 @@ _bfd_riscv_relax_call (bfd *abfd, asection *sec, asection *sym_sec,
   else if (VALID_JTYPE_IMM (foff))
     {
       /* Relax to JAL rd, addr.  */
-      r_type = R_RISCV_JAL;
+      r_type = R_RISCV_RELAX_JAL;
       auipc = MATCH_JAL | (rd << OP_SH_RD);
     }
   else
@@ -5073,7 +5157,13 @@ _bfd_riscv_relax_section (bfd *abfd, asection *sec,
 	  /* Skip over the R_RISCV_RELAX.  */
 	  i++;
 	}
-      else if (info->relax_pass == 1 && type == R_RISCV_ALIGN)
+      else if (info->relax_pass == 1 && type == R_RISCV_RELAX_JAL)
+	{
+	  relax_func = _bfd_riscv_relax_jal;
+	  riscv_relax_delete_bytes = _riscv_relax_delete_immediate;
+	}
+      else if (info->relax_pass == 2
+	       && (type == R_RISCV_ALIGN))
 	{
 	  relax_func = _bfd_riscv_relax_align;
 	  riscv_relax_delete_bytes = _riscv_relax_delete_immediate;

@@ -94,7 +94,10 @@ enum riscv_csr_class
   CSR_CLASS_SSTC_AND_H,		/* Sstc only (with H) */
   CSR_CLASS_SSTC_32,		/* Sstc RV32 only */
   CSR_CLASS_SSTC_AND_H_32,	/* Sstc RV32 only (with H) */
+  CSR_CLASS_XTHEADMATRIX,	/* xtheadmatrix only */
   CSR_CLASS_XTHEADVECTOR,	/* xtheadvector only */
+  CSR_CLASS_XTHEADFPP,	/* xtheadfpp only */
+  CSR_CLASS_XTHEAD,	/* xthead* */
 };
 
 /* This structure holds all restricted conditions for a CSR.  */
@@ -151,7 +154,7 @@ struct riscv_ip_error
 #endif
 
 #ifndef DEFAULT_RISCV_PRIV_SPEC
-#define DEFAULT_RISCV_PRIV_SPEC "1.11"
+#define DEFAULT_RISCV_PRIV_SPEC "1.12"
 #endif
 
 static const char default_arch[] = DEFAULT_ARCH;
@@ -463,6 +466,7 @@ static char *expr_parse_end;
     | ((uncond) ? 1 : 0)				\
     | ((rvc) ? 2 : 0)					\
     | ((length) << 2)))
+
 #define RELAX_BRANCH_P(i) (((i) & 0xf0000000) == 0xc0000000)
 #define RELAX_BRANCH_LENGTH(i) (((i) >> 2) & 0xF)
 #define RELAX_BRANCH_RVC(i) (((i) & 2) != 0)
@@ -935,6 +939,7 @@ enum reg_class
   RCLASS_FPR,
   RCLASS_VECR,
   RCLASS_VECM,
+  RCLASS_MR,
   RCLASS_MAX,
 
   RCLASS_CSR
@@ -1108,8 +1113,18 @@ riscv_csr_address (const char *csr_name,
       break;
     case CSR_CLASS_DEBUG:
       break;
+    case CSR_CLASS_XTHEADMATRIX:
+      extension = "xtheadmatrix";
+      break;
     case CSR_CLASS_XTHEADVECTOR:
       extension = "xtheadvector";
+      break;
+    case CSR_CLASS_XTHEADFPP:
+      extension = "xtheadfpp";
+      break;
+    case CSR_CLASS_XTHEAD:
+      /* Xuantie CPUs must have xtheadcmo extension.  */
+      extension = "xtheadcmo";
       break;
     default:
       as_bad (_("internal: bad RISC-V CSR class (0x%x)"), csr_class);
@@ -1476,8 +1491,86 @@ validate_riscv_insn (const struct riscv_opcode *opc, int length)
 			goto unknown_validate_operand;
 		      }
 		      break;
+		  case 'P':
+		    switch (*++oparg)
+		      {
+		      case 'd': /* P rd.  */
+			      USE_BITS (OP_MASK_PD, OP_SH_PD); break;
+		      case 's': /* P rs1.  */
+			      USE_BITS (OP_MASK_PS1, OP_SH_PS1); break;
+		      case 't': /* P rs2.  */
+			      USE_BITS (OP_MASK_PS2, OP_SH_PS2); break;
+		      case 'r': /* P rs3.  */
+			      USE_BITS (OP_MASK_PS3, OP_SH_PS3); break;
+		      case 'u': /* P rs1 + rs2.  */
+			      USE_BITS (OP_MASK_PS1, OP_SH_PS1);
+			      USE_BITS (OP_MASK_PS2, OP_SH_PS2); break;
+		      default:
+			goto unknown_validate_operand;
+		      }
+		      break;
+		  case 'M':
+		    switch (*++oparg)
+		      {
+		      case 'd': /* md.  */
+			USE_BITS (OP_MASK_MD, OP_SH_MD);
+			break;
+		      case 's': /* ms1.  */
+			USE_BITS (OP_MASK_MS1, OP_SH_MS1);
+			break;
+		      case 't': /* ms2.  */
+			USE_BITS (OP_MASK_MS2, OP_SH_MS2);
+			break;
+		      case 'u': /* ms3.  */
+			USE_BITS (OP_MASK_MS3, OP_SH_MS3);
+			break;
+		      default:
+			break;
+		      }
+		    break;
+		  case 'i': /* immediate split into 2 parts.  */
+		    {
+		      /* Xti*nbit*hK@AlJ@B
+		       * unsigned imm nbits,
+		       * hi K bit @ A,
+		       * lo J bit @ B,
+		       * */
+		      int nbits = 0;
+		      int hi_bits = 0;
+		      int hi_at = -1;
+		      int lo_bits = 0;
+		      int lo_at = -1;
+
+		      oparg++;
+		      nbits = strtol (oparg, (char **)&oparg, 10);
+		      (void)nbits;
+		      if (*oparg == 'h')
+			hi_bits = strtol (++oparg, (char **)&oparg, 10);
+		      if (*oparg == '@')
+			hi_at = strtol (++oparg, (char **)&oparg, 10);
+		      if (*oparg == 'l')
+			lo_bits = strtol (++oparg, (char **)&oparg, 10);
+		      if (*oparg == '@')
+			lo_at = strtol (++oparg, (char **)&oparg, 10);
+		      oparg--;
+
+		      USE_IMM (hi_bits, hi_at);
+		      USE_IMM (lo_bits, lo_at);
+		    }
+		    break;
 		  case 'l': /* Integer immediate, literal.  */
 		    oparg += strcspn(oparg, ",") - 1;
+		    break;
+		  case '>': /* Shift amount, 'Xt>@S' ... 0 - (XLEN-1) at bit S.  */
+		    {
+		      int at = -1;
+
+		      oparg++;
+		      if (*oparg == '@')
+			at = strtol (++oparg, (char **)&oparg, 10);
+		      oparg--;
+		      USE_IMM (SIZE_OF_XT_EXTEND_IMM, at);
+		    }
 		    break;
 		  case 's': /* Integer immediate, 'XtsN@S' ... N-bit signed immediate at bit S.  */
 		    goto use_imm;
@@ -1485,6 +1578,8 @@ validate_riscv_insn (const struct riscv_opcode *opc, int length)
 		    goto use_imm;
 		  use_imm:
 		    n = strtol (oparg + 1, (char **)&oparg, 10);
+		    if (*oparg == 's')
+		       strtol (++oparg, (char **)&oparg, 10);
 		    if (*oparg != '@')
 		      goto unknown_validate_operand;
 		    s = strtol (oparg + 1, (char **)&oparg, 10);
@@ -1669,6 +1764,7 @@ md_begin (void)
   hash_reg_names (RCLASS_FPR, riscv_fpr_names_abi, NFPR);
   hash_reg_names (RCLASS_VECR, riscv_vecr_names_numeric, NVECR);
   hash_reg_names (RCLASS_VECM, riscv_vecm_names_numeric, NVECM);
+  hash_reg_names (RCLASS_MR, riscv_xuantie_mr_names_numeric, NMR);
   /* Add "fp" as an alias for "s0".  */
   hash_reg_name (RCLASS_GPR, "fp", 8);
 
@@ -1792,6 +1888,7 @@ macro_build (expressionS *ep, const char *name, const char *fmt, ...)
   const struct riscv_opcode *mo;
   struct riscv_cl_insn insn;
   bfd_reloc_code_real_type r;
+  expressionS ep_tmp;
   va_list args;
   const char *fmtStart;
 
@@ -1825,6 +1922,14 @@ macro_build (expressionS *ep, const char *name, const char *fmt, ...)
 	    case 't':
 	      INSERT_OPERAND (VS2, insn, va_arg (args, int));
 	      continue;
+	    case 'u':
+	      {
+		int reg = va_arg (args, int);
+		INSERT_OPERAND (VS1, insn, reg);
+		INSERT_OPERAND (VS2, insn, reg);
+	      }
+	      continue;
+
 	    case 'm':
 	      {
 		int reg = va_arg (args, int);
@@ -1855,12 +1960,31 @@ macro_build (expressionS *ep, const char *name, const char *fmt, ...)
 	case 't':
 	  INSERT_OPERAND (RS2, insn, va_arg (args, int));
 	  continue;
+	case 'S': /* float */
+	  INSERT_OPERAND (RS1, insn, va_arg (args, int));
+	  continue;
 
 	case 'j':
 	case 'u':
 	case 'q':
 	  gas_assert (ep != NULL);
 	  r = va_arg (args, int);
+	  continue;
+	case 'X' :
+	  {
+	    switch (*++fmt)
+	      {
+	      case 'j':
+		ep_tmp.X_op = O_constant;
+		ep_tmp.X_add_number = va_arg (args, int);
+		if (ep == NULL)
+		  ep = &ep_tmp;
+		r = va_arg (args, int);
+		continue;
+	      default:
+		goto unknown_macro_argument;
+	      }
+	  }
 	  continue;
 
 	case '\0':
@@ -2662,7 +2786,7 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 	  switch (*oparg)
 	    {
 	    case '\0': /* End of args.  */
-	      if (insn->match_func && !insn->match_func (insn, ip->insn_opcode))
+	      if (insn->match_func && !insn->match_func (insn, ip->insn_opcode, xlen))
 		break;
 
 	      if (insn->pinfo != INSN_MACRO)
@@ -3683,6 +3807,7 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 		  {
 		    size_t n;
 		    size_t s;
+		    size_t shift = 0;
 		    bool sign;
 		    switch (*++oparg)
 		      {
@@ -3702,13 +3827,158 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 			imm_expr->X_op = O_absent;
 			asarg = expr_parse_end;
 			continue;
+		      case 'M': /* Matrix register.  */
+			switch (*++oparg)
+			  {
+			  case 'd': /* md.  */
+			    if (reg_lookup (&asarg, RCLASS_MR, &regno))
+			      INSERT_OPERAND (MD, *ip, regno);
+			    else
+			      as_bad (_ ("unknown matrix register (%s)"),
+				      asarg);
+			    continue;
+			  case 's': /* ms1.  */
+			    if (reg_lookup (&asarg, RCLASS_MR, &regno))
+			      INSERT_OPERAND (MS1, *ip, regno);
+			    else
+			      as_bad (_ ("unknown matrix register (%s)"),
+				      asarg);
+			    continue;
+			  case 't': /* ms2.  */
+			    if (reg_lookup (&asarg, RCLASS_MR, &regno))
+			      INSERT_OPERAND (MS2, *ip, regno);
+			    else
+			      as_bad (_ ("unknown matrix register (%s)"),
+				      asarg);
+			    continue;
+			  case 'u': /* ms3.  */
+			    if (reg_lookup (&asarg, RCLASS_MR, &regno))
+			      INSERT_OPERAND (MS3, *ip, regno);
+			    else
+			      as_bad (_ ("unknown matrix register (%s)"),
+				      asarg);
+			    continue;
+			  default:
+			    break;
+			  }
+			break;
+		      case 'P':
+			switch (*++oparg)
+			  {
+			  case 'd': /* P rd.  */
+			    if (!reg_lookup (&asarg, RCLASS_GPR, &regno))
+			      break;
+			    INSERT_OPERAND (PD, *ip, regno);
+			    continue;
+			  case 's': /* P rs1.  */
+			    if (!reg_lookup (&asarg, RCLASS_GPR, &regno))
+			      break;
+			    INSERT_OPERAND (PS1, *ip, regno);
+			    continue;
+			  case 't': /* P rs2.  */
+			    if (!reg_lookup (&asarg, RCLASS_GPR, &regno))
+			      break;
+			    INSERT_OPERAND (PS2, *ip, regno);
+			    continue;
+			  case 'r': /* P rs3.  */
+			    if (!reg_lookup (&asarg, RCLASS_GPR, &regno))
+			      break;
+			    INSERT_OPERAND (PS3, *ip, regno);
+			    continue;
+			  case 'u': /* P rs1 == rs2.  */
+			    if (!reg_lookup (&asarg, RCLASS_GPR, &regno))
+			      break;
+			    INSERT_OPERAND (PS1, *ip, regno);
+			    INSERT_OPERAND (PS2, *ip, regno);
+			    continue;
+			  default:
+			    break;
+			  }
+			continue;
+		      case 'i': /* immediate split into 2 parts .  */
+			{
+			  /* XA*nbit*hK@AlJ@B
+			   * unsigned imm nbits,
+			   * hi K bit @ A,
+			   * lo J bit @ B,
+			   * */
+			  int nbits = 0;
+			  int hi_bits = 0;
+			  int hi_at = -1;
+			  int lo_bits = 0;
+			  int lo_at = -1;
 
+			  oparg++;
+
+			  nbits = strtol (oparg, (char **)&oparg, 10);
+			  (void)nbits;
+			  if (*oparg == 'h')
+			    hi_bits = strtol (++oparg, (char **)&oparg, 10);
+			  if (*oparg == '@')
+			    hi_at = strtol (++oparg, (char **)&oparg, 10);
+			  if (*oparg == 'l')
+			    lo_bits = strtol (++oparg, (char **)&oparg, 10);
+			  if (*oparg == '@')
+			    lo_at = strtol (++oparg, (char **)&oparg, 10);
+
+			  /* oparg will plus 1 in the for loop.  */
+			  oparg -= 1;
+
+			  if (riscv_handle_implicit_zero_offset (imm_expr,
+								 asarg))
+			    continue;
+			  if (my_getSmallExpression (imm_expr, imm_reloc,
+						     asarg, p))
+			    break;
+
+			  if (imm_expr->X_op != O_constant
+			      || (!(VALIDATE_U_IMM (imm_expr->X_add_number
+							>> lo_bits,
+						    hi_bits)
+				    && VALIDATE_U_IMM (
+					(imm_expr->X_add_number
+					 & ((1UL << lo_bits) - 1)),
+					lo_bits))))
+			    {
+			      break;
+			    }
+
+			  INSERT_IMM (hi_bits, hi_at, *ip,
+				      imm_expr->X_add_number >> lo_bits);
+			  INSERT_IMM (lo_bits, lo_at, *ip,
+				      imm_expr->X_add_number
+					  & ((1 << lo_bits) - 1));
+			  imm_expr->X_op = O_absent;
+			  asarg = expr_parse_end;
+			}
+			continue;
 		      case 'l': /* Integer immediate, literal.  */
 			n = strcspn (++oparg, ",");
 			if (strncmp (oparg, asarg, n))
 			  as_bad (_("unexpected literal (%s)"), asarg);
 			oparg += n - 1;
 			asarg += n;
+			continue;
+		      case '>': /* Shift amount, 'Xt>@S' ... 0 - (XLEN-1) at bit S.  */
+			{
+			  int at = -1;
+
+			  oparg++;
+			  if (*oparg == '@')
+			    at = strtol (++oparg, (char **)&oparg, 10);
+			  oparg--;
+			  my_getExpression (imm_expr, asarg);
+			  check_absolute_expr (ip, imm_expr, false);
+			  if (imm_expr->X_add_number >= xlen
+			      || imm_expr->X_add_number < 0)
+			    as_bad (
+				_ ("improper immediate value (%" PRIi64 ")"),
+				imm_expr->X_add_number);
+			  INSERT_IMM (SIZE_OF_XT_EXTEND_IMM, at, *ip,
+				      imm_expr->X_add_number);
+			  imm_expr->X_op = O_absent;
+			  asarg = expr_parse_end;
+			}
 			continue;
 		      case 's': /* Integer immediate, 'XsN@S' ... N-bit signed immediate at bit S.  */
 			sign = true;
@@ -3718,6 +3988,8 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 			goto parse_imm;
 		      parse_imm:
 			n = strtol (oparg + 1, (char **)&oparg, 10);
+			if (*oparg == 's')
+			  shift = strtol (++oparg, (char **)&oparg, 10);
 			if (*oparg != '@')
 			  goto unknown_riscv_ip_operand;
 			s = strtol (oparg + 1, (char **)&oparg, 10);
@@ -3725,6 +3997,19 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 
 			my_getExpression (imm_expr, asarg);
 			check_absolute_expr (ip, imm_expr, false);
+
+			if (shift != 0)
+			  {
+			    /* Check imm is aligned with shift or not.  */
+			    if (imm_expr->X_add_number & ((1 << shift) - 1))
+			      break;
+
+			    if (shift > 0)
+			      imm_expr->X_add_number >>= shift;
+			    else
+			      imm_expr->X_add_number <<= -shift;
+			  }
+
 			if (!sign)
 			  {
 			    if (!VALIDATE_U_IMM (imm_expr->X_add_number, n))
@@ -4390,6 +4675,9 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
 	  bfd_vma target = S_GET_VALUE (fixP->fx_addsy) + *valP;
 	  bfd_vma delta = target - md_pcrel_from (fixP);
 	  bfd_putl32 (bfd_getl32 (buf) | ENCODE_JTYPE_IMM (delta), buf);
+	  if (S_IS_LOCAL (fixP->fx_addsy)
+	      && S_GET_SEGMENT (fixP->fx_addsy) == seg && (!riscv_opts.relax))
+	    fixP->fx_done = 1;
 	}
       break;
 
@@ -4400,6 +4688,9 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
 	  bfd_vma target = S_GET_VALUE (fixP->fx_addsy) + *valP;
 	  bfd_vma delta = target - md_pcrel_from (fixP);
 	  bfd_putl32 (bfd_getl32 (buf) | ENCODE_BTYPE_IMM (delta), buf);
+	  if (S_IS_LOCAL (fixP->fx_addsy)
+	      && S_GET_SEGMENT (fixP->fx_addsy) == seg && (!riscv_opts.relax))
+	    fixP->fx_done = 1;
 	}
       break;
 
@@ -4410,6 +4701,9 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
 	  bfd_vma target = S_GET_VALUE (fixP->fx_addsy) + *valP;
 	  bfd_vma delta = target - md_pcrel_from (fixP);
 	  bfd_putl16 (bfd_getl16 (buf) | ENCODE_CBTYPE_IMM (delta), buf);
+	  if (S_IS_LOCAL (fixP->fx_addsy)
+	      && S_GET_SEGMENT (fixP->fx_addsy) == seg && (!riscv_opts.relax))
+	    fixP->fx_done = 1;
 	}
       break;
 
@@ -4420,6 +4714,9 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
 	  bfd_vma target = S_GET_VALUE (fixP->fx_addsy) + *valP;
 	  bfd_vma delta = target - md_pcrel_from (fixP);
 	  bfd_putl16 (bfd_getl16 (buf) | ENCODE_CJTYPE_IMM (delta), buf);
+	  if (S_IS_LOCAL (fixP->fx_addsy)
+	      && S_GET_SEGMENT (fixP->fx_addsy) == seg && (!riscv_opts.relax))
+	    fixP->fx_done = 1;
 	}
       break;
 

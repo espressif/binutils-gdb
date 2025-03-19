@@ -9,3 +9,11 @@ target:
 	lw      a0,%pcrel_lo(.LA1)(a5)
 
 	call target
+.L1:
+	c.j .L1
+	c.bnez a0, .L1
+	.option norvc
+	j .L1
+	bnez a0, .L1
+	.option rvc
+

@@ -215,6 +215,8 @@ maybe_print_address (struct riscv_private_data *pd, int base_reg, int offset,
     pd->print_addr = (bfd_vma)(uint32_t)pd->print_addr;
 }
 
+#include "riscv-dis-xt.inc"
+
 /* Print insn arguments for 32/64-bit code.  */
 
 static void
@@ -568,18 +570,21 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 	      }
 
 	    if (riscv_csr_hash[csr] != NULL)
-	      if (riscv_subset_supports (&riscv_rps_dis, "xtheadvector")
-		  && (csr == CSR_VSTART
-		      || csr == CSR_VXSAT
-		      || csr == CSR_VXRM
-		      || csr == CSR_VL
-		      || csr == CSR_VTYPE
-		      || csr == CSR_VLENB))
-		print (info->stream, dis_style_register, "%s",
-		       concat ("th.", riscv_csr_hash[csr], NULL));
-	      else
-		print (info->stream, dis_style_register, "%s",
-		       riscv_csr_hash[csr]);
+	      {
+		if (riscv_subset_supports (&riscv_rps_dis, "xtheadvector")
+		    && (csr == CSR_VSTART || csr == CSR_VXSAT
+			|| csr == CSR_VXRM || csr == CSR_VL || csr == CSR_VTYPE
+			|| csr == CSR_VLENB))
+		  print (info->stream, dis_style_register, "%s",
+			 concat ("th.", riscv_csr_hash[csr], NULL));
+		else
+		  {
+		    if (riscv_xuantie_print_csr (csr, info))
+		      break;
+		    print (info->stream, dis_style_register, "%s",
+			   riscv_csr_hash[csr]);
+		  }
+	      }
 	    else
 	      print (info->stream, dis_style_immediate, "0x%x", csr);
 	    break;
@@ -675,6 +680,90 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 		    else
 		      print (info->stream, dis_style_immediate, "%d", imm);
 		    break;
+		  case 'M': /* Matrix.  */
+		    switch (*++oparg)
+		      {
+		      case 'd':
+			print (info->stream, dis_style_register, "%s",
+			       riscv_xuantie_mr_names_numeric[EXTRACT_OPERAND (
+				   MD, l)]);
+			break;
+		      case 's':
+			print (info->stream, dis_style_register, "%s",
+			       riscv_xuantie_mr_names_numeric[EXTRACT_OPERAND (
+				   MS1, l)]);
+			break;
+		      case 't':
+			print (info->stream, dis_style_register, "%s",
+			       riscv_xuantie_mr_names_numeric[EXTRACT_OPERAND (
+				   MS2, l)]);
+			break;
+		      case 'u':
+			print (info->stream, dis_style_register, "%s",
+			       riscv_xuantie_mr_names_numeric[EXTRACT_OPERAND (
+				   MS3, l)]);
+			break;
+		      }
+		    break;
+		  case 'P':
+		    switch (*++oparg)
+		      {
+		      case 'd':
+			print (info->stream, dis_style_immediate, "%s",
+			       riscv_gpr_names[EXTRACT_OPERAND (PD, l)]);
+			break;
+		      case 's':
+			print (info->stream, dis_style_immediate, "%s",
+			       riscv_gpr_names[EXTRACT_OPERAND (PS1, l)]);
+			break;
+		      case 't':
+			print (info->stream, dis_style_immediate, "%s",
+			       riscv_gpr_names[EXTRACT_OPERAND (PS2, l)]);
+			break;
+		      case 'r':
+			print (info->stream, dis_style_immediate, "%s",
+			       riscv_gpr_names[EXTRACT_OPERAND (PS3, l)]);
+			break;
+		      }
+		    break;
+		    case 'i': /* immediate split into 2 parts.  */
+		      {
+			/* XA*nbit*hK@AlJ@B
+			 * unsigned imm nbits,
+			 * hi K bit @ A,
+			 * lo J bit @ B,
+			 * */
+			int nbits = 0;
+			int hi_bits = 0;
+			int hi_at = -1;
+			int lo_bits = 0;
+			int lo_at = -1;
+			int value = l;
+
+			oparg++;
+
+			nbits = strtol (oparg, (char **)&oparg, 10);
+			(void)nbits;
+			if (*oparg == 'h')
+			  hi_bits = strtol (++oparg, (char **)&oparg, 10);
+			if (*oparg == '@')
+			  hi_at = strtol (++oparg, (char **)&oparg, 10);
+			if (*oparg == 'l')
+			  lo_bits = strtol (++oparg, (char **)&oparg, 10);
+			if (*oparg == '@')
+			  lo_at = strtol (++oparg, (char **)&oparg, 10);
+
+			/* oparg will plus 1 in the for loop.  */
+			oparg -= 1;
+			value
+			    = (unsigned int)EXTRACT_U_IMM (hi_bits, hi_at, l);
+			value = value << lo_bits;
+			value |= (unsigned int)EXTRACT_U_IMM (lo_bits, lo_at, l);
+
+			print (info->stream, dis_style_immediate, "%u",
+			       value);
+		      }
+		      break;
 		  case 'l': /* Integer immediate, literal.  */
 		    oparg++;
 		    while (*oparg && *oparg != ',')
@@ -683,6 +772,19 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 			oparg++;
 		      }
 		    oparg--;
+		    break;
+		  case '>': /* Shift amount, 'Xt>@S' ... 0 - (XLEN-1) at bit S.  */
+		    {
+		      int at = -1;
+
+		      oparg++;
+		      if (*oparg == '@')
+			at = strtol (++oparg, (char **)&oparg, 10);
+		      oparg--;
+
+		      print (info->stream, dis_style_immediate, "%u",
+			     (unsigned int)EXTRACT_U_IMM (SIZE_OF_XT_EXTEND_IMM, at, l));
+		    }
 		    break;
 		  case 's': /* Integer immediate, 'XsN@S' ... N-bit signed immediate at bit S.  */
 		    sign = true;
@@ -840,7 +942,7 @@ riscv_disassemble_insn (bfd_vma memaddr,
 	  if (op->pinfo == INSN_MACRO)
 	    continue;
 	  /* Does the opcode match?  */
-	  if (! (op->match_func) (op, word))
+	  if (! (op->match_func) (op, word, xlen))
 	    continue;
 	  /* Is this a pseudo-instruction and may we print it as such?  */
 	  if (no_aliases && (op->pinfo & INSN_ALIAS))
@@ -850,6 +952,13 @@ riscv_disassemble_insn (bfd_vma memaddr,
 	    continue;
 	  /* Is this instruction supported by the current architecture?  */
 	  if (!riscv_multi_subset_supports (&riscv_rps_dis, op->insn_class))
+	    continue;
+
+	  /* Is thead* and startwith "th."?
+	     Do not dump theadvector with no "th."  */
+	  if (op->insn_class > INSN_CLASS_XCVALU
+	      && op->insn_class < INSN_CLASS_XTHEADMATRIX
+	      && (strncmp (op->name, "th.", 3) != 0))
 	    continue;
 
 	  /* It's a match.  */

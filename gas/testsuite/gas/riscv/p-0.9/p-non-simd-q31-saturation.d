@@ -1,0 +1,84 @@
+#as: -march=rv64imap
+#objdump: -d
+
+tmpdir/p-non-simd-q31-saturation.o:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <non_simd_q31_saturation>:
+   0:	00001077          	kaddw	zero,zero,zero
+   4:	003110f7          	kaddw	ra,sp,gp
+   8:	011817f7          	kaddw	a5,a6,a7
+   c:	016a9a77          	kaddw	s4,s5,s6
+  10:	01ff1ef7          	kaddw	t4,t5,t6
+  14:	10001077          	ukaddw	zero,zero,zero
+  18:	103110f7          	ukaddw	ra,sp,gp
+  1c:	111817f7          	ukaddw	a5,a6,a7
+  20:	116a9a77          	ukaddw	s4,s5,s6
+  24:	11ff1ef7          	ukaddw	t4,t5,t6
+  28:	02001077          	ksubw	zero,zero,zero
+  2c:	023110f7          	ksubw	ra,sp,gp
+  30:	031817f7          	ksubw	a5,a6,a7
+  34:	036a9a77          	ksubw	s4,s5,s6
+  38:	03ff1ef7          	ksubw	t4,t5,t6
+  3c:	12001077          	uksubw	zero,zero,zero
+  40:	123110f7          	uksubw	ra,sp,gp
+  44:	131817f7          	uksubw	a5,a6,a7
+  48:	136a9a77          	uksubw	s4,s5,s6
+  4c:	13ff1ef7          	uksubw	t4,t5,t6
+  50:	0a001077          	kdmbb	zero,zero,zero
+  54:	0a3110f7          	kdmbb	ra,sp,gp
+  58:	0b1817f7          	kdmbb	a5,a6,a7
+  5c:	0b6a9a77          	kdmbb	s4,s5,s6
+  60:	0bff1ef7          	kdmbb	t4,t5,t6
+  64:	1a001077          	kdmbt	zero,zero,zero
+  68:	1a3110f7          	kdmbt	ra,sp,gp
+  6c:	1b1817f7          	kdmbt	a5,a6,a7
+  70:	1b6a9a77          	kdmbt	s4,s5,s6
+  74:	1bff1ef7          	kdmbt	t4,t5,t6
+  78:	2a001077          	kdmtt	zero,zero,zero
+  7c:	2a3110f7          	kdmtt	ra,sp,gp
+  80:	2b1817f7          	kdmtt	a5,a6,a7
+  84:	2b6a9a77          	kdmtt	s4,s5,s6
+  88:	2bff1ef7          	kdmtt	t4,t5,t6
+  8c:	6e001077          	kslraw	zero,zero,zero
+  90:	6e3110f7          	kslraw	ra,sp,gp
+  94:	6f1817f7          	kslraw	a5,a6,a7
+  98:	6f6a9a77          	kslraw	s4,s5,s6
+  9c:	6fff1ef7          	kslraw	t4,t5,t6
+  a0:	7e001077          	kslraw.u	zero,zero,zero
+  a4:	7e3110f7          	kslraw.u	ra,sp,gp
+  a8:	7f1817f7          	kslraw.u	a5,a6,a7
+  ac:	7f6a9a77          	kslraw.u	s4,s5,s6
+  b0:	7fff1ef7          	kslraw.u	t4,t5,t6
+  b4:	26001077          	ksllw	zero,zero,zero
+  b8:	263110f7          	ksllw	ra,sp,gp
+  bc:	271817f7          	ksllw	a5,a6,a7
+  c0:	276a9a77          	ksllw	s4,s5,s6
+  c4:	27ff1ef7          	ksllw	t4,t5,t6
+  c8:	36001077          	kslliw	zero,zero,0
+  cc:	363110f7          	kslliw	ra,sp,3
+  d0:	371817f7          	kslliw	a5,a6,17
+  d4:	376a9a77          	kslliw	s4,s5,22
+  d8:	37ff1ef7          	kslliw	t4,t5,31
+  dc:	d2001077          	kdmabb	zero,zero,zero
+  e0:	d23110f7          	kdmabb	ra,sp,gp
+  e4:	d31817f7          	kdmabb	a5,a6,a7
+  e8:	d36a9a77          	kdmabb	s4,s5,s6
+  ec:	d3ff1ef7          	kdmabb	t4,t5,t6
+  f0:	e2001077          	kdmabt	zero,zero,zero
+  f4:	e23110f7          	kdmabt	ra,sp,gp
+  f8:	e31817f7          	kdmabt	a5,a6,a7
+  fc:	e36a9a77          	kdmabt	s4,s5,s6
+ 100:	e3ff1ef7          	kdmabt	t4,t5,t6
+ 104:	f2001077          	kdmatt	zero,zero,zero
+ 108:	f23110f7          	kdmatt	ra,sp,gp
+ 10c:	f31817f7          	kdmatt	a5,a6,a7
+ 110:	f36a9a77          	kdmatt	s4,s5,s6
+ 114:	f3ff1ef7          	kdmatt	t4,t5,t6
+ 118:	ad400077          	kabsw	zero,zero
+ 11c:	ad4100f7          	kabsw	ra,sp
+ 120:	ad4807f7          	kabsw	a5,a6
+ 124:	ad4a8a77          	kabsw	s4,s5
+ 128:	ad4f0ef7          	kabsw	t4,t5

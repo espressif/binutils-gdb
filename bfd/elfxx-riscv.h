@@ -31,8 +31,9 @@ struct riscv_elf_params
 {
   /* Whether to relax code sequences to GP-relative addressing.  */
   bool relax_gp;
-  /* Whether to check if SUB_ULEB128 relocation has non-zero addend.  */
   bool check_uleb128;
+  /* Whether to warn if the version of privileged spec do not equal.  */
+  bool warn_priv_version;
 };
 
 extern void riscv_elf32_set_options (struct bfd_link_info *,
@@ -125,3 +126,5 @@ extern void
 bfd_elf32_riscv_set_data_segment_info (struct bfd_link_info *, int *);
 extern void
 bfd_elf64_riscv_set_data_segment_info (struct bfd_link_info *, int *);
+
+#include "elfxx-riscv-xt.h"

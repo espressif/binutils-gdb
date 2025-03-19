@@ -8,13 +8,13 @@
 Disassembly of section .text:
 
 0+000 <pseudo_csr_insn>:
-[ 	]+[0-9a-f]+:[ 	]+000022f3[ 	]+csrr[ 	]+t0,ustatus
-[ 	]+[0-9a-f]+:[ 	]+00029073[ 	]+csrw[ 	]+ustatus,t0
-[ 	]+[0-9a-f]+:[ 	]+0002a073[ 	]+csrs[ 	]+ustatus,t0
-[ 	]+[0-9a-f]+:[ 	]+0002b073[ 	]+csrc[ 	]+ustatus,t0
-[ 	]+[0-9a-f]+:[ 	]+000fd073[ 	]+csrwi[ 	]+ustatus,31
-[ 	]+[0-9a-f]+:[ 	]+000fe073[ 	]+csrsi[ 	]+ustatus,31
-[ 	]+[0-9a-f]+:[ 	]+000ff073[ 	]+csrci[ 	]+ustatus,31
+[ 	]+[0-9a-f]+:[ 	]+000022f3[ 	]+csrr[ 	]+t0,0x0
+[ 	]+[0-9a-f]+:[ 	]+00029073[ 	]+csrw[ 	]+0x0,t0
+[ 	]+[0-9a-f]+:[ 	]+0002a073[ 	]+csrs[ 	]+0x0,t0
+[ 	]+[0-9a-f]+:[ 	]+0002b073[ 	]+csrc[ 	]+0x0,t0
+[ 	]+[0-9a-f]+:[ 	]+000fd073[ 	]+csrwi[ 	]+0x0,31
+[ 	]+[0-9a-f]+:[ 	]+000fe073[ 	]+csrsi[ 	]+0x0,31
+[ 	]+[0-9a-f]+:[ 	]+000ff073[ 	]+csrci[ 	]+0x0,31
 [ 	]+[0-9a-f]+:[ 	]+c00022f3[ 	]+rdcycle[ 	]+t0
 [ 	]+[0-9a-f]+:[ 	]+c01022f3[ 	]+rdtime[ 	]+t0
 [ 	]+[0-9a-f]+:[ 	]+c02022f3[ 	]+rdinstret[ 	]+t0

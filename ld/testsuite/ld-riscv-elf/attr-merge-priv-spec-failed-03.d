@@ -2,7 +2,7 @@
 #source: attr-merge-priv-spec-d.s
 #source: attr-merge-priv-spec-c.s
 #as:
-#ld: -r
+#ld: -r --warn-priv-version
 #warning: .*use privileged spec version 1.11.0 but the output use version 1.9.1
 #warning: .*privileged spec version 1.9.1 can not be linked with other spec versions
 #readelf: -A

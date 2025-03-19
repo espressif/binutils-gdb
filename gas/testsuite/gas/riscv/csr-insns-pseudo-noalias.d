@@ -8,13 +8,13 @@
 Disassembly of section .text:
 
 0+000 <pseudo_csr_insn>:
-[ 	]+[0-9a-f]+:[ 	]+000022f3[ 	]+csrrs[ 	]+t0,ustatus,zero
-[ 	]+[0-9a-f]+:[ 	]+00029073[ 	]+csrrw[ 	]+zero,ustatus,t0
-[ 	]+[0-9a-f]+:[ 	]+0002a073[ 	]+csrrs[ 	]+zero,ustatus,t0
-[ 	]+[0-9a-f]+:[ 	]+0002b073[ 	]+csrrc[ 	]+zero,ustatus,t0
-[ 	]+[0-9a-f]+:[ 	]+000fd073[ 	]+csrrwi[ 	]+zero,ustatus,31
-[ 	]+[0-9a-f]+:[ 	]+000fe073[ 	]+csrrsi[ 	]+zero,ustatus,31
-[ 	]+[0-9a-f]+:[ 	]+000ff073[ 	]+csrrci[ 	]+zero,ustatus,31
+[ 	]+[0-9a-f]+:[ 	]+000022f3[ 	]+csrrs[ 	]+t0,0x0,zero
+[ 	]+[0-9a-f]+:[ 	]+00029073[ 	]+csrrw[ 	]+zero,0x0,t0
+[ 	]+[0-9a-f]+:[ 	]+0002a073[ 	]+csrrs[ 	]+zero,0x0,t0
+[ 	]+[0-9a-f]+:[ 	]+0002b073[ 	]+csrrc[ 	]+zero,0x0,t0
+[ 	]+[0-9a-f]+:[ 	]+000fd073[ 	]+csrrwi[ 	]+zero,0x0,31
+[ 	]+[0-9a-f]+:[ 	]+000fe073[ 	]+csrrsi[ 	]+zero,0x0,31
+[ 	]+[0-9a-f]+:[ 	]+000ff073[ 	]+csrrci[ 	]+zero,0x0,31
 [ 	]+[0-9a-f]+:[ 	]+c00022f3[ 	]+csrrs[ 	]+t0,cycle,zero
 [ 	]+[0-9a-f]+:[ 	]+c01022f3[ 	]+csrrs[ 	]+t0,time,zero
 [ 	]+[0-9a-f]+:[ 	]+c02022f3[ 	]+csrrs[ 	]+t0,instret,zero

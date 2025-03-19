@@ -2235,6 +2235,23 @@
 #define MASK_C_NOT 0xfc7f
 #define MATCH_C_MUL 0x9c41
 #define MASK_C_MUL 0xfc63
+/* Zcmop instructions.  */
+#define MATCH_C_MOP_1 0x6081
+#define MASK_C_MOP_1 0xffff
+#define MATCH_C_MOP_3 0x6181
+#define MASK_C_MOP_3 0xffff
+#define MATCH_C_MOP_5 0x6281
+#define MASK_C_MOP_5 0xffff
+#define MATCH_C_MOP_7 0x6381
+#define MASK_C_MOP_7 0xffff
+#define MATCH_C_MOP_9 0x6481
+#define MASK_C_MOP_9 0xffff
+#define MATCH_C_MOP_11 0x6581
+#define MASK_C_MOP_11 0xffff
+#define MATCH_C_MOP_13 0x6681
+#define MASK_C_MOP_13 0xffff
+#define MATCH_C_MOP_15 0x6781
+#define MASK_C_MOP_15 0xffff
 /* Svinval instruction.  */
 #define MATCH_SINVAL_VMA 0x16000073
 #define MASK_SINVAL_VMA 0xfe007fff
@@ -2315,11 +2332,107 @@
 #define MASK_C_NTL_S1 0xffff
 #define MATCH_C_NTL_ALL 0x9016
 #define MASK_C_NTL_ALL 0xffff
+/* Zimop instructions.  */
+#define MATCH_MOP_R_0 0x81c04073
+#define MASK_MOP_R_0 0xfff0707f
+#define MATCH_MOP_R_1 0x81d04073
+#define MASK_MOP_R_1 0xfff0707f
+#define MATCH_MOP_R_2 0x81e04073
+#define MASK_MOP_R_2 0xfff0707f
+#define MATCH_MOP_R_3 0x81f04073
+#define MASK_MOP_R_3 0xfff0707f
+#define MATCH_MOP_R_4 0x85c04073
+#define MASK_MOP_R_4 0xfff0707f
+#define MATCH_MOP_R_5 0x85d04073
+#define MASK_MOP_R_5 0xfff0707f
+#define MATCH_MOP_R_6 0x85e04073
+#define MASK_MOP_R_6 0xfff0707f
+#define MATCH_MOP_R_7 0x85f04073
+#define MASK_MOP_R_7 0xfff0707f
+#define MATCH_MOP_R_8 0x89c04073
+#define MASK_MOP_R_8 0xfff0707f
+#define MATCH_MOP_R_9 0x89d04073
+#define MASK_MOP_R_9 0xfff0707f
+#define MATCH_MOP_R_10 0x89e04073
+#define MASK_MOP_R_10 0xfff0707f
+#define MATCH_MOP_R_11 0x89f04073
+#define MASK_MOP_R_11 0xfff0707f
+#define MATCH_MOP_R_12 0x8dc04073
+#define MASK_MOP_R_12 0xfff0707f
+#define MATCH_MOP_R_13 0x8dd04073
+#define MASK_MOP_R_13 0xfff0707f
+#define MATCH_MOP_R_14 0x8de04073
+#define MASK_MOP_R_14 0xfff0707f
+#define MATCH_MOP_R_15 0x8df04073
+#define MASK_MOP_R_15 0xfff0707f
+#define MATCH_MOP_R_16 0xc1c04073
+#define MASK_MOP_R_16 0xfff0707f
+#define MATCH_MOP_R_17 0xc1d04073
+#define MASK_MOP_R_17 0xfff0707f
+#define MATCH_MOP_R_18 0xc1e04073
+#define MASK_MOP_R_18 0xfff0707f
+#define MATCH_MOP_R_19 0xc1f04073
+#define MASK_MOP_R_19 0xfff0707f
+#define MATCH_MOP_R_20 0xc5c04073
+#define MASK_MOP_R_20 0xfff0707f
+#define MATCH_MOP_R_21 0xc5d04073
+#define MASK_MOP_R_21 0xfff0707f
+#define MATCH_MOP_R_22 0xc5e04073
+#define MASK_MOP_R_22 0xfff0707f
+#define MATCH_MOP_R_23 0xc5f04073
+#define MASK_MOP_R_23 0xfff0707f
+#define MATCH_MOP_R_24 0xc9c04073
+#define MASK_MOP_R_24 0xfff0707f
+#define MATCH_MOP_R_25 0xc9d04073
+#define MASK_MOP_R_25 0xfff0707f
+#define MATCH_MOP_R_26 0xc9e04073
+#define MASK_MOP_R_26 0xfff0707f
+#define MATCH_MOP_R_27 0xc9f04073
+#define MASK_MOP_R_27 0xfff0707f
+#define MATCH_MOP_R_28 0xcdc04073
+#define MASK_MOP_R_28 0xfff0707f
+#define MATCH_MOP_R_29 0xcdd04073
+#define MASK_MOP_R_29 0xfff0707f
+#define MATCH_MOP_R_30 0xcde04073
+#define MASK_MOP_R_30 0xfff0707f
+#define MATCH_MOP_R_31 0xcdf04073
+#define MASK_MOP_R_31 0xfff0707f
+#define MATCH_MOP_RR_0 0x82004073
+#define MASK_MOP_RR_0 0xfe00707f
+#define MATCH_MOP_RR_1 0x86004073
+#define MASK_MOP_RR_1 0xfe00707f
+#define MATCH_MOP_RR_2 0x8a004073
+#define MASK_MOP_RR_2 0xfe00707f
+#define MATCH_MOP_RR_3 0x8e004073
+#define MASK_MOP_RR_3 0xfe00707f
+#define MATCH_MOP_RR_4 0xc2004073
+#define MASK_MOP_RR_4 0xfe00707f
+#define MATCH_MOP_RR_5 0xc6004073
+#define MASK_MOP_RR_5 0xfe00707f
+#define MATCH_MOP_RR_6 0xca004073
+#define MASK_MOP_RR_6 0xfe00707f
+#define MATCH_MOP_RR_7 0xce004073
+#define MASK_MOP_RR_7 0xfe00707f
 /* Zawrs instructions.  */
 #define MATCH_WRS_NTO 0x00d00073
 #define MASK_WRS_NTO 0xffffffff
 #define MATCH_WRS_STO 0x01d00073
 #define MASK_WRS_STO 0xffffffff
+/* Zfbfmin intructions.  */
+#define MATCH_FCVT_BF16_S 0x44800053
+#define MASK_FCVT_BF16_S 0xfff0007f
+#define MATCH_FCVT_S_BF16 0x40600053
+#define MASK_FCVT_S_BF16 0xfff0007f
+/* Zvfbfmin intructions.  */
+#define MATCH_VFNCVTBF16_F_F_W 0x480e9057
+#define MASK_VFNCVTBF16_F_F_W 0xfc0ff07f
+#define MATCH_VFWCVTBF16_F_F_V 0x48069057
+#define MASK_VFWCVTBF16_F_F_V 0xfc0ff07f
+/* Zvfbfwma intructions.  */
+#define MATCH_VFWMACCBF16_VF 0xec005057
+#define MASK_VFWMACCBF16_VF 0xfc00707f
+#define MATCH_VFWMACCBF16_VV 0xec001057
+#define MASK_VFWMACCBF16_VV 0xfc00707f
 /* Vendor-specific (CORE-V) Xcvmac instructions.  */
 #define MATCH_CV_MAC       0x9000302b
 #define MASK_CV_MAC        0xfe00707f
@@ -2969,6 +3082,51 @@
 #define MASK_TH_VFMVFS 0xfe0ff07f
 #define MATCH_TH_VFMVSF 0x36005057
 #define MASK_TH_VFMVSF 0xfff0707f
+/* Vendor-specific (T-Head) XTheadVdot instructions.  */
+#define MATCH_TH_VMAQA_VV 0x8000600b
+#define MASK_TH_VMAQA_VV 0xfc00707f
+#define MATCH_TH_VMAQA_VX 0x8400600b
+#define MASK_TH_VMAQA_VX 0xfc00707f
+#define MATCH_TH_VMAQAU_VV 0x8800600b
+#define MASK_TH_VMAQAU_VV 0xfc00707f
+#define MATCH_TH_VMAQAU_VX 0x8c00600b
+#define MASK_TH_VMAQAU_VX 0xfc00707f
+#define MATCH_TH_VMAQASU_VV 0x9000600b
+#define MASK_TH_VMAQASU_VV 0xfc00707f
+#define MATCH_TH_VMAQASU_VX 0x9400600b
+#define MASK_TH_VMAQASU_VX 0xfc00707f
+#define MATCH_TH_VMAQAUS_VX 0x9c00600b
+#define MASK_TH_VMAQAUS_VX 0xfc00707f
+#define MATCH_TH_VPMAQA_VV 0x8000700b
+#define MASK_TH_VPMAQA_VV 0xfc00707f
+#define MATCH_TH_VPMAQA_VX 0x8400700b
+#define MASK_TH_VPMAQA_VX 0xfc00707f
+#define MATCH_TH_VPMAQAU_VV 0x8800700b
+#define MASK_TH_VPMAQAU_VV 0xfc00707f
+#define MATCH_TH_VPMAQAU_VX 0x8c00700b
+#define MASK_TH_VPMAQAU_VX 0xfc00707f
+#define MATCH_TH_VPMAQASU_VV 0x9000700b
+#define MASK_TH_VPMAQASU_VV 0xfc00707f
+#define MATCH_TH_VPMAQASU_VX 0x9400700b
+#define MASK_TH_VPMAQASU_VX 0xfc00707f
+#define MATCH_TH_VPMAQAUS_VX 0x9c00700b
+#define MASK_TH_VPMAQAUS_VX 0xfc00707f
+#define MATCH_TH_VPNCLIP_WV 0xa000700b
+#define MASK_TH_VPNCLIP_WV 0xfc00707f
+#define MATCH_TH_VPNCLIP_WX 0xa400700b
+#define MASK_TH_VPNCLIP_WX 0xfc00707f
+#define MATCH_TH_VPNCLIPU_WV 0xa800700b
+#define MASK_TH_VPNCLIPU_WV 0xfc00707f
+#define MATCH_TH_VPNCLIPU_WX 0xac00700b
+#define MASK_TH_VPNCLIPU_WX 0xfc00707f
+#define MATCH_TH_VPWADD_VV 0xb000700b
+#define MASK_TH_VPWADD_VV 0xfc00707f
+#define MATCH_TH_VPWADD_VX 0xb400700b
+#define MASK_TH_VPWADD_VX 0xfc00707f
+#define MATCH_TH_VPWADDU_VV 0xb800700b
+#define MASK_TH_VPWADDU_VV 0xfc00707f
+#define MATCH_TH_VPWADDU_VX 0xbc00700b
+#define MASK_TH_VPWADDU_VX 0xfc00707f
 /* Vendor-specific (Ventana Microsystems) XVentanaCondOps instructions */
 #define MATCH_VT_MASKC 0x607b
 #define MASK_VT_MASKC 0xfe00707f
@@ -3855,6 +4013,15 @@ DECLARE_INSN(c_ntl_all, MATCH_C_NTL_ALL, MASK_C_NTL_ALL)
 /* Zawrs instructions.  */
 DECLARE_INSN(wrs_nto, MATCH_WRS_NTO, MASK_WRS_NTO)
 DECLARE_INSN(wrs_sto, MATCH_WRS_STO, MASK_WRS_STO)
+/* Zfbfmin instructions.  */
+DECLARE_INSN(FCVT_BF16_S, MATCH_FCVT_BF16_S, MASK_FCVT_BF16_S)
+DECLARE_INSN(FCVT_S_BF16, MATCH_FCVT_S_BF16, MASK_FCVT_S_BF16)
+/* Zvfbfmin instructions.  */
+DECLARE_INSN(VFNCVTBF16_F_F_W, MATCH_VFNCVTBF16_F_F_W, MASK_VFNCVTBF16_F_F_W)
+DECLARE_INSN(VFWCVTBF16_F_F_V, MATCH_VFWCVTBF16_F_F_V, MASK_VFWCVTBF16_F_F_V)
+/* Zvfbfwma instructions.  */
+DECLARE_INSN(VFWMACCBF16_VF, MATCH_VFWMACCBF16_VF, MASK_VFWMACCBF16_VF)
+DECLARE_INSN(VFWMACCBF16_VV, MATCH_VFWMACCBF16_VV, MASK_VFWMACCBF16_VV)
 /* Zvbb/Zvkb instructions.  */
 DECLARE_INSN(vandn_vv, MATCH_VANDN_VV, MASK_VANDN_VV)
 DECLARE_INSN(vandn_vx, MATCH_VANDN_VX, MASK_VANDN_VX)
@@ -4507,3 +4674,6 @@ DECLARE_CSR_ALIAS(th.vl, CSR_VL, CSR_CLASS_XTHEADVECTOR, PRIV_SPEC_CLASS_NONE, P
 DECLARE_CSR_ALIAS(th.vtype, CSR_VTYPE, CSR_CLASS_XTHEADVECTOR, PRIV_SPEC_CLASS_NONE, PRIV_SPEC_CLASS_NONE)
 DECLARE_CSR_ALIAS(th.vlenb, CSR_VLENB, CSR_CLASS_XTHEADVECTOR, PRIV_SPEC_CLASS_NONE, PRIV_SPEC_CLASS_NONE)
 #endif /* DECLARE_CSR_ALIAS */
+
+#include "riscv-opc-xt.def"
+

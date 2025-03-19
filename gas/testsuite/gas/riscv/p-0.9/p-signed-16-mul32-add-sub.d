@@ -1,0 +1,99 @@
+#as: -march=rv64imap
+#objdump: -d
+
+tmpdir/p-signed-16-mul32-add-sub.o:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <signed_16bit_mul32_add_sub>:
+   0:	08001077          	smbb16	zero,zero,zero
+   4:	083110f7          	smbb16	ra,sp,gp
+   8:	091817f7          	smbb16	a5,a6,a7
+   c:	096a9a77          	smbb16	s4,s5,s6
+  10:	09ff1ef7          	smbb16	t4,t5,t6
+  14:	18001077          	smbt16	zero,zero,zero
+  18:	183110f7          	smbt16	ra,sp,gp
+  1c:	191817f7          	smbt16	a5,a6,a7
+  20:	196a9a77          	smbt16	s4,s5,s6
+  24:	19ff1ef7          	smbt16	t4,t5,t6
+  28:	28001077          	smtt16	zero,zero,zero
+  2c:	283110f7          	smtt16	ra,sp,gp
+  30:	291817f7          	smtt16	a5,a6,a7
+  34:	296a9a77          	smtt16	s4,s5,s6
+  38:	29ff1ef7          	smtt16	t4,t5,t6
+  3c:	38001077          	kmda	zero,zero,zero
+  40:	383110f7          	kmda	ra,sp,gp
+  44:	391817f7          	kmda	a5,a6,a7
+  48:	396a9a77          	kmda	s4,s5,s6
+  4c:	39ff1ef7          	kmda	t4,t5,t6
+  50:	3a001077          	kmxda	zero,zero,zero
+  54:	3a3110f7          	kmxda	ra,sp,gp
+  58:	3b1817f7          	kmxda	a5,a6,a7
+  5c:	3b6a9a77          	kmxda	s4,s5,s6
+  60:	3bff1ef7          	kmxda	t4,t5,t6
+  64:	58001077          	smds	zero,zero,zero
+  68:	583110f7          	smds	ra,sp,gp
+  6c:	591817f7          	smds	a5,a6,a7
+  70:	596a9a77          	smds	s4,s5,s6
+  74:	59ff1ef7          	smds	t4,t5,t6
+  78:	68001077          	smdrs	zero,zero,zero
+  7c:	683110f7          	smdrs	ra,sp,gp
+  80:	691817f7          	smdrs	a5,a6,a7
+  84:	696a9a77          	smdrs	s4,s5,s6
+  88:	69ff1ef7          	smdrs	t4,t5,t6
+  8c:	78001077          	smxds	zero,zero,zero
+  90:	783110f7          	smxds	ra,sp,gp
+  94:	791817f7          	smxds	a5,a6,a7
+  98:	796a9a77          	smxds	s4,s5,s6
+  9c:	79ff1ef7          	smxds	t4,t5,t6
+  a0:	5a001077          	kmabb	zero,zero,zero
+  a4:	5a3110f7          	kmabb	ra,sp,gp
+  a8:	5b1817f7          	kmabb	a5,a6,a7
+  ac:	5b6a9a77          	kmabb	s4,s5,s6
+  b0:	5bff1ef7          	kmabb	t4,t5,t6
+  b4:	6a001077          	kmabt	zero,zero,zero
+  b8:	6a3110f7          	kmabt	ra,sp,gp
+  bc:	6b1817f7          	kmabt	a5,a6,a7
+  c0:	6b6a9a77          	kmabt	s4,s5,s6
+  c4:	6bff1ef7          	kmabt	t4,t5,t6
+  c8:	7a001077          	kmatt	zero,zero,zero
+  cc:	7a3110f7          	kmatt	ra,sp,gp
+  d0:	7b1817f7          	kmatt	a5,a6,a7
+  d4:	7b6a9a77          	kmatt	s4,s5,s6
+  d8:	7bff1ef7          	kmatt	t4,t5,t6
+  dc:	48001077          	kmada	zero,zero,zero
+  e0:	483110f7          	kmada	ra,sp,gp
+  e4:	491817f7          	kmada	a5,a6,a7
+  e8:	496a9a77          	kmada	s4,s5,s6
+  ec:	49ff1ef7          	kmada	t4,t5,t6
+  f0:	4a001077          	kmaxda	zero,zero,zero
+  f4:	4a3110f7          	kmaxda	ra,sp,gp
+  f8:	4b1817f7          	kmaxda	a5,a6,a7
+  fc:	4b6a9a77          	kmaxda	s4,s5,s6
+ 100:	4bff1ef7          	kmaxda	t4,t5,t6
+ 104:	5c001077          	kmads	zero,zero,zero
+ 108:	5c3110f7          	kmads	ra,sp,gp
+ 10c:	5d1817f7          	kmads	a5,a6,a7
+ 110:	5d6a9a77          	kmads	s4,s5,s6
+ 114:	5dff1ef7          	kmads	t4,t5,t6
+ 118:	6c001077          	kmadrs	zero,zero,zero
+ 11c:	6c3110f7          	kmadrs	ra,sp,gp
+ 120:	6d1817f7          	kmadrs	a5,a6,a7
+ 124:	6d6a9a77          	kmadrs	s4,s5,s6
+ 128:	6dff1ef7          	kmadrs	t4,t5,t6
+ 12c:	7c001077          	kmaxds	zero,zero,zero
+ 130:	7c3110f7          	kmaxds	ra,sp,gp
+ 134:	7d1817f7          	kmaxds	a5,a6,a7
+ 138:	7d6a9a77          	kmaxds	s4,s5,s6
+ 13c:	7dff1ef7          	kmaxds	t4,t5,t6
+ 140:	4c001077          	kmsda	zero,zero,zero
+ 144:	4c3110f7          	kmsda	ra,sp,gp
+ 148:	4d1817f7          	kmsda	a5,a6,a7
+ 14c:	4d6a9a77          	kmsda	s4,s5,s6
+ 150:	4dff1ef7          	kmsda	t4,t5,t6
+ 154:	4e001077          	kmsxda	zero,zero,zero
+ 158:	4e3110f7          	kmsxda	ra,sp,gp
+ 15c:	4f1817f7          	kmsxda	a5,a6,a7
+ 160:	4f6a9a77          	kmsxda	s4,s5,s6
+ 164:	4fff1ef7          	kmsxda	t4,t5,t6

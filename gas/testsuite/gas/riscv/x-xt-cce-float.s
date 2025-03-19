@@ -1,0 +1,14 @@
+fcpx0	1,f2
+fcpx1	1,f3,f2
+fcpx2	1,f2,f1
+fcpx3	1,f3,f2,f1
+fcpx4	1,f3,f2,f1
+fcpx5	1,f3,f2,f1
+fcpx6	1,f3,f1,8
+th.fcpx0	1,f2
+th.fcpx1	1,f3,f2
+th.fcpx2	1,f2,f1
+th.fcpx3	1,f3,f2,f1
+th.fcpx4	1,f3,f2,f1
+th.fcpx5	1,f3,f2,f1
+th.fcpx6	1,f3,f1,8

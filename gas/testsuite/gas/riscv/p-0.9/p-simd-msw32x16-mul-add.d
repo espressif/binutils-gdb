@@ -1,0 +1,79 @@
+#as: -march=rv64imap
+#objdump: -d
+
+tmpdir/p-simd-msw32x16-mul-add.o:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <simd_msw32x16_mul_add>:
+   0:	44001077          	smmwb	zero,zero,zero
+   4:	443110f7          	smmwb	ra,sp,gp
+   8:	451817f7          	smmwb	a5,a6,a7
+   c:	456a9a77          	smmwb	s4,s5,s6
+  10:	45ff1ef7          	smmwb	t4,t5,t6
+  14:	54001077          	smmwb.u	zero,zero,zero
+  18:	543110f7          	smmwb.u	ra,sp,gp
+  1c:	551817f7          	smmwb.u	a5,a6,a7
+  20:	556a9a77          	smmwb.u	s4,s5,s6
+  24:	55ff1ef7          	smmwb.u	t4,t5,t6
+  28:	64001077          	smmwt	zero,zero,zero
+  2c:	643110f7          	smmwt	ra,sp,gp
+  30:	651817f7          	smmwt	a5,a6,a7
+  34:	656a9a77          	smmwt	s4,s5,s6
+  38:	65ff1ef7          	smmwt	t4,t5,t6
+  3c:	74001077          	smmwt.u	zero,zero,zero
+  40:	743110f7          	smmwt.u	ra,sp,gp
+  44:	751817f7          	smmwt.u	a5,a6,a7
+  48:	756a9a77          	smmwt.u	s4,s5,s6
+  4c:	75ff1ef7          	smmwt.u	t4,t5,t6
+  50:	46001077          	kmmawb	zero,zero,zero
+  54:	463110f7          	kmmawb	ra,sp,gp
+  58:	471817f7          	kmmawb	a5,a6,a7
+  5c:	476a9a77          	kmmawb	s4,s5,s6
+  60:	47ff1ef7          	kmmawb	t4,t5,t6
+  64:	56001077          	kmmawb.u	zero,zero,zero
+  68:	563110f7          	kmmawb.u	ra,sp,gp
+  6c:	571817f7          	kmmawb.u	a5,a6,a7
+  70:	576a9a77          	kmmawb.u	s4,s5,s6
+  74:	57ff1ef7          	kmmawb.u	t4,t5,t6
+  78:	66001077          	kmmawt	zero,zero,zero
+  7c:	663110f7          	kmmawt	ra,sp,gp
+  80:	671817f7          	kmmawt	a5,a6,a7
+  84:	676a9a77          	kmmawt	s4,s5,s6
+  88:	67ff1ef7          	kmmawt	t4,t5,t6
+  8c:	76001077          	kmmawt.u	zero,zero,zero
+  90:	763110f7          	kmmawt.u	ra,sp,gp
+  94:	771817f7          	kmmawt.u	a5,a6,a7
+  98:	776a9a77          	kmmawt.u	s4,s5,s6
+  9c:	77ff1ef7          	kmmawt.u	t4,t5,t6
+  a0:	8e001077          	kmmwb2	zero,zero,zero
+  a4:	8e3110f7          	kmmwb2	ra,sp,gp
+  a8:	8f1817f7          	kmmwb2	a5,a6,a7
+  ac:	8f6a9a77          	kmmwb2	s4,s5,s6
+  b0:	8fff1ef7          	kmmwb2	t4,t5,t6
+  b4:	9e001077          	kmmwb2.u	zero,zero,zero
+  b8:	9e3110f7          	kmmwb2.u	ra,sp,gp
+  bc:	9f1817f7          	kmmwb2.u	a5,a6,a7
+  c0:	9f6a9a77          	kmmwb2.u	s4,s5,s6
+  c4:	9fff1ef7          	kmmwb2.u	t4,t5,t6
+  c8:	ae001077          	kmmwt2	zero,zero,zero
+  cc:	ae3110f7          	kmmwt2	ra,sp,gp
+  d0:	af1817f7          	kmmwt2	a5,a6,a7
+  d4:	af6a9a77          	kmmwt2	s4,s5,s6
+  d8:	afff1ef7          	kmmwt2	t4,t5,t6
+  dc:	be001077          	kmmwt2.u	zero,zero,zero
+  e0:	be3110f7          	kmmwt2.u	ra,sp,gp
+  e4:	bf1817f7          	kmmwt2.u	a5,a6,a7
+  e8:	bf6a9a77          	kmmwt2.u	s4,s5,s6
+  ec:	bfff1ef7          	kmmwt2.u	t4,t5,t6
+  f0:	ee001077          	kmmawt2	zero,zero,zero
+  f4:	ee3110f7          	kmmawt2	ra,sp,gp
+  f8:	ef1817f7          	kmmawt2	a5,a6,a7
+  fc:	ef6a9a77          	kmmawt2	s4,s5,s6
+ 100:	efff1ef7          	kmmawt2	t4,t5,t6
+ 104:	fe001077          	kmmawt2.u	zero,zero,zero
+ 108:	fe3110f7          	kmmawt2.u	ra,sp,gp
+ 10c:	ff1817f7          	kmmawt2.u	a5,a6,a7
+ 110:	ff6a9a77          	kmmawt2.u	s4,s5,s6
+ 114:	ffff1ef7          	kmmawt2.u	t4,t5,t6

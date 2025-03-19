@@ -1118,6 +1118,9 @@ static struct riscv_implicit_subset riscv_implicit_subsets[] =
   {"v", "d",		check_implicit_always},
   {"v", "zve64d",	check_implicit_always},
   {"v", "zvl128b",	check_implicit_always},
+  {"zvfbfmin", "zve32f",	check_implicit_always},
+  {"zvfbfwma", "zve32f",	check_implicit_always},
+  {"zvfbfwma", "zfbfmin",	check_implicit_always},
   {"zvfh", "zvfhmin",	check_implicit_always},
   {"zvfh", "zfhmin",	check_implicit_always},
   {"zvfhmin", "zve32f",	check_implicit_always},
@@ -1146,8 +1149,38 @@ static struct riscv_implicit_subset riscv_implicit_subsets[] =
   {"zvl64b", "zvl32b",		check_implicit_always},
   {"zicntr", "zicsr",		check_implicit_always},
   {"zihpm", "zicsr",		check_implicit_always},
+
+  /* To reduce the likelihood of code synchronization conflicts,
+     the code is added here instead of at the end of the table.  */
+  {"xtheadc", "xtheadcmo",	check_implicit_always},
+  {"xtheadc", "xtheadsync",	check_implicit_always},
+  {"xtheadc", "xtheadba",	check_implicit_always},
+  {"xtheadc", "xtheadbb",	check_implicit_always},
+  {"xtheadc", "xtheadbs",	check_implicit_always},
+  {"xtheadc", "xtheadcondmov",	check_implicit_always},
+  {"xtheadc", "xtheadmemidx",	check_implicit_always},
+  {"xtheadc", "xtheadmempair",	check_implicit_always},
+  {"xtheadc", "xtheadfmemidx",	check_implicit_always},
+  {"xtheadc", "xtheadfmv",	check_implicit_always},
+  {"xtheadc", "xtheadmac",	check_implicit_always},
+
+  {"xtheade", "xtheadcmo",	check_implicit_always},
+  {"xtheade", "xtheadsync",	check_implicit_always},
+  {"xtheade", "xtheadba",	check_implicit_always},
+  {"xtheade", "xtheadbb",	check_implicit_always},
+  {"xtheade", "xtheadbs",	check_implicit_always},
+  {"xtheade", "xtheadcondmov",	check_implicit_always},
+  {"xtheade", "xtheadmemidx",	check_implicit_always},
+  {"xtheade", "xtheadfmv",	check_implicit_always},
+  {"xtheade", "xtheadmac",	check_implicit_always},
+  {"xtheade", "xtheadint",	check_implicit_always},
+
+  {"xtheadmatrix", "v",	check_implicit_always},
+  {"xtheadvsfa", "v",	check_implicit_always},
+
   {"zcd", "d",		check_implicit_always},
   {"zcf", "f",		check_implicit_always},
+  {"zfbfmin", "zfhmin",	check_implicit_always},
   {"zfa", "f",		check_implicit_always},
   {"d", "f",		check_implicit_always},
   {"zfh", "zfhmin",	check_implicit_always},
@@ -1193,6 +1226,7 @@ static struct riscv_implicit_subset riscv_implicit_subsets[] =
   {"zcf", "zca",	check_implicit_always},
   {"zcd", "zca",	check_implicit_always},
   {"zcb", "zca",	check_implicit_always},
+  {"zcmop", "zca",	check_implicit_always},
   {"smaia", "ssaia",		check_implicit_always},
   {"smcntrpmf", "zicsr",	check_implicit_always},
   {"smstateen", "ssstateen",	check_implicit_always},
@@ -1254,6 +1288,7 @@ static struct riscv_supported_ext riscv_supported_std_ext[] =
   {"c",		ISA_SPEC_CLASS_20191213,	2, 0, 0 },
   {"c",		ISA_SPEC_CLASS_20190608,	2, 0, 0 },
   {"c",		ISA_SPEC_CLASS_2P2,		2, 0, 0 },
+  {"p",		ISA_SPEC_CLASS_DRAFT,		0, 9, 0 },
   {"v",		ISA_SPEC_CLASS_DRAFT,		1, 0, 0 },
   {"h",		ISA_SPEC_CLASS_DRAFT,		1, 0, 0 },
   {NULL, 0, 0, 0, 0}
@@ -1265,6 +1300,7 @@ static struct riscv_supported_ext riscv_supported_std_z_ext[] =
   {"zicbop",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zicboz",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zicond",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
+  {"zimop",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zicntr",		ISA_SPEC_CLASS_DRAFT,		2, 0,  0 },
   {"zicsr",		ISA_SPEC_CLASS_20191213,	2, 0,  0 },
   {"zicsr",		ISA_SPEC_CLASS_20190608,	2, 0,  0 },
@@ -1275,6 +1311,7 @@ static struct riscv_supported_ext riscv_supported_std_z_ext[] =
   {"zihpm",		ISA_SPEC_CLASS_DRAFT,		2, 0,  0 },
   {"zmmul",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zawrs",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
+  {"zfbfmin",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zfa",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zfh",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zfhmin",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
@@ -1300,6 +1337,11 @@ static struct riscv_supported_ext riscv_supported_std_z_ext[] =
   {"zksed",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zksh",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zkt",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
+  {"zpn",		ISA_SPEC_CLASS_DRAFT,		0, 9,  0 },
+  {"zprvsfextra",	ISA_SPEC_CLASS_DRAFT,		0, 9,  0 },
+  {"zpsfoperand",	ISA_SPEC_CLASS_DRAFT,		0, 9,  0 },
+  {"zvamo",		ISA_SPEC_CLASS_DRAFT,		0, 7,  0 },
+  {"zvlsseg",		ISA_SPEC_CLASS_DRAFT,		0, 7,  0 },
   {"zve32x",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zve32f",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zve64x",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
@@ -1307,6 +1349,8 @@ static struct riscv_supported_ext riscv_supported_std_z_ext[] =
   {"zve64d",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zvbb",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zvbc",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
+  {"zvfbfmin",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
+  {"zvfbfwma",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zvfh",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zvfhmin",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zvkb",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
@@ -1340,6 +1384,7 @@ static struct riscv_supported_ext riscv_supported_std_z_ext[] =
   {"zcb",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zcf",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {"zcd",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
+  {"zcmop",		ISA_SPEC_CLASS_DRAFT,		1, 0,  0 },
   {NULL, 0, 0, 0, 0}
 };
 
@@ -1372,19 +1417,32 @@ static struct riscv_supported_ext riscv_supported_vendor_x_ext[] =
   {"xtheadba",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadbb",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadbs",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+  {"xtheadc",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadcmo",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadcondmov",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+  {"xtheade",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadfmemidx",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+  {"xtheadfpp",		ISA_SPEC_CLASS_DRAFT,	0, 1, 0 },
   {"xtheadfmv",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadint",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadmac",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+  {"xtheadmatrix",	ISA_SPEC_CLASS_DRAFT,	0, 3, 0 },
   {"xtheadmemidx",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadmempair",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+  {"xtheadse",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadsync",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadvector",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+  {"xtheadvdot",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadzvamo",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+  {"xtheadvsfa",	ISA_SPEC_CLASS_DRAFT,	0, 2, 0 },
+  {"xtheadvfcvt",	ISA_SPEC_CLASS_DRAFT,	0, 6, 0 },
+  {"xtheadvreduction",	ISA_SPEC_CLASS_DRAFT,	0, 6, 0 },
+  {"xtheadlpw",	        ISA_SPEC_CLASS_DRAFT,	0, 6, 0 },
   {"xventanacondops",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xsfvcp",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0},
+  {"xxtccei",		ISA_SPEC_CLASS_DRAFT,	0, 2, 0 },
+  {"xxtccef",		ISA_SPEC_CLASS_DRAFT,	0, 2, 0 },
+  {"xxtccev",		ISA_SPEC_CLASS_DRAFT,	0, 2, 0 },
   {NULL, 0, 0, 0, 0}
 };
 
@@ -1605,6 +1663,9 @@ riscv_add_subset (riscv_subset_list_t *subset_list,
 		  int minor)
 {
   riscv_subset_t *current, *new;
+
+  if (riscv_vendor_perfer_subset (subset_list, subset, major, minor))
+    return;
 
   if (riscv_lookup_subset (subset_list, subset, &current))
     return;
@@ -2431,6 +2492,8 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
 		  || riscv_subset_supports (rps, "zca")));
     case INSN_CLASS_ZIHINTPAUSE:
       return riscv_subset_supports (rps, "zihintpause");
+    case INSN_CLASS_ZIMOP:
+      return riscv_subset_supports (rps, "zimop");
     case INSN_CLASS_M:
       return riscv_subset_supports (rps, "m");
     case INSN_CLASS_ZMMUL:
@@ -2483,6 +2546,8 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
 	       && riscv_subset_supports (rps, "q"))
 	      || (riscv_subset_supports (rps, "zhinxmin")
 		  && riscv_subset_supports (rps, "zqinx")));
+    case INSN_CLASS_ZFBFMIN:
+      return riscv_subset_supports (rps, "zfbfmin");
     case INSN_CLASS_ZFA:
       return riscv_subset_supports (rps, "zfa");
     case INSN_CLASS_D_AND_ZFA:
@@ -2531,6 +2596,20 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
       return riscv_subset_supports (rps, "zksed");
     case INSN_CLASS_ZKSH:
       return riscv_subset_supports (rps, "zksh");
+    case INSN_CLASS_P:
+      return (riscv_subset_supports (rps, "p")
+	      || riscv_subset_supports (rps, "zpn")
+	      || riscv_subset_supports (rps, "zprvsfextra")
+	      || riscv_subset_supports (rps, "zpsfoperand"));
+    case INSN_CLASS_P_OR_ZPN:
+      return (riscv_subset_supports (rps, "p")
+	      || riscv_subset_supports (rps, "zpn"));
+    case INSN_CLASS_P_OR_ZPRVSFEXTRA:
+      return (riscv_subset_supports (rps, "p")
+	      || riscv_subset_supports (rps, "zprvsfextra"));
+    case INSN_CLASS_P_OR_ZPSFOPERAND:
+      return (riscv_subset_supports (rps, "p")
+	      || riscv_subset_supports (rps, "zpsfoperand"));
     case INSN_CLASS_V:
       return (riscv_subset_supports (rps, "v")
 	      || riscv_subset_supports (rps, "zve64x")
@@ -2544,6 +2623,10 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
       return riscv_subset_supports (rps, "zvbb");
     case INSN_CLASS_ZVBC:
       return riscv_subset_supports (rps, "zvbc");
+    case INSN_CLASS_ZVFBFMIN:
+      return riscv_subset_supports (rps, "zvfbfmin");
+    case INSN_CLASS_ZVFBFWMA:
+      return riscv_subset_supports (rps, "zvfbfwma");
     case INSN_CLASS_ZVKB:
       return riscv_subset_supports (rps, "zvkb");
     case INSN_CLASS_ZVKG:
@@ -2568,6 +2651,8 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
     case INSN_CLASS_ZCB_AND_ZMMUL:
       return (riscv_subset_supports (rps, "zcb")
 	      && riscv_subset_supports (rps, "zmmul"));
+    case INSN_CLASS_ZCMOP:
+      return riscv_subset_supports (rps, "zcmop");
     case INSN_CLASS_SVINVAL:
       return riscv_subset_supports (rps, "svinval");
     case INSN_CLASS_H:
@@ -2594,6 +2679,8 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
       return riscv_subset_supports (rps, "xtheadint");
     case INSN_CLASS_XTHEADMAC:
       return riscv_subset_supports (rps, "xtheadmac");
+    case INSN_CLASS_XTHEADMATRIX:
+      return riscv_subset_supports (rps, "xtheadmatrix");
     case INSN_CLASS_XTHEADMEMIDX:
       return riscv_subset_supports (rps, "xtheadmemidx");
     case INSN_CLASS_XTHEADMEMPAIR:
@@ -2602,12 +2689,28 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
       return riscv_subset_supports (rps, "xtheadsync");
     case INSN_CLASS_XTHEADVECTOR:
       return riscv_subset_supports (rps, "xtheadvector");
+    case INSN_CLASS_XTHEADVDOT:
+      return riscv_subset_supports (rps, "xtheadvdot");
     case INSN_CLASS_XTHEADZVAMO:
       return riscv_subset_supports (rps, "xtheadzvamo");
+    case INSN_CLASS_XTHEADVSFA:
+      return riscv_subset_supports (rps, "xtheadvsfa");
+    case INSN_CLASS_XTHEADVFCVT:
+      return riscv_subset_supports (rps, "xtheadvfcvt");
+    case INSN_CLASS_XTHEADVREDUCTION:
+      return riscv_subset_supports (rps, "xtheadvreduction");
+    case INSN_CLASS_XTHEADLPW:
+      return riscv_subset_supports (rps, "xtheadlpw");
     case INSN_CLASS_XVENTANACONDOPS:
       return riscv_subset_supports (rps, "xventanacondops");
     case INSN_CLASS_XSFVCP:
       return riscv_subset_supports (rps, "xsfvcp");
+    case INSN_CLASS_XXTCCEI:
+      return riscv_subset_supports (rps, "xxtccei");
+    case INSN_CLASS_XXTCCEF:
+      return riscv_subset_supports (rps, "xxtccef");
+    case INSN_CLASS_XXTCCEV:
+      return riscv_subset_supports (rps, "xxtccev");
     default:
       rps->error_handler
         (_("internal: unreachable INSN_CLASS_*"));
@@ -2653,6 +2756,8 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
 	return _("c' or `zca");
     case INSN_CLASS_ZIHINTPAUSE:
       return "zihintpause";
+    case INSN_CLASS_ZIMOP:
+      return "zimop";
     case INSN_CLASS_M:
       return "m";
     case INSN_CLASS_ZMMUL:
@@ -2725,6 +2830,8 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
 	return "zhinxmin";
       else
 	return _("zfhmin' and `q', or `zhinxmin' and `zqinx");
+    case INSN_CLASS_ZFBFMIN:
+      return "zfbfmin";
     case INSN_CLASS_ZFA:
       return "zfa";
     case INSN_CLASS_D_AND_ZFA:
@@ -2800,6 +2907,10 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
       return _("zvbb");
     case INSN_CLASS_ZVBC:
       return _("zvbc");
+    case INSN_CLASS_ZVFBFMIN:
+      return "zvfbfmin";
+    case INSN_CLASS_ZVFBFWMA:
+      return "zvfbfwma";
     case INSN_CLASS_ZVKB:
       return _("zvkb");
     case INSN_CLASS_ZVKG:
@@ -2820,6 +2931,8 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
       return _("zcb' and `zbb");
     case INSN_CLASS_ZCB_AND_ZMMUL:
       return _("zcb' and `zmmul', or `zcb' and `m");
+    case INSN_CLASS_ZCMOP:
+      return "zcmop";
     case INSN_CLASS_SVINVAL:
       return "svinval";
     case INSN_CLASS_H:
@@ -2846,6 +2959,8 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
       return "xtheadint";
     case INSN_CLASS_XTHEADMAC:
       return "xtheadmac";
+    case INSN_CLASS_XTHEADMATRIX:
+      return "xtheadmatrix";
     case INSN_CLASS_XTHEADMEMIDX:
       return "xtheadmemidx";
     case INSN_CLASS_XTHEADMEMPAIR:
@@ -2854,11 +2969,30 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
       return "xtheadsync";
     case INSN_CLASS_XTHEADVECTOR:
       return "xtheadvector";
+    case INSN_CLASS_XTHEADVDOT:
+      return "xtheadvdot";
     case INSN_CLASS_XTHEADZVAMO:
       return "xtheadzvamo";
+    case INSN_CLASS_XTHEADVFCVT:
+      return "xtheadvfcvt";
+    case INSN_CLASS_XTHEADVREDUCTION:
+      return "xtheadvreduction";
+    case INSN_CLASS_XTHEADLPW:
+      return "xtheadlpw";
+    case INSN_CLASS_XTHEADVSFA:
+      return "xtheadvsfa";
+    case INSN_CLASS_XXTCCEI:
+      return "xxtccei";
+    case INSN_CLASS_XXTCCEF:
+      return "xxtccef";
+    case INSN_CLASS_XXTCCEV:
+      return "xxtccev";
     default:
       rps->error_handler
         (_("internal: unreachable INSN_CLASS_*"));
       return NULL;
     }
 }
+
+#include "elfxx-riscv-xt.inc"
+

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!-- Copyright (C) 2018-2019 Free Software Foundation, Inc.
+
+     Copying and distribution of this file, with or without modification,
+     are permitted in any medium without royalty provided the copyright
+     notice and this notice are preserved.  -->
+
+<!DOCTYPE feature SYSTEM "gdb-target.dtd">
+<feature name="org.gnu.gdb.riscv.csr">
+  <reg name="vstart" bitsize="32" type="int" regnum="73"/>
+  <reg name="vcsr"   bitsize="32" type="int" regnum="80"/>
+  <reg name="vl"     bitsize="32" type="int" regnum="3169"/>
+  <reg name="vtype"  bitsize="32" type="int" regnum="3170"/>
+  <reg name="vlenb"  bitsize="32" type="int" regnum="3171"/>
+</feature>
