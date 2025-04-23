@@ -883,6 +883,54 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 	    case 'e':
 	      switch (*++oparg)
 		{
+		case 'd':
+		  switch (*++oparg)
+		    {
+		    case 'i':
+		      switch (*++oparg)
+			{
+			case '2':	/* Xedi2 */
+			  print (info->stream, dis_style_immediate, "%d",
+				 EXTRACT_ESP_IMM2 ((int32_t) l));
+			  break;	/* Xedi2 */
+			case '5':
+			  switch (*++oparg)
+			    {
+			    case '0':	/* Xedi50 */
+			      print (info->stream, dis_style_immediate, "%d",
+				     EXTRACT_ESP_IMM5_0 ((int32_t) l));
+			      break;	/* Xedi50 */
+			    case '1':	/* Xedi51 */
+			      print (info->stream, dis_style_immediate, "%d",
+				     EXTRACT_ESP_IMM5_1 ((int32_t) l));
+			      break;	/* Xedi51 */
+			    default:	/* Xedi5[.] */
+			      goto undefined_modifier;
+			    }
+			  break;
+			default:	/* Xedi[.] */
+			  goto undefined_modifier;
+			}
+		      break;
+		    case 's':
+		      switch (*++oparg)
+			{
+			case '0':	/* Xeds0 */
+			  print (info->stream, dis_style_immediate, "%d",
+				 EXTRACT_ESP_SHAMT_0 ((int32_t) l));
+			  break;	/* Xeds0 */
+			case '1':	/* Xeds1 */
+			  print (info->stream, dis_style_immediate, "%d",
+				 EXTRACT_ESP_SHAMT_1 ((int32_t) l));
+			  break;	/* Xeds1 */
+			default:	/* Xeds[.] */
+			  goto undefined_modifier;
+			}
+		      break;
+		    default:	/* Xed[.] */
+		      goto undefined_modifier;
+		    }
+		  break;
 		case 'l':
 		  switch (*++oparg)
 		    {
@@ -906,8 +954,6 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 						   (l) + pc, 0);
 			      print (info->stream, dis_style_address_offset,
 				     "%d",
-				     (int) EXTRACT_ESP_LP_OFFSET_12 (l));
-			      print (info->stream, dis_style_immediate, "%d",
 				     EXTRACT_ESP_LP_OFFSET_12 ((int32_t) l));
 			      break;	/* Xelo12 */
 			    default:	/* Xelo1[.] */
@@ -919,8 +965,6 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 					       EXTRACT_ESP_LP_OFFSET_9 (l) +
 					       pc, 0);
 			  print (info->stream, dis_style_address_offset, "%d",
-				 (int) EXTRACT_ESP_LP_OFFSET_9 (l));
-			  print (info->stream, dis_style_immediate, "%d",
 				 EXTRACT_ESP_LP_OFFSET_9 ((int32_t) l));
 			  break;	/* Xelo9 */
 			default:	/* Xelo[.] */
@@ -1098,16 +1142,44 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 		      print (info->stream, dis_style_register, "%s",
 			     riscv_gpr_names[EXTRACT_ESP_RD (l) | 1 << 3]);
 		      break;	/* Xerc */
-		    case 'a':	/* Xera */
-		      /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
-		      print (info->stream, dis_style_register, "%s",
-			     riscv_gpr_names[EXTRACT_ESP_RS1 (l) | 1 << 3]);
-		      break;	/* Xera */
-		    case 'b':	/* Xerb */
-		      /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
-		      print (info->stream, dis_style_register, "%s",
-			     riscv_gpr_names[EXTRACT_ESP_RS2 (l) | 1 << 3]);
-		      break;	/* Xerb */
+		    case 'a':
+		      switch (*++oparg)
+			{
+			case '0':	/* Xera0 */
+			  /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
+			  print (info->stream, dis_style_register, "%s",
+				 riscv_gpr_names[EXTRACT_ESP_RS1_0 (l) | 1 <<
+						 3]);
+			  break;	/* Xera0 */
+			case '1':	/* Xera1 */
+			  /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
+			  print (info->stream, dis_style_register, "%s",
+				 riscv_gpr_names[EXTRACT_ESP_RS1_1 (l) | 1 <<
+						 3]);
+			  break;	/* Xera1 */
+			default:	/* Xera[.] */
+			  goto undefined_modifier;
+			}
+		      break;
+		    case 'b':
+		      switch (*++oparg)
+			{
+			case '0':	/* Xerb0 */
+			  /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
+			  print (info->stream, dis_style_register, "%s",
+				 riscv_gpr_names[EXTRACT_ESP_RS2_0 (l) | 1 <<
+						 3]);
+			  break;	/* Xerb0 */
+			case '1':	/* Xerb1 */
+			  /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
+			  print (info->stream, dis_style_register, "%s",
+				 riscv_gpr_names[EXTRACT_ESP_RS2_1 (l) | 1 <<
+						 3]);
+			  break;	/* Xerb1 */
+			default:	/* Xerb[.] */
+			  goto undefined_modifier;
+			}
+		      break;
 		    default:	/* Xer[.] */
 		      goto undefined_modifier;
 		    }

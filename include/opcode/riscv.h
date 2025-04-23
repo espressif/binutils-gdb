@@ -138,6 +138,12 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define EXTRACT_CV_SIMD_UIMM6(x) \
   ((RV_X(x, 25, 1)) | (RV_X(x, 20, 5) << 1))
 /* Vendor-specific (Espressif) extract macros.  */
+#define EXTRACT_ESP_IMM2(x) \
+  (RV_X(x, 25, 2))
+#define EXTRACT_ESP_IMM5_0(x) \
+  ( ( (RV_X(x, 7, 5)) << (sizeof(x) * 8 - 5) ) >> (sizeof(x) * 8 - 5) )
+#define EXTRACT_ESP_IMM5_1(x) \
+  ( ( (RV_X(x, 20, 5)) << (sizeof(x) * 8 - 5) ) >> (sizeof(x) * 8 - 5) )
 #define EXTRACT_ESP_LP_COUNT(x) \
   (RV_X(x, 20, 12))
 #define EXTRACT_ESP_LP_ID(x) \
@@ -186,10 +192,14 @@ static inline unsigned int riscv_insn_length (insn_t insn)
   (RV_X(x, 7, 3))
 #define EXTRACT_ESP_RD(x) \
   ((RV_X(x, 10, 1) << 4) | (RV_X(x, 7, 3)))
-#define EXTRACT_ESP_RS1(x) \
+#define EXTRACT_ESP_RS1_0(x) \
   ((RV_X(x, 18, 1) << 4) | (RV_X(x, 15, 3)))
-#define EXTRACT_ESP_RS2(x) \
+#define EXTRACT_ESP_RS1_1(x) \
+  ((RV_X(x, 19, 1) << 4) | (RV_X(x, 15, 3)))
+#define EXTRACT_ESP_RS2_0(x) \
   ((RV_X(x, 23, 1) << 4) | (RV_X(x, 20, 3)))
+#define EXTRACT_ESP_RS2_1(x) \
+  ((RV_X(x, 24, 1) << 4) | (RV_X(x, 20, 3)))
 #define EXTRACT_ESP_SELECT_16_0(x) \
   (RV_X(x, 7, 4))
 #define EXTRACT_ESP_SELECT_16_1(x) \
@@ -232,6 +242,10 @@ static inline unsigned int riscv_insn_length (insn_t insn)
   (RV_X(x, 26, 3))
 #define EXTRACT_ESP_SELECT_8_2(x) \
   (RV_X(x, 7, 3))
+#define EXTRACT_ESP_SHAMT_0(x) \
+  ((RV_X(x, 25, 2) << 4) | (RV_X(x, 23, 1) << 3) | (RV_X(x, 18, 1) << 2) | (RV_X(x, 13, 2)))
+#define EXTRACT_ESP_SHAMT_1(x) \
+  (RV_X(x, 26, 6))
 #define EXTRACT_ESP_UPD_4(x) \
   ((RV_X(x, 19, 1) << 1) | (RV_X(x, 14, 1)))
 
@@ -303,6 +317,12 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define ENCODE_CV_SIMD_UIMM6(x) \
   ((RV_X(x, 0, 1) << 25) | (RV_X(x, 1, 5) << 20))
 /* Vendor-specific (Espressif) encode macros.  */
+#define ENCODE_ESP_IMM2(x) \
+  (RV_X(x, 0, 2) << 25)
+#define ENCODE_ESP_IMM5_0(x) \
+  (RV_X(x, 0, 5) << 7)
+#define ENCODE_ESP_IMM5_1(x) \
+  (RV_X(x, 0, 5) << 20)
 #define ENCODE_ESP_LP_COUNT(x) \
   (RV_X(x, 0, 12) << 20)
 #define ENCODE_ESP_LP_ID(x) \
@@ -351,10 +371,14 @@ static inline unsigned int riscv_insn_length (insn_t insn)
   (RV_X(x, 0, 3) << 7)
 #define ENCODE_ESP_RD(x) \
   ((RV_X(x, 4, 1) << 10) | (RV_X(x, 0, 3) << 7))
-#define ENCODE_ESP_RS1(x) \
+#define ENCODE_ESP_RS1_0(x) \
   ((RV_X(x, 4, 1) << 18) | (RV_X(x, 0, 3) << 15))
-#define ENCODE_ESP_RS2(x) \
+#define ENCODE_ESP_RS1_1(x) \
+  ((RV_X(x, 4, 1) << 19) | (RV_X(x, 0, 3) << 15))
+#define ENCODE_ESP_RS2_0(x) \
   ((RV_X(x, 4, 1) << 23) | (RV_X(x, 0, 3) << 20))
+#define ENCODE_ESP_RS2_1(x) \
+  ((RV_X(x, 4, 1) << 24) | (RV_X(x, 0, 3) << 20))
 #define ENCODE_ESP_SELECT_16_0(x) \
   (RV_X(x, 0, 4) << 7)
 #define ENCODE_ESP_SELECT_16_1(x) \
@@ -397,6 +421,10 @@ static inline unsigned int riscv_insn_length (insn_t insn)
   (RV_X(x, 0, 3) << 26)
 #define ENCODE_ESP_SELECT_8_2(x) \
   (RV_X(x, 0, 3) << 7)
+#define ENCODE_ESP_SHAMT_0(x) \
+  ((RV_X(x, 4, 2) << 25) | (RV_X(x, 3, 1) << 23) | (RV_X(x, 2, 1) << 18) | (RV_X(x, 0, 2) << 13))
+#define ENCODE_ESP_SHAMT_1(x) \
+  (RV_X(x, 0, 6) << 26)
 #define ENCODE_ESP_UPD_4(x) \
   ((RV_X(x, 1, 1) << 19) | (RV_X(x, 0, 1) << 14))
 
@@ -428,6 +456,9 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define VALID_ZCB_HALFWORD_UIMM(x) (EXTRACT_ZCB_HALFWORD_UIMM(ENCODE_ZCB_HALFWORD_UIMM(x)) == (x))
 #define VALID_ZCMP_SPIMM(x) (EXTRACT_ZCMP_SPIMM(ENCODE_ZCMP_SPIMM(x)) == (x))
 /* Vendor-specific (Espressif) validation macros.  */
+#define VALID_ESP_IMM2(x) (EXTRACT_ESP_IMM2(ENCODE_ESP_IMM2(x)) == (x))
+#define VALID_ESP_IMM5_0(x) (EXTRACT_ESP_IMM5_0(ENCODE_ESP_IMM5_0(x)) == (x))
+#define VALID_ESP_IMM5_1(x) (EXTRACT_ESP_IMM5_1(ENCODE_ESP_IMM5_1(x)) == (x))
 #define VALID_ESP_LP_COUNT(x) (EXTRACT_ESP_LP_COUNT(ENCODE_ESP_LP_COUNT(x)) == (x))
 #define VALID_ESP_LP_ID(x) (EXTRACT_ESP_LP_ID(ENCODE_ESP_LP_ID(x)) == (x))
 #define VALID_ESP_LP_OFFSET_12(x) (EXTRACT_ESP_LP_OFFSET_12(ENCODE_ESP_LP_OFFSET_12(x)) == (x))
@@ -452,8 +483,10 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define VALID_ESP_QY(x) (EXTRACT_ESP_QY(ENCODE_ESP_QY(x)) == (x))
 #define VALID_ESP_QZ(x) (EXTRACT_ESP_QZ(ENCODE_ESP_QZ(x)) == (x))
 #define VALID_ESP_RD(x) (EXTRACT_ESP_RD(ENCODE_ESP_RD(x)) == (x))
-#define VALID_ESP_RS1(x) (EXTRACT_ESP_RS1(ENCODE_ESP_RS1(x)) == (x))
-#define VALID_ESP_RS2(x) (EXTRACT_ESP_RS2(ENCODE_ESP_RS2(x)) == (x))
+#define VALID_ESP_RS1_0(x) (EXTRACT_ESP_RS1_0(ENCODE_ESP_RS1_0(x)) == (x))
+#define VALID_ESP_RS1_1(x) (EXTRACT_ESP_RS1_1(ENCODE_ESP_RS1_1(x)) == (x))
+#define VALID_ESP_RS2_0(x) (EXTRACT_ESP_RS2_0(ENCODE_ESP_RS2_0(x)) == (x))
+#define VALID_ESP_RS2_1(x) (EXTRACT_ESP_RS2_1(ENCODE_ESP_RS2_1(x)) == (x))
 #define VALID_ESP_SELECT_16_0(x) (EXTRACT_ESP_SELECT_16_0(ENCODE_ESP_SELECT_16_0(x)) == (x))
 #define VALID_ESP_SELECT_16_1(x) (EXTRACT_ESP_SELECT_16_1(ENCODE_ESP_SELECT_16_1(x)) == (x))
 #define VALID_ESP_SELECT_16_2(x) (EXTRACT_ESP_SELECT_16_2(ENCODE_ESP_SELECT_16_2(x)) == (x))
@@ -475,6 +508,8 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define VALID_ESP_SELECT_8_0(x) (EXTRACT_ESP_SELECT_8_0(ENCODE_ESP_SELECT_8_0(x)) == (x))
 #define VALID_ESP_SELECT_8_1(x) (EXTRACT_ESP_SELECT_8_1(ENCODE_ESP_SELECT_8_1(x)) == (x))
 #define VALID_ESP_SELECT_8_2(x) (EXTRACT_ESP_SELECT_8_2(ENCODE_ESP_SELECT_8_2(x)) == (x))
+#define VALID_ESP_SHAMT_0(x) (EXTRACT_ESP_SHAMT_0(ENCODE_ESP_SHAMT_0(x)) == (x))
+#define VALID_ESP_SHAMT_1(x) (EXTRACT_ESP_SHAMT_1(ENCODE_ESP_SHAMT_1(x)) == (x))
 #define VALID_ESP_UPD_4(x) (EXTRACT_ESP_UPD_4(ENCODE_ESP_UPD_4(x)) == (x))
 
 #define RISCV_RTYPE(insn, rd, rs1, rs2) \
@@ -823,6 +858,8 @@ enum riscv_insn_class
   INSN_CLASS_XSFVFNRCLIPXFQF,
   INSN_CLASS_XESPV,
   INSN_CLASS_XESPLOOP,
+  INSN_CLASS_XESPDSP,
+  INSN_CLASS_XESPV_AND_XESPDSP,
 };
 
 /* This structure holds information for a particular instruction.  */

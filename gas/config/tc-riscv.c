@@ -1762,6 +1762,39 @@ validate_riscv_insn (const struct riscv_opcode *opc, int length)
 	    case 'e':
 	      switch (*++oparg)
 		{
+		case 'd':
+		  switch (*++oparg)
+		    {
+		    case 'i':
+		      switch (*++oparg)
+			{
+			case '2': used_bits |= ENCODE_ESP_IMM2 (-1U); break;	/* Xedi2 */
+			case '5':
+			  switch (*++oparg)
+			    {
+			    case '0': used_bits |= ENCODE_ESP_IMM5_0 (-1U); break;	/* Xedi50 */
+			    case '1': used_bits |= ENCODE_ESP_IMM5_1 (-1U); break;	/* Xedi51 */
+			    default:	/* Xedi5[.] */
+			      goto unknown_validate_operand;
+			    }
+			  break;
+			default:	/* Xedi[.] */
+			  goto unknown_validate_operand;
+			}
+		      break;
+		    case 's':
+		      switch (*++oparg)
+			{
+			case '0': used_bits |= ENCODE_ESP_SHAMT_0 (-1U); break;	/* Xeds0 */
+			case '1': used_bits |= ENCODE_ESP_SHAMT_1 (-1U); break;	/* Xeds1 */
+			default:	/* Xeds[.] */
+			  goto unknown_validate_operand;
+			}
+		      break;
+		    default:	/* Xed[.] */
+		      goto unknown_validate_operand;
+		    }
+		  break;
 		case 'l':
 		  switch (*++oparg)
 		    {
@@ -1880,8 +1913,24 @@ validate_riscv_insn (const struct riscv_opcode *opc, int length)
 		  switch (*++oparg)
 		    {
 		    case 'c': used_bits |= ENCODE_ESP_RD (-1U); break;	/* Xerc */
-		    case 'a': used_bits |= ENCODE_ESP_RS1 (-1U); break;	/* Xera */
-		    case 'b': used_bits |= ENCODE_ESP_RS2 (-1U); break;	/* Xerb */
+		    case 'a':
+		      switch (*++oparg)
+			{
+			case '0': used_bits |= ENCODE_ESP_RS1_0 (-1U); break;	/* Xera0 */
+			case '1': used_bits |= ENCODE_ESP_RS1_1 (-1U); break;	/* Xera1 */
+			default:	/* Xera[.] */
+			  goto unknown_validate_operand;
+			}
+		      break;
+		    case 'b':
+		      switch (*++oparg)
+			{
+			case '0': used_bits |= ENCODE_ESP_RS2_0 (-1U); break;	/* Xerb0 */
+			case '1': used_bits |= ENCODE_ESP_RS2_1 (-1U); break;	/* Xerb1 */
+			default:	/* Xerb[.] */
+			  goto unknown_validate_operand;
+			}
+		      break;
 		    default:	/* Xer[.] */
 		      goto unknown_validate_operand;
 		    }
@@ -4371,6 +4420,118 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 		case 'e':
 		  switch (*++oparg)
 		    {
+		    case 'd':
+		      switch (*++oparg)
+			{
+			case 'i':
+			  switch (*++oparg)
+			    {
+			    case '2':	/* Xedi2 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 3
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_IMM2 (imm_expr->X_add_number))
+				{
+				  as_bad (_("bad value for imm2, "
+					    "must be in range 0..3 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_IMM2 (imm_expr->X_add_number);
+			    esp_imm_done:
+			      asarg = expr_parse_end;
+			      imm_expr->X_op = O_absent;
+			      continue;
+			    case '5':
+			      switch (*++oparg)
+				{
+				case '0':	/* Xedi50 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 15
+				      || imm_expr->X_add_number < -16
+				      || !VALID_ESP_IMM5_0 (imm_expr->
+							    X_add_number))
+				    {
+				      as_bad (_("bad value for imm5, "
+						"must be in range -16..15 with step 1"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_IMM5_0 (imm_expr->
+						       X_add_number);
+				  goto esp_imm_done;
+				case '1':	/* Xedi51 */
+				  if (my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      || imm_expr->X_op != O_constant
+				      || imm_expr->X_add_number > 15
+				      || imm_expr->X_add_number < -16
+				      || !VALID_ESP_IMM5_1 (imm_expr->
+							    X_add_number))
+				    {
+				      as_bad (_("bad value for imm5, "
+						"must be in range -16..15 with step 1"));
+				      break;
+				    }
+				  ip->insn_opcode |=
+				    ENCODE_ESP_IMM5_1 (imm_expr->
+						       X_add_number);
+				  goto esp_imm_done;
+				default:	/* Xedi5[.] */
+				  goto unknown_riscv_ip_operand;
+				}
+			      break;
+			    default:	/* Xedi[.] */
+			      goto unknown_riscv_ip_operand;
+			    }
+			  break;
+			case 's':
+			  switch (*++oparg)
+			    {
+			    case '0':	/* Xeds0 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 32
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SHAMT_0 (imm_expr->
+							 X_add_number))
+				{
+				  as_bad (_("bad value for shamt, "
+					    "must be in range 0..32 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SHAMT_0 (imm_expr->X_add_number);
+			      goto esp_imm_done;
+			    case '1':	/* Xeds1 */
+			      if (my_getSmallExpression
+				  (imm_expr, imm_reloc, asarg, p)
+				  || imm_expr->X_op != O_constant
+				  || imm_expr->X_add_number > 32
+				  || imm_expr->X_add_number < 0
+				  || !VALID_ESP_SHAMT_1 (imm_expr->
+							 X_add_number))
+				{
+				  as_bad (_("bad value for shamt, "
+					    "must be in range 0..32 with step 1"));
+				  break;
+				}
+			      ip->insn_opcode |=
+				ENCODE_ESP_SHAMT_1 (imm_expr->X_add_number);
+			      goto esp_imm_done;
+			    default:	/* Xeds[.] */
+			      goto unknown_riscv_ip_operand;
+			    }
+			  break;
+			default:	/* Xed[.] */
+			  goto unknown_riscv_ip_operand;
+			}
+		      break;
 		    case 'l':
 		      switch (*++oparg)
 			{
@@ -4388,10 +4549,7 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 			    }
 			  ip->insn_opcode |=
 			    ENCODE_ESP_LP_COUNT (imm_expr->X_add_number);
-			esp_imm_done:
-			  asarg = expr_parse_end;
-			  imm_expr->X_op = O_absent;
-			  continue;
+			  goto esp_imm_done;
 			case 'i':	/* Xeli */
 			  if (my_getSmallExpression
 			      (imm_expr, imm_reloc, asarg, p)
@@ -4775,20 +4933,48 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 			    break;
 			  ip->insn_opcode |= ENCODE_ESP_RD (regno);
 			  continue;
-			case 'a':	/* Xera */
-			  if (!reg_lookup (&asarg, RCLASS_GPR, &regno)
-			      || !((regno >= 8 && regno <= 15)
-				   || (regno >= 24 && regno <= 31)))
-			    break;
-			  ip->insn_opcode |= ENCODE_ESP_RS1 (regno);
-			  continue;
-			case 'b':	/* Xerb */
-			  if (!reg_lookup (&asarg, RCLASS_GPR, &regno)
-			      || !((regno >= 8 && regno <= 15)
-				   || (regno >= 24 && regno <= 31)))
-			    break;
-			  ip->insn_opcode |= ENCODE_ESP_RS2 (regno);
-			  continue;
+			case 'a':
+			  switch (*++oparg)
+			    {
+			    case '0':	/* Xera0 */
+			      if (!reg_lookup (&asarg, RCLASS_GPR, &regno)
+				  || !((regno >= 8 && regno <= 15)
+				       || (regno >= 24 && regno <= 31)))
+				break;
+			      ip->insn_opcode |= ENCODE_ESP_RS1_0 (regno);
+			      continue;
+			    case '1':	/* Xera1 */
+			      if (!reg_lookup (&asarg, RCLASS_GPR, &regno)
+				  || !((regno >= 8 && regno <= 15)
+				       || (regno >= 24 && regno <= 31)))
+				break;
+			      ip->insn_opcode |= ENCODE_ESP_RS1_1 (regno);
+			      continue;
+			    default:	/* Xera[.] */
+			      goto unknown_riscv_ip_operand;
+			    }
+			  break;
+			case 'b':
+			  switch (*++oparg)
+			    {
+			    case '0':	/* Xerb0 */
+			      if (!reg_lookup (&asarg, RCLASS_GPR, &regno)
+				  || !((regno >= 8 && regno <= 15)
+				       || (regno >= 24 && regno <= 31)))
+				break;
+			      ip->insn_opcode |= ENCODE_ESP_RS2_0 (regno);
+			      continue;
+			    case '1':	/* Xerb1 */
+			      if (!reg_lookup (&asarg, RCLASS_GPR, &regno)
+				  || !((regno >= 8 && regno <= 15)
+				       || (regno >= 24 && regno <= 31)))
+				break;
+			      ip->insn_opcode |= ENCODE_ESP_RS2_1 (regno);
+			      continue;
+			    default:	/* Xerb[.] */
+			      goto unknown_riscv_ip_operand;
+			    }
+			  break;
 			default:	/* Xer[.] */
 			  goto unknown_riscv_ip_operand;
 			}

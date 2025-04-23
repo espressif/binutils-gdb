@@ -1544,6 +1544,7 @@ static struct riscv_supported_ext riscv_supported_vendor_x_ext[] =
   {"xsfvfnrclipxfqf",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0},
   {"xespv",			ISA_SPEC_CLASS_DRAFT,	2, 1, 0 },
   {"xesploop",			ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+  {"xespdsp",			ISA_SPEC_CLASS_DRAFT,	2, 1, 0 },
   {NULL, 0, 0, 0, 0}
 };
 
@@ -2807,6 +2808,11 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
       return riscv_subset_supports (rps, "xespv");
     case INSN_CLASS_XESPLOOP:
       return riscv_subset_supports (rps, "xesploop");
+    case INSN_CLASS_XESPDSP:
+      return riscv_subset_supports (rps, "xespdsp");
+    case INSN_CLASS_XESPV_AND_XESPDSP:
+      return (riscv_subset_supports (rps, "xespv")
+	      || riscv_subset_supports (rps, "xespdsp"));
     case INSN_CLASS_XTHEADBA:
       return riscv_subset_supports (rps, "xtheadba");
     case INSN_CLASS_XTHEADBB:
@@ -3116,6 +3122,10 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
       return "xespv";
     case INSN_CLASS_XESPLOOP:
       return "xesploop";
+    case INSN_CLASS_XESPDSP:
+      return "xespdsp";
+    case INSN_CLASS_XESPV_AND_XESPDSP:
+      return _("xespv' or `xespdsp");
     case INSN_CLASS_XTHEADBA:
       return "xtheadba";
     case INSN_CLASS_XTHEADBB:
