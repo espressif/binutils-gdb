@@ -507,12 +507,13 @@ translatecomments (void)
 static void
 wrap_comment (void)
 {
+  unsigned int idx;
   string_type out;
   init_string (&out);
 
   catstr (&out, tos);
   cattext (&out, "/* ");
-  for (unsigned int idx = 0; at (tos - 1, idx); idx++)
+  for (idx = 0; at (tos - 1, idx); idx++)
     {
       catchar (&out, at (tos - 1, idx));
       if (at (tos - 1, idx) == '\n' && at (tos - 1, idx + 1) != '\n')
