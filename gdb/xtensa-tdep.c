@@ -30,6 +30,8 @@
 #include "regset.h"
 #include "inferior.h"
 
+#include "objfiles.h"
+
 #include "dwarf2/frame.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
@@ -887,6 +889,30 @@ xtensa_iterate_over_regset_sections (struct gdbarch *gdbarch,
       &xtensa_gregset, NULL, cb_data);
 }
 
+
+/* Implement the "print_insn" gdbarch method so that disassembly works
+   correctly, taking into account the .xt.prop section data. */
+
+static int
+xtensa_gdb_print_insn (bfd_vma pc, disassemble_info * info)
+{
+  struct obj_section * s = find_pc_section (pc);
+  asymbol *sym = info->symbol_at_address_func (pc, info);
+
+  if (s)
+    {
+      /* The libopcodes disassembly code uses the section to determine
+	 the correct number of instructions in it using .xt.prop section.  */
+      info->section = s->the_bfd_section;
+    }
+
+  if (sym)
+    {
+      /* The symbol start address is required for correct disassembly. */
+      return default_print_insn (bfd_asymbol_value(sym), info);
+    }
+  return default_print_insn (pc, info);
+}
 
 /* Handling frames.  */
 
@@ -3236,6 +3262,9 @@ xtensa_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_frame_align (gdbarch, xtensa_frame_align);
 
   set_gdbarch_dummy_id (gdbarch, xtensa_dummy_id);
+
+  /* Disassembly.  */
+  set_gdbarch_print_insn (gdbarch, xtensa_gdb_print_insn);
 
   /* Frame handling.  */
   frame_base_set_default (gdbarch, &xtensa_frame_base);
