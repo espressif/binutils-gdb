@@ -24,6 +24,7 @@
 #include "opcode/riscv.h"
 #include <assert.h>
 #include <stdio.h>
+#include "esp/riscv-opc.h"
 
 /* Register names used by gas and objdump.  */
 
@@ -3682,6 +3683,7 @@ const struct riscv_opcode riscv_opcodes[] =
 {"smt.vnspack4.vv", 0, INSN_CLASS_XSMTVDOTII, "Vd,Vs,Vt,Xpu2@12", MATCH_SMT_VNSPACK4_VV, MASK_SMT_VNSPACK4_VV, match_opcode, 0 },
 {"smt.vpack.vv", 0, INSN_CLASS_XSMTVDOTII, "XpVd,Vs,Vt,Xpu2@12", MATCH_SMT_VPACK_VV, MASK_SMT_VPACK_VV, match_opcode, 0 },
 {"smt.vupack.vv", 0, INSN_CLASS_XSMTVDOTII, "XpVd,Vs,Vt,Xpu2@12", MATCH_SMT_VUPACK_VV, MASK_SMT_VUPACK_VV, match_opcode, 0 },
+#include "esp/riscv-opc.c"
 
 /* Terminate the list.  */
 {0, 0, INSN_CLASS_NONE, 0, 0, 0, 0, 0}
