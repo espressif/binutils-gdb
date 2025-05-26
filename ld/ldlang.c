@@ -5636,8 +5636,8 @@ size_input_section
 			     "the linker-created stubs section `%pA'.\n"),
 			   i->output_section, i);
 
-		  if (i->rawsize && i->rawsize != i->size)
-		    einfo (_("%P: Relaxation not supported with "
+		  if (i->flags & SEC_RELOC && i->rawsize && i->rawsize != i->size)
+		    fatal (_("%P: Relaxation not supported with "
 			     "--enable-non-contiguous-regions (section `%pA' "
 			     "would overflow `%pA' after it changed size).\n"),
 			   i, i->output_section);
