@@ -31,6 +31,7 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 {
   if ((insn & 0x3) != 0x3) /* RVC instructions.  */
     return 2;
+#if 0
   if ((insn & 0x1f) != 0x1f) /* 32-bit instructions.  */
     return 4;
   if ((insn & 0x3f) == 0x1f) /* 48-bit instructions.  */
@@ -44,6 +45,10 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define RISCV_MAX_INSN_LEN 22
   /* Longer instructions not supported at the moment.  */
   return 2;
+#else
+#define RISCV_MAX_INSN_LEN 22
+  return 4;
+#endif
 }
 
 #define RVC_JUMP_BITS 11
@@ -606,6 +611,15 @@ enum riscv_insn_class
   INSN_CLASS_XMIPSCMOV,
   INSN_CLASS_XMIPSEXECTL,
   INSN_CLASS_XMIPSLSP,
+#if RISCV_XESPV2P1
+  INSN_CLASS_XESPV,
+  INSN_CLASS_XESPLOOP,
+#else
+  INSN_CLASS_XESPV,
+  INSN_CLASS_XESPLOOP,
+  INSN_CLASS_XESPDSP,
+  INSN_CLASS_XESPV_AND_XESPDSP,
+#endif
 };
 
 /* This structure holds information for a particular instruction.  */
@@ -710,6 +724,7 @@ enum riscv_seg_mstate
 
 #define NRC (4 + 1)     /* Max characters in register names, incl nul.  */
 
+#include "esp/riscv.h"
 extern const char riscv_gpr_names_numeric[NGPR][NRC];
 extern const char riscv_gpr_names_abi[NGPR][NRC];
 extern const char riscv_fpr_names_numeric[NFPR][NRC];

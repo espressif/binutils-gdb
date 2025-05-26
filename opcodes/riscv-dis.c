@@ -917,6 +917,14 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 		  goto undefined_modifier;
 		}
 	      break;
+	    case 'e': /* Vendor-specific (Espressif) operands.  */
+	      switch (*++oparg)
+		{
+#include "esp/riscv-dis.c"
+		default:
+		  goto undefined_modifier;
+		}
+	      break;
 	    default:
 	      goto undefined_modifier;
 	    }

@@ -23,6 +23,7 @@
 #include "sysdep.h"
 #include "opcode/riscv.h"
 #include <stdio.h>
+#include "esp/riscv-opc.h"
 
 /* Register names used by gas and objdump.  */
 
@@ -3578,6 +3579,8 @@ const struct riscv_opcode riscv_opcodes[] =
 {"mips.pref", 0, INSN_CLASS_XMIPSCBOP, "Xm@,Xm#(s)", MATCH_MIPS_PREF, MASK_MIPS_PREF, match_opcode, 0 },
 {"mips.sdp", 0, INSN_CLASS_XMIPSLSP, "t,r,Xm^(s)", MATCH_MIPS_SDP, MASK_MIPS_SDP, match_opcode, 0 },
 {"mips.swp", 0, INSN_CLASS_XMIPSLSP, "t,r,Xm&(s)", MATCH_MIPS_SWP, MASK_MIPS_SWP, match_opcode, 0 },
+
+#include "esp/riscv-opc.c"
 
 /* Terminate the list.  */
 {0, 0, INSN_CLASS_NONE, 0, 0, 0, 0, 0}

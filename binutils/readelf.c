@@ -2261,6 +2261,7 @@ dump_relocations (Filedata *          filedata,
   size_t i;
   Elf_Internal_Rela * rels;
   bool res = true;
+  char *vendor_id = NULL;
 
   if (rel_type == reltype_unknown)
     rel_type = guess_is_rela (filedata->file_header.e_machine) ? reltype_rela : reltype_rel;
@@ -2489,7 +2490,10 @@ dump_relocations (Filedata *          filedata,
 	  break;
 
 	case EM_RISCV:
-	  rtype = elf_riscv_reloc_type (type);
+	  if (vendor_id)
+	    rtype = elf_riscv_vendor_reloc_type (vendor_id, type);
+	  else
+	    rtype = elf_riscv_reloc_type (type);
 	  break;
 
 	case EM_ALPHA:
@@ -2689,6 +2693,12 @@ dump_relocations (Filedata *          filedata,
 	  break;
 	}
 
+      if (vendor_id)
+	{
+	  free(vendor_id);
+	  vendor_id = NULL;
+	}
+
       char *symbol_name = NULL;
       if (dump_reloc)
 	{
@@ -2821,6 +2831,7 @@ dump_relocations (Filedata *          filedata,
 		    sec_name = printable_section_name_from_index
 		      (filedata, psym->st_shndx, NULL);
 
+		  vendor_id = strdup(sec_name);
 		  if (do_got_section_contents)
 		    symbol_name = xstrdup (sec_name);
 		  if (dump_reloc)
@@ -2843,6 +2854,7 @@ dump_relocations (Filedata *          filedata,
 		}
 	      else
 		{
+		  vendor_id = strdup(strtab + psym->st_name);
 		  if (dump_reloc)
 		    {
 		      print_symbol_name (22, strtab + psym->st_name);

@@ -736,6 +736,45 @@ riscv_target_format (void)
     return xlen == 64 ? "elf64-littleriscv" : "elf32-littleriscv";
 }
 
+/* Insert R_RISCV_VENDOR relocation right before the custom relocation
+ * passed in fixP. */
+static void
+insert_vendor_relocation (fixS *fixP, segT target_seg, const char *vendor_id)
+{
+  symbolS *sym;
+  const flagword vendor_sym_flags = (BSF_NO_FLAGS | BSF_LOCAL);
+
+  /* Check if the vendor ID symbol already exists. */
+  for (sym = symbol_rootP; sym != NULL; sym = symbol_next (sym))
+    {
+      /* Ensure we find a local symbol in the desired segment.
+         This prevents R_RISCV_VENDOR relocation against a global symbol
+         with the same name, if it exists.  */
+      if (S_GET_SEGMENT (sym) == target_seg
+          && symbol_get_bfdsym (sym)->flags == vendor_sym_flags
+          && strcmp (S_GET_NAME (sym), vendor_id) == 0)
+	{
+	  break; /* Symbol found.  */
+	}
+    }
+
+  /* If symbol does not exist, create a new one.  */
+  if (sym == NULL)
+    {
+      sym = symbol_new (vendor_id, target_seg, &zero_address_frag, 0);
+      symbol_get_bfdsym (sym)->flags = vendor_sym_flags;
+    }
+
+  /* Insert the R_RISCV_VENDOR relocation.  */
+   void *next = fixP->fx_next;
+   fixP->fx_next = xmemdup (fixP, sizeof (*fixP), sizeof (*fixP));
+   fixP->fx_addsy = sym;
+   fixP->fx_subsy = NULL;
+   fixP->fx_r_type = BFD_RELOC_RISCV_VENDOR;
+   if (next)
+       fixP->fx_next->fx_next = next;
+}
+
 /* Return the length of instruction INSN.  */
 
 static inline unsigned int
@@ -953,6 +992,7 @@ enum reg_class
   RCLASS_FPR,
   RCLASS_VECR,
   RCLASS_VECM,
+  RCLASS_ESPV,
   RCLASS_MAX,
 
   RCLASS_CSR
@@ -1771,6 +1811,14 @@ validate_riscv_insn (const struct riscv_opcode *opc, int length)
 		    goto unknown_validate_operand;
 		}
 		break;
+	    case 'e': /* Vendor-specific (Espressif) operands.  */
+	      switch (*++oparg)
+		{
+#include "esp/validate_riscv_insn.c"
+		  default:
+		    goto unknown_validate_operand;
+		}
+		break;
 	    default:
 	      goto unknown_validate_operand;
 	    }
@@ -1917,6 +1965,7 @@ md_begin (void)
   hash_reg_names (RCLASS_FPR, riscv_fpr_names_abi, NFPR);
   hash_reg_names (RCLASS_VECR, riscv_vecr_names_numeric, NVECR);
   hash_reg_names (RCLASS_VECM, riscv_vecm_names_numeric, NVECM);
+  hash_reg_names (RCLASS_ESPV, riscv_espv_qr_names_numeric, 8);
   /* Add "fp" as an alias for "s0".  */
   hash_reg_name (RCLASS_GPR, "fp", 8);
 
@@ -4286,7 +4335,14 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 		      goto unknown_riscv_ip_operand;
 		    }
 		  break;
-
+	    case 'e': /* Vendor-specific (Espressif) operands.  */
+	      switch (*++oparg)
+		{
+#include "esp/riscv_ip.c"
+		  default:
+		    goto unknown_riscv_ip_operand;
+		}
+		break;
 		default:
 		  goto unknown_riscv_ip_operand;
 		}
@@ -4678,6 +4734,13 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg)
   bool relaxable = false;
   offsetT loc;
   segT sub_segment;
+  static bool skip_next = false;
+
+  if (skip_next)
+  {
+    skip_next = false;
+    return;
+  }
 
   /* Remember value for tc_gen_reloc.  */
   fixP->fx_addnumber = *valP;
@@ -4998,6 +5061,47 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg)
       break;
 
     case BFD_RELOC_RISCV_ALIGN:
+      break;
+
+    case BFD_RELOC_RISCV_VENDOR:
+      break;
+
+    case BFD_RELOC_RISCV_ESP_LP_OFFSET_9:
+	if (fixP->fx_addsy)
+	  {
+	    /* Fill in a tentative value to improve objdump readability.  */
+	    bfd_vma target = S_GET_VALUE (fixP->fx_addsy) + *valP;
+	    bfd_vma delta = target - md_pcrel_from (fixP);
+	    if (!VALID_ESP_LP_OFFSET_9 (delta))
+	      as_bad_where (fixP->fx_file, fixP->fx_line,
+	      	      _("bad value for lp_offset_9, must be in range 0..1022 with step 2"));
+	    bfd_putl32 (bfd_getl32 (buf) | ENCODE_ESP_LP_OFFSET_9 (delta), buf);
+	    if (!riscv_opts.relax)
+	      fixP->fx_done = 1;
+	  }
+	if (!fixP->fx_done) {
+	  insert_vendor_relocation(fixP, seg, R_RISCV_ESPRESSIF_VENDOR_ID_STR);
+	  skip_next = true;
+	  }
+      break;
+
+    case BFD_RELOC_RISCV_ESP_LP_OFFSET_12:
+	if (fixP->fx_addsy)
+	  {
+	    /* Fill in a tentative value to improve objdump readability.  */
+	    bfd_vma target = S_GET_VALUE (fixP->fx_addsy) + *valP;
+	    bfd_vma delta = target - md_pcrel_from (fixP);
+	    if (!VALID_ESP_LP_OFFSET_12 (delta))
+	      as_bad_where (fixP->fx_file, fixP->fx_line,
+	      	      _("bad value for lp_offset_12, must be in range 0..8190 with step 2"));
+	    bfd_putl32 (bfd_getl32 (buf) | ENCODE_ESP_LP_OFFSET_12 (delta), buf);
+	    if (!riscv_opts.relax)
+	      fixP->fx_done = 1;
+	  }
+	if (!fixP->fx_done) {
+	  insert_vendor_relocation(fixP, seg, R_RISCV_ESPRESSIF_VENDOR_ID_STR);
+	  skip_next = true;
+	  }
       break;
 
     default:
