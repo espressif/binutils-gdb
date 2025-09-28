@@ -6712,6 +6712,17 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 					ENCODE_ESP_SAT_13 (regno);
 				      continue;
 				    }
+				  if (!my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      && imm_expr->X_op == O_constant
+				      && imm_expr->X_add_number <= 1
+				      && imm_expr->X_add_number >= 0)
+				    {
+				      ip->insn_opcode |=
+					ENCODE_ESP_SAT_13 (imm_expr->
+							   X_add_number);
+				      goto esp_imm_done;
+				    }
 				  break;
 				case '4':	/* Xevs14 */
 				  if (arg_lookup
@@ -6731,6 +6742,17 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 				      ip->insn_opcode |=
 					ENCODE_ESP_SAT_15 (regno);
 				      continue;
+				    }
+				  if (!my_getSmallExpression
+				      (imm_expr, imm_reloc, asarg, p)
+				      && imm_expr->X_op == O_constant
+				      && imm_expr->X_add_number <= 1
+				      && imm_expr->X_add_number >= 0)
+				    {
+				      ip->insn_opcode |=
+					ENCODE_ESP_SAT_15 (imm_expr->
+							   X_add_number);
+				      goto esp_imm_done;
 				    }
 				  break;
 				case '6':	/* Xevs16 */
