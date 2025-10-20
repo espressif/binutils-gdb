@@ -878,7 +878,7 @@ static reloc_howto_type howto_table[] =
 	 ENCODE_ITYPE_IMM (-1U),	/* dst_mask */
 	 false), 			/* pcrel_offset */
 
-  HOWTO (R_RISCV_ESP_LP_OFFSET_9,	/* type */
+  HOWTO (R_RISCV_ESP_LP_OFFSET_9_OLD,	/* type */
 	 0,				/* rightshift */
 	 0,				/* size */
 	 0,				/* bitsize */
@@ -889,9 +889,9 @@ static reloc_howto_type howto_table[] =
 	 "R_RISCV_ESP_LP_OFFSET_9",	/* name */
 	 false,				/* partial_inplace */
 	 0,				/* src_mask */
-	 ENCODE_ESPPIE_LP_OFFSET_9 (-1U),	/* dst_mask */
+	 ENCODE_ESP_LP_OFFSET_9 (-1U),	/* dst_mask */
 	 true),				/* pcrel_offset */
-  HOWTO (R_RISCV_ESP_LP_OFFSET_12,	/* type */
+  HOWTO (R_RISCV_ESP_LP_OFFSET_12_OLD,	/* type */
 	 0,				/* rightshift */
 	 0,				/* size */
 	 0,				/* bitsize */
@@ -902,7 +902,7 @@ static reloc_howto_type howto_table[] =
 	 "R_RISCV_ESP_LP_OFFSET_12",	/* name */
 	 false,				/* partial_inplace */
 	 0,				/* src_mask */
-	 ENCODE_ESPPIE_LP_OFFSET_12 (-1U),	/* dst_mask */
+	 ENCODE_ESP_LP_OFFSET_12 (-1U),	/* dst_mask */
 	 true),				/* pcrel_offset */
 };
 
@@ -987,6 +987,168 @@ static reloc_howto_type howto_table_internal[] =
 	 false),			/* pcrel_offset */
 };
 
+/* This howto table is used solely to provide relocation name strings.  */
+static reloc_howto_type howto_table_vendor[] = {
+  HOWTO (R_RISCV_CUSTOM0, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM0", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM1, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM1", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM2, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM2", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM3, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM3", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM4, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM4", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM5, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM5", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM6, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM6", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM7, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM7", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM8, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM8", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM9, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM9", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM10, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM10", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM11, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM11", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM12, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM12", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM13, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM13", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM14, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM14", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM15, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM15", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM16, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM16", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM17, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM17", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM18, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM18", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM19, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM19", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM20, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM20", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM21, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM21", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM22, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM22", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM23, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM23", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM24, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM24", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM25, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM25", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM26, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM26", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM27, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM27", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM28, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM28", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM29, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM29", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM30, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM30", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM31, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM31", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM32, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM32", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM33, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM33", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM34, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM34", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM35, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM35", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM36, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM36", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM37, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM37", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM38, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM38", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM39, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM39", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM40, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM40", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM41, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM41", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM42, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM42", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM43, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM43", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM44, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM44", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM45, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM45", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM46, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM46", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM47, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM47", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM48, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM48", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM49, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM49", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM50, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM50", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM51, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM51", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM52, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM52", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM53, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM53", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM54, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM54", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM55, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM55", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM56, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM56", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM57, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM57", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM58, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM58", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM59, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM59", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM60, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM60", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM61, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM61", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM62, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM62", false, 0, 0, false),
+  HOWTO (R_RISCV_CUSTOM63, 0, 0, 0, false, 0, complain_overflow_dont,
+	 bfd_elf_generic_reloc, "R_RISCV_CUSTOM63", false, 0, 0, false)
+};
+
+static reloc_howto_type howto_table_esp[] =
+{
+  HOWTO (R_RISCV_ESP_LP_OFFSET_9_NEW,	/* type */
+	 0,				/* rightshift */
+	 4,				/* size */
+	 32,				/* bitsize */
+	 true,				/* pc_relative */
+	 0,				/* bitpos */
+	 complain_overflow_dont,	/* complain_on_overflow */
+	 bfd_elf_generic_reloc,		/* special_function */
+	 "R_RISCV_ESP_LP_OFFSET_9",	/* name */
+	 false,				/* partial_inplace */
+	 0,				/* src_mask */
+	 ENCODE_ESP_LP_OFFSET_9 (-1U),	/* dst_mask */
+	 true),				/* pcrel_offset */
+  HOWTO (R_RISCV_ESP_LP_OFFSET_12_NEW,	/* type */
+	 0,				/* rightshift */
+	 4,				/* size */
+	 32,				/* bitsize */
+	 true,				/* pc_relative */
+	 0,				/* bitpos */
+	 complain_overflow_dont,	/* complain_on_overflow */
+	 bfd_elf_generic_reloc,		/* special_function */
+	 "R_RISCV_ESP_LP_OFFSET_12",	/* name */
+	 false,				/* partial_inplace */
+	 0,				/* src_mask */
+	 ENCODE_ESP_LP_OFFSET_12 (-1U),	/* dst_mask */
+	 true),				/* pcrel_offset */
+};
+
 /* A mapping from BFD reloc types to RISC-V ELF reloc types.  */
 struct elf_reloc_map
 {
@@ -1047,8 +1209,56 @@ static const struct elf_reloc_map riscv_reloc_map[] =
   { BFD_RELOC_RISCV_32_PCREL, R_RISCV_32_PCREL },
   { BFD_RELOC_RISCV_SET_ULEB128, R_RISCV_SET_ULEB128 },
   { BFD_RELOC_RISCV_SUB_ULEB128, R_RISCV_SUB_ULEB128 },
-  { BFD_RELOC_RISCV_ESP_LP_OFFSET_9, R_RISCV_ESP_LP_OFFSET_9 },
-  { BFD_RELOC_RISCV_ESP_LP_OFFSET_12, R_RISCV_ESP_LP_OFFSET_12 },
+  { BFD_RELOC_RISCV_ESP_LP_OFFSET_9_OLD, R_RISCV_ESP_LP_OFFSET_9_OLD },
+  { BFD_RELOC_RISCV_ESP_LP_OFFSET_12_OLD, R_RISCV_ESP_LP_OFFSET_12_OLD },
+};
+
+static const reloc_howto_type howto_vendor = HOWTO (R_RISCV_VENDOR,	/* type */
+						    0,	/* rightshift */
+						    0,	/* size */
+						    0,	/* bitsize */
+						    false,	/* pc_relative */
+						    0,	/* bitpos */
+						    complain_overflow_dont,	/* complain_on_overflow */
+						    bfd_elf_generic_reloc,	/* special_function */
+						    "R_RISCV_VENDOR",	/* name */
+						    false,	/* partial_inplace */
+						    0,	/* src_mask */
+						    0,	/* dst_mask */
+						    false);
+
+struct elf_vendor_map
+{
+  enum elf_riscv_vendor_id id;
+  const char *id_str;
+};
+
+static const struct elf_vendor_map elf_riscv_vendor_map[] =
+{
+  { R_RISCV_VENDOR_ID_ESP, R_RISCV_ESPRESSIF_VENDOR_ID_STR },
+};
+
+enum elf_riscv_vendor_id
+riscv_elf_vendor_id_str_to_enum(const char *id_str)
+{
+  unsigned int i;
+  for (i = 0; i < ARRAY_SIZE (elf_riscv_vendor_map); i++)
+    if (strcmp(elf_riscv_vendor_map[i].id_str, id_str) == 0)
+      return elf_riscv_vendor_map[i].id;
+
+  return R_RISCV_VENDOR_ID_NONE;
+}
+
+struct elf_reloc_map_esp
+{
+  bfd_reloc_code_real_type bfd_val;
+  enum elf_riscv_esp_reloc_type elf_val;
+};
+
+static const struct elf_reloc_map_esp riscv_esp_reloc_map[] =
+{
+  { BFD_RELOC_RISCV_ESP_LP_OFFSET_9_NEW, R_RISCV_ESP_LP_OFFSET_9_NEW },
+  { BFD_RELOC_RISCV_ESP_LP_OFFSET_12_NEW, R_RISCV_ESP_LP_OFFSET_12_NEW },
 };
 
 /* Given a BFD reloc type, return a howto structure.  */
@@ -1063,6 +1273,14 @@ riscv_reloc_type_lookup (bfd *abfd ATTRIBUTE_UNUSED,
     if (riscv_reloc_map[i].bfd_val == code)
       return &howto_table[(int) riscv_reloc_map[i].elf_val];
 
+  if (code == BFD_RELOC_RISCV_VENDOR)
+    return &howto_vendor;
+
+  /* Vendor-specific (Espressif) relocations.  */
+  for (i = 0; i < ARRAY_SIZE (riscv_esp_reloc_map); i++)
+    if (riscv_esp_reloc_map[i].bfd_val == code)
+      return &howto_table_esp[(int) riscv_esp_reloc_map[i].elf_val - R_RISCV_CUSTOM0];
+
   bfd_set_error (bfd_error_bad_value);
   return NULL;
 }
@@ -1076,6 +1294,10 @@ riscv_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED, const char *r_name)
     if (howto_table[i].name && strcasecmp (howto_table[i].name, r_name) == 0)
       return &howto_table[i];
 
+  for (i = 0; i < ARRAY_SIZE (howto_table_esp); i++)
+    if (howto_table_esp[i].name && strcasecmp (howto_table_esp[i].name, r_name) == 0)
+      return &howto_table_esp[i];
+
   return NULL;
 }
 
@@ -1084,14 +1306,29 @@ riscv_elf_rtype_to_howto (bfd *abfd, unsigned int r_type)
 {
   if (r_type < ARRAY_SIZE (howto_table))
     return &howto_table[r_type];
-  else if (r_type < R_RISCV_max + ARRAY_SIZE (howto_table_internal))
-    return &howto_table_internal[r_type - R_RISCV_max];
+  else if (r_type < R_RISCV_internal_first + ARRAY_SIZE (howto_table_internal))
+    return &howto_table_internal[r_type - R_RISCV_internal_first];
+  else if (r_type == R_RISCV_VENDOR)
+    return &howto_vendor;
   else
     {
       (*_bfd_error_handler) (_("%pB: unsupported relocation type %#x"),
 			     abfd, r_type);
       bfd_set_error (bfd_error_bad_value);
       return NULL;
+    }
+}
+
+reloc_howto_type *
+riscv_elf_rtype_to_vendor_howto (bfd *abfd ATTRIBUTE_UNUSED, unsigned int r_type,
+				 enum elf_riscv_vendor_id vendor_id)
+{
+  switch (vendor_id)
+    {
+    case R_RISCV_VENDOR_ID_ESP:
+      return &howto_table_esp[r_type - R_RISCV_CUSTOM0];
+    default:
+      return &howto_table_vendor[r_type - R_RISCV_CUSTOM0];
     }
 }
 
@@ -1502,7 +1739,6 @@ static struct riscv_supported_ext riscv_supported_vendor_x_ext[] =
   {"xcvelw",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xcvbi",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xcvmem",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
-  {"xesppie",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadba",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadbb",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xtheadbs",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
@@ -1520,6 +1756,12 @@ static struct riscv_supported_ext riscv_supported_vendor_x_ext[] =
   {"xventanacondops",	ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xsfvcp",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
   {"xsfcease",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+#if RISCV_XESPV2P1
+  {"xesppie",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0 },
+#else
+  {"xesploop",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0},
+  {"xespv",		ISA_SPEC_CLASS_DRAFT,	2, 2, 0},
+#endif
   {NULL, 0, 0, 0, 0}
 };
 
@@ -2765,8 +3007,6 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
       return riscv_subset_supports (rps, "xcvbi");
     case INSN_CLASS_XCVMEM:
       return riscv_subset_supports (rps, "xcvmem");
-    case INSN_CLASS_XESPPIE:
-      return riscv_subset_supports (rps, "xesppie");
     case INSN_CLASS_XTHEADBA:
       return riscv_subset_supports (rps, "xtheadba");
     case INSN_CLASS_XTHEADBB:
@@ -2801,6 +3041,15 @@ riscv_multi_subset_supports (riscv_parse_subset_t *rps,
       return riscv_subset_supports (rps, "xsfvcp");
     case INSN_CLASS_XSFCEASE:
       return riscv_subset_supports (rps, "xsfcease");
+#if RISCV_XESPV2P1
+    case INSN_CLASS_XESPV:
+      return riscv_subset_supports (rps, "xesppie");
+#else
+    case INSN_CLASS_XESPV:
+      return riscv_subset_supports (rps, "xespv");
+    case INSN_CLASS_XESPLOOP:
+      return riscv_subset_supports (rps, "xesploop");
+#endif
     default:
       rps->error_handler
         (_("internal: unreachable INSN_CLASS_*"));
@@ -3047,8 +3296,6 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
       return "xcvbi";
     case INSN_CLASS_XCVMEM:
       return "xcvmem";
-    case INSN_CLASS_XESPPIE:
-      return "xesppie";
     case INSN_CLASS_XTHEADBA:
       return "xtheadba";
     case INSN_CLASS_XTHEADBB:
@@ -3079,6 +3326,15 @@ riscv_multi_subset_supports_ext (riscv_parse_subset_t *rps,
       return "xtheadzvamo";
     case INSN_CLASS_XSFCEASE:
       return "xsfcease";
+#if RISCV_XESPV2P1
+    case INSN_CLASS_XESPV:
+      return "xesppie";
+#else
+    case INSN_CLASS_XESPV:
+      return "xespv";
+    case INSN_CLASS_XESPLOOP:
+      return "xesploop";
+#endif
     default:
       rps->error_handler
         (_("internal: unreachable INSN_CLASS_*"));
