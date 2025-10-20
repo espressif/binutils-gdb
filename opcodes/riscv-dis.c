@@ -917,6 +917,9 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 		  goto undefined_modifier;
 		}
 	      break;
+
+#include "esp/print_insn_args.c"
+
 	    default:
 	      goto undefined_modifier;
 	    }

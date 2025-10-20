@@ -606,6 +606,13 @@ enum riscv_insn_class
   INSN_CLASS_XMIPSCMOV,
   INSN_CLASS_XMIPSEXECTL,
   INSN_CLASS_XMIPSLSP,
+#if RISCV_XESPV2P1
+  INSN_CLASS_XESPV,
+  INSN_CLASS_XESPLOOP = INSN_CLASS_XESPV,
+#else
+  INSN_CLASS_XESPV,
+  INSN_CLASS_XESPLOOP,
+#endif
 };
 
 /* This structure holds information for a particular instruction.  */
@@ -710,6 +717,7 @@ enum riscv_seg_mstate
 
 #define NRC (4 + 1)     /* Max characters in register names, incl nul.  */
 
+#include "esp/riscv.h"
 extern const char riscv_gpr_names_numeric[NGPR][NRC];
 extern const char riscv_gpr_names_abi[NGPR][NRC];
 extern const char riscv_fpr_names_numeric[NFPR][NRC];

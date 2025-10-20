@@ -5450,6 +5450,14 @@ enum bfd_reloc_code_real
   BFD_RELOC_RISCV_SET_ULEB128,
   BFD_RELOC_RISCV_SUB_ULEB128,
 
+#ifndef RISCV_XESPV2P1
+  BFD_RELOC_RISCV_VENDOR,
+#endif
+
+  /* RISC-V Vendor (Espressif) relocations.  */
+  BFD_RELOC_RISCV_ESP_LP_OFFSET_9,
+  BFD_RELOC_RISCV_ESP_LP_OFFSET_12,
+
   /* Renesas RL78 Relocations.  */
   BFD_RELOC_RL78_NEG8,
   BFD_RELOC_RL78_NEG16,
