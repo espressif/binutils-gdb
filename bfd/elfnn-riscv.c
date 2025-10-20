@@ -130,9 +130,6 @@
     } \
   while (0)
 
-/* Internal relocations used exclusively by the relaxation pass.  */
-#define R_RISCV_DELETE (R_RISCV_max + 1)
-
 #define ARCH_SIZE NN
 
 #define MINUS_ONE ((bfd_vma)0 - 1)
@@ -267,7 +264,28 @@ riscv_info_to_howto_rela (bfd *abfd,
 			  arelent *cache_ptr,
 			  Elf_Internal_Rela *dst)
 {
-  cache_ptr->howto = riscv_elf_rtype_to_howto (abfd, ELFNN_R_TYPE (dst->r_info));
+  static enum elf_riscv_vendor_id vendor_id = R_RISCV_VENDOR_ID_NONE;
+  unsigned int r_type = ELFNN_R_TYPE (dst->r_info);
+
+  if (r_type > R_RISCV_VENDOR)
+    {
+      cache_ptr->howto =
+	riscv_elf_rtype_to_vendor_howto (abfd, r_type, vendor_id);
+      vendor_id = R_RISCV_VENDOR_ID_NONE;
+      return cache_ptr->howto != NULL;
+    }
+  else
+    vendor_id = R_RISCV_VENDOR_ID_NONE;
+
+  if (r_type == R_RISCV_VENDOR)
+    {
+      const char *sym_name = bfd_asymbol_name (*cache_ptr->sym_ptr_ptr);
+      if (sym_name != NULL)
+	vendor_id = riscv_elf_vendor_id_str_to_enum (sym_name);
+    }
+
+  cache_ptr->howto = riscv_elf_rtype_to_howto (abfd, r_type);
+
   return cache_ptr->howto != NULL;
 }
 
@@ -1725,6 +1743,38 @@ riscv_global_pointer_value (struct bfd_link_info *info)
   return h->u.def.value + sec_addr (h->u.def.section);
 }
 
+static bfd_reloc_status_type
+calculate_vendor_relocaton (const Elf_Internal_Rela *rel, bfd_vma *value,
+			    enum elf_riscv_vendor_id vendor_id)
+{
+  bfd_vma v = *value;
+
+  switch (vendor_id)
+    {
+    case R_RISCV_VENDOR_ID_ESP: /* Espressif.  */
+      switch (ELFNN_R_TYPE (rel->r_info))
+	{
+	case R_RISCV_ESP_LP_OFFSET_9_NEW:
+	  if (!VALID_ESP_LP_OFFSET_9 (v))
+	    return bfd_reloc_overflow;
+	  v = ENCODE_ESP_LP_OFFSET_9 (v);
+	  break;
+
+	case R_RISCV_ESP_LP_OFFSET_12_NEW:
+	  if (!VALID_ESP_LP_OFFSET_12 (v))
+	    return bfd_reloc_overflow;
+	  v = ENCODE_ESP_LP_OFFSET_12 (v);
+	  break;
+	}
+      break;
+    default:
+      return bfd_reloc_notsupported;
+    }
+
+  *value = v;
+  return bfd_reloc_ok;
+}
+
 /* Emplace a static relocation.  */
 
 static bfd_reloc_status_type
@@ -1733,11 +1783,23 @@ perform_relocation (const reloc_howto_type *howto,
 		    bfd_vma value,
 		    asection *input_section,
 		    bfd *input_bfd,
-		    bfd_byte *contents)
+		    bfd_byte *contents,
+		    enum elf_riscv_vendor_id vendor_id)
 {
+  bfd_vma word;
+
   if (howto->pc_relative)
     value -= sec_addr (input_section) + rel->r_offset;
   value += rel->r_addend;
+
+  if (vendor_id != R_RISCV_VENDOR_ID_NONE)
+    {
+      bfd_reloc_status_type status =
+	calculate_vendor_relocaton (rel, &value, vendor_id);
+      if (status != bfd_reloc_ok)
+	return status;
+      goto finish_relocation;
+    }
 
   switch (ELFNN_R_TYPE (rel->r_info))
     {
@@ -1890,23 +1952,24 @@ perform_relocation (const reloc_howto_type *howto,
     case R_RISCV_DELETE:
       return bfd_reloc_ok;
 
-    case R_RISCV_ESP_LP_OFFSET_9:
-      if (!VALID_ESPPIE_LP_OFFSET_9 (value))
+    case R_RISCV_ESP_LP_OFFSET_9_OLD:
+      if (!VALID_ESP_LP_OFFSET_9 (value))
 	return bfd_reloc_overflow;
-      value = ENCODE_ESPPIE_LP_OFFSET_9 (value);
+      value = ENCODE_ESP_LP_OFFSET_9 (value);
       break;
 
-    case R_RISCV_ESP_LP_OFFSET_12:
-      if (!VALID_ESPPIE_LP_OFFSET_12 (value))
+    case R_RISCV_ESP_LP_OFFSET_12_OLD:
+      if (!VALID_ESP_LP_OFFSET_12 (value))
 	return bfd_reloc_overflow;
-      value = ENCODE_ESPPIE_LP_OFFSET_12 (value);
+      value = ENCODE_ESP_LP_OFFSET_12 (value);
       break;
 
     default:
       return bfd_reloc_notsupported;
     }
 
-  bfd_vma word;
+finish_relocation:
+
   if (riscv_is_insn_reloc (howto))
     word = riscv_get_insn (howto->bitsize, contents + rel->r_offset);
   else
@@ -2121,7 +2184,7 @@ riscv_resolve_pcrel_lo_relocs (riscv_pcrel_relocs *p)
 	}
 
       perform_relocation (r->howto, r->reloc, entry->value, r->input_section,
-			  input_bfd, r->contents);
+			  input_bfd, r->contents, R_RISCV_VENDOR_ID_NONE);
     }
 
   return true;
@@ -2175,6 +2238,7 @@ riscv_elf_relocate_section (bfd *output_bfd,
   bfd_vma *local_got_offsets = elf_local_got_offsets (input_bfd);
   bfd_vma uleb128_set_vma = 0;
   Elf_Internal_Rela *uleb128_set_rel = NULL;
+  Elf_Internal_Rela *vendor_rel = NULL;
   bool absolute;
 
   if (!riscv_init_pcrel_relocs (&pcrel_relocs))
@@ -2194,9 +2258,45 @@ riscv_elf_relocate_section (bfd *output_bfd,
       bool unresolved_reloc, is_ie = false;
       bfd_vma pc = sec_addr (input_section) + rel->r_offset;
       int r_type = ELFNN_R_TYPE (rel->r_info), tls_type;
-      reloc_howto_type *howto = riscv_elf_rtype_to_howto (input_bfd, r_type);
+      reloc_howto_type *howto;
       const char *msg = NULL;
       bool resolved_to_zero;
+
+      enum elf_riscv_vendor_id vendor_id = R_RISCV_VENDOR_ID_NONE;
+
+      if (vendor_rel == NULL)
+	howto = riscv_elf_rtype_to_howto (input_bfd, r_type);
+      else
+	{
+	  if (r_type <= R_RISCV_VENDOR)
+	    {
+	      _bfd_error_handler
+		(_
+		 ("error: %pB: expected vendor-specific relocation (r_type 192..255) after R_RISCV_VENDOR(191); Got r_type %d"),
+		 input_bfd, r_type);
+	      bfd_set_error (bfd_error_bad_value);
+	      return false;
+	    }
+
+	  r_symndx = ELFNN_R_SYM (vendor_rel->r_info);
+	  sym =
+	    bfd_sym_from_r_symndx (&htab->elf.sym_cache, input_bfd, r_symndx);
+	  name = bfd_elf_sym_name (input_bfd, symtab_hdr, sym, NULL);
+	  vendor_id = riscv_elf_vendor_id_str_to_enum (name);
+	  if (vendor_id == R_RISCV_VENDOR_ID_NONE)
+	    {
+	      _bfd_error_handler
+		(_
+		 ("error: %pB: vendor-specific (%s) relocations are not supported"),
+		 input_bfd, name);
+	      bfd_set_error (bfd_error_bad_value);
+	      return false;
+	    }
+	  howto =
+	    riscv_elf_rtype_to_vendor_howto (input_bfd, r_type, vendor_id);
+	  name = NULL;
+	  vendor_rel = NULL;
+	}
 
       if (howto == NULL)
 	continue;
@@ -2489,6 +2589,26 @@ riscv_elf_relocate_section (bfd *output_bfd,
       resolved_to_zero = (h != NULL
 			  && UNDEFWEAK_NO_DYNAMIC_RELOC (info, h));
 
+      /* Expected vendor-specific relocation if previous
+	 type was R_RISCV_VENDOR.  */
+	switch (vendor_id)
+	{
+      case R_RISCV_VENDOR_ID_ESP:
+      switch (r_type)
+	{
+	case R_RISCV_ESP_LP_OFFSET_9_NEW:
+	case R_RISCV_ESP_LP_OFFSET_12_NEW:
+	  /* These require no special handling beyond perform_relocation.  */
+	  break;
+	default:
+	  /* Unreachable: vendor_id was was validated earlier.  */
+	  BFD_ASSERT (false);
+	}
+      goto do_relocation;
+	default:
+	  break;
+	}
+
       switch (r_type)
 	{
 	case R_RISCV_NONE:
@@ -2497,8 +2617,8 @@ riscv_elf_relocate_section (bfd *output_bfd,
 	case R_RISCV_COPY:
 	case R_RISCV_JUMP_SLOT:
 	case R_RISCV_RELATIVE:
-	case R_RISCV_ESP_LP_OFFSET_9:
-	case R_RISCV_ESP_LP_OFFSET_12:
+	case R_RISCV_ESP_LP_OFFSET_9_OLD:
+	case R_RISCV_ESP_LP_OFFSET_12_OLD:
 	  /* These require nothing of us at all.  */
 	  continue;
 
@@ -2516,6 +2636,10 @@ riscv_elf_relocate_section (bfd *output_bfd,
 	case R_RISCV_DELETE:
 	  /* These require no special handling beyond perform_relocation.  */
 	  break;
+
+	case R_RISCV_VENDOR:
+	  vendor_rel = rel;
+	  continue;
 
 	case R_RISCV_SET_ULEB128:
 	  if (uleb128_set_rel == NULL)
@@ -3020,7 +3144,7 @@ riscv_elf_relocate_section (bfd *output_bfd,
  do_relocation:
       if (r == bfd_reloc_ok)
 	r = perform_relocation (howto, rel, relocation, input_section,
-				input_bfd, contents);
+				input_bfd, contents, vendor_id);
 
       /* We should have already detected the error and set message before.
 	 If the error message isn't set since the linker runs out of memory

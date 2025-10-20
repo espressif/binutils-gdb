@@ -1481,6 +1481,7 @@ dump_relocations (Filedata *filedata,
   size_t i;
   Elf_Internal_Rela * rels;
   bool res = true;
+  char *vendor_id = NULL;
 
   if (rel_type == reltype_unknown)
     rel_type = guess_is_rela (filedata->file_header.e_machine) ? reltype_rela : reltype_rel;
@@ -1724,7 +1725,10 @@ dump_relocations (Filedata *filedata,
 	  break;
 
 	case EM_RISCV:
-	  rtype = elf_riscv_reloc_type (type);
+	  if (vendor_id)
+	    rtype = elf_riscv_vendor_reloc_type (vendor_id, type);
+	  else
+	    rtype = elf_riscv_reloc_type (type);
 	  break;
 
 	case EM_ALPHA:
@@ -1918,6 +1922,12 @@ dump_relocations (Filedata *filedata,
 	  break;
 	}
 
+      if (vendor_id)
+	{
+	  free(vendor_id);
+	  vendor_id = NULL;
+	}
+
       if (rtype == NULL)
 	printf (_("unrecognized: %-7lx"), (unsigned long) type & 0xffffffff);
       else
@@ -2056,6 +2066,9 @@ dump_relocations (Filedata *filedata,
 			  sec_name = name_buf;
 			}
 		    }
+#ifndef RISCV_XESPV2P1
+		  vendor_id = strdup(sec_name);
+#endif
 		  print_symbol (22, sec_name);
 		}
 	      else if (strtab == NULL)
@@ -2068,6 +2081,9 @@ dump_relocations (Filedata *filedata,
 		}
 	      else
 		{
+#ifndef RISCV_XESPV2P1
+		  vendor_id = strdup(strtab + psym->st_name);
+#endif
 		  print_symbol (22, strtab + psym->st_name);
 		  if (version_string)
 		    printf (sym_info == symbol_public ? "@@%s" : "@%s",
