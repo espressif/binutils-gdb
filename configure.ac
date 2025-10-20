@@ -4005,4 +4005,20 @@ AC_CONFIG_FILES([Makefile],
   [extrasub_build="$extrasub_build"
    extrasub_host="$extrasub_host"
    extrasub_target="$extrasub_target"])
+
+dnl Add new configure option --enable-xespv2p1
+AC_ARG_ENABLE([xespv2p1],
+  AS_HELP_STRING([--enable-xespv2p1],
+                 [Enable xespv2p1]),
+  [case "${enableval}" in
+     yes) xespv2p1=yes ;;
+     no)  xespv2p1=no ;;
+     *)   AC_MSG_ERROR([bad value ${enableval} for --enable-xespv2p1]) ;;
+   esac],
+  [xespv2p1=no])
+
+dnl If enabled, add the define to CFLAGS
+if test "x$xespv2p1" = "xyes"; then
+  CFLAGS="$CFLAGS -DRISCV_XESPV2P1"
+fi
 AC_OUTPUT

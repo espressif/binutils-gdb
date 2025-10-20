@@ -40,6 +40,9 @@ extern void riscv_elf32_set_options (struct bfd_link_info *,
 extern void riscv_elf64_set_options (struct bfd_link_info *,
 				     struct riscv_elf_params *);
 
+extern enum elf_riscv_vendor_id
+riscv_elf_vendor_id_str_to_enum(const char *id_str);
+
 extern reloc_howto_type *
 riscv_reloc_name_lookup (bfd *, const char *);
 
@@ -48,6 +51,11 @@ riscv_reloc_type_lookup (bfd *, bfd_reloc_code_real_type);
 
 extern reloc_howto_type *
 riscv_elf_rtype_to_howto (bfd *, unsigned int r_type);
+
+#ifndef RISCV_XESPV2P1
+extern reloc_howto_type *
+riscv_elf_rtype_to_vendor_howto (bfd *, unsigned int, enum elf_riscv_vendor_id);
+#endif
 
 /* The information of architecture attribute.  */
 struct riscv_subset_t
