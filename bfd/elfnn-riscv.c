@@ -2015,6 +2015,7 @@ perform_relocation (const reloc_howto_type *howto,
     case R_RISCV_DELETE:
       return bfd_reloc_ok;
 
+#if RISCV_XESPV2P1
     case R_RISCV_ESP_LP_OFFSET_9:
       if (!VALID_ESP_LP_OFFSET_9 (value))
 	return bfd_reloc_overflow;
@@ -2026,6 +2027,7 @@ perform_relocation (const reloc_howto_type *howto,
 	return bfd_reloc_overflow;
       value = ENCODE_ESP_LP_OFFSET_12 (value);
       break;
+#endif
 
     default:
       return bfd_reloc_notsupported;
@@ -2734,8 +2736,10 @@ riscv_elf_relocate_section (bfd *output_bfd,
 	case R_RISCV_COPY:
 	case R_RISCV_JUMP_SLOT:
 	case R_RISCV_RELATIVE:
+#ifdef RISCV_XESPV2P1
 	case R_RISCV_ESP_LP_OFFSET_9:
 	case R_RISCV_ESP_LP_OFFSET_12:
+#endif
 	  /* These require nothing of us at all.  */
 	  continue;
 
@@ -2753,6 +2757,12 @@ riscv_elf_relocate_section (bfd *output_bfd,
 	case R_RISCV_DELETE:
 	  /* These require no special handling beyond perform_relocation.  */
 	  break;
+
+#ifndef RISCV_XESPV2P1
+	case R_RISCV_VENDOR:
+	  vendor_rel = rel;
+	  continue;
+#endif
 
 	case R_RISCV_SET_ULEB128:
 	  if (uleb128_set_rel == NULL)
