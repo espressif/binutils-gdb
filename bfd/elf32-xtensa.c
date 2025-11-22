@@ -6916,6 +6916,9 @@ elf_xtensa_relax_section (bfd *abfd,
   static bool relocations_analyzed = false;
   xtensa_relax_info *relax_info;
 
+  if (!xtensa_default_isa)
+    xtensa_default_isa = xtensa_isa_init (0, 0);
+
   if (!relocations_analyzed)
     {
       /* Do some overall initialization for relaxation.  */
