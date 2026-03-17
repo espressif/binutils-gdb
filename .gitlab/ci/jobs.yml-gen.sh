@@ -2,6 +2,7 @@
 
 PYTHON_VERSIONS="without_python 3.8.0 3.9.0 3.10.0 3.11.0 3.12.0 3.13.0 3.14.0"
 PYTHON_MACOS_AARCH64_VERSIONS="without_python 3.8.10 3.9.13 3.10.0 3.11.0 3.12.0 3.13.0 3.14.0"
+PYTHON_WIN_AARCH64_VERSIONS="without_python 3.11.0 3.12.0 3.13.0 3.14.0"
 MACOS_TESTS_PYTHON_VERSIONS="3.8.10 3.9.5 3.10.2"
 declare -a TEST_ESP_CHIPS=(         "esp32"
                                     "esp32s2"
@@ -18,6 +19,7 @@ MACOS_x86_64_TRIPLET="x86_64-apple-darwin24.5"
 MACOS_AARCH64_TRIPLET="aarch64-apple-darwin24.5"
 LINUX_x86_64_TRIPLET="x86_64-linux-gnu"
 WIN_x86_64_TRIPLET="x86_64-w64-mingw32"
+WIN_ARM64_TRIPLET="aarch64-w64-mingw32"
 
 declare -a ARCHITECTURES_ARRAY=(${LINUX_x86_64_TRIPLET}
                                 "i586-linux-gnu"
@@ -26,6 +28,7 @@ declare -a ARCHITECTURES_ARRAY=(${LINUX_x86_64_TRIPLET}
                                 "aarch64-linux-gnu"
                                 "i686-w64-mingw32"
                                 ${WIN_x86_64_TRIPLET}
+                                ${WIN_ARM64_TRIPLET}
                                 ${MACOS_x86_64_TRIPLET}
                                 ${MACOS_AARCH64_TRIPLET})
 
@@ -36,6 +39,7 @@ declare -a PLATFORMIO_SYSTEM_ARRAY=("\\\"linux_x86_64\\\""
                                 "\\\"linux_aarch64\\\""
                                 "\\\"windows_x86\\\""
                                 "\\\"windows_amd64\\\""
+                                "\\\"windows_arm64\\\""
                                 "\\\"darwin_x86_64\\\""
                                 "\\\"darwin_arm64\\\"")
 
@@ -48,6 +52,7 @@ declare -a IMAGE_POSTFIX_ARRAY=("linux-x86_64"
                                 "linux-arm64"
                                 "win-x86"
                                 "win-x86_64"
+                                "win-arm64"
                                 "macos-x86_64"
                                 "macos-arm64")
 
@@ -69,6 +74,9 @@ function build_arch() {
   if [ "$MACOS_AARCH64_TRIPLET" = "$BUILD_ARCH_TRIPLET" ]; then
     PYTHON_VERSIONS_TO_BUILD=$PYTHON_MACOS_AARCH64_VERSIONS
   fi
+  if [ "$WIN_ARM64_TRIPLET" = "$BUILD_ARCH_TRIPLET" ]; then
+    PYTHON_VERSIONS_TO_BUILD=$PYTHON_WIN_AARCH64_VERSIONS
+  fi
   echo ""
   for ESP_CHIP_ARCH in $ESP_ARCHITECTURES_ALL; do
     echo ""
@@ -80,7 +88,6 @@ function build_arch() {
       echo "    PYTHON_VERSION: $PYTHON_VERSION"
       if [ "$MACOS_AARCH64_TRIPLET" = "$BUILD_ARCH_TRIPLET" ]; then
         echo "    MACOSX_DEPLOYMENT_TARGET: 10.13"
-        PYTHON_VERSIONS_TO_BUILD=$PYTHON_MACOS_AARCH64_VERSIONS
       fi
       echo "  image: \$CI_REGISTRY_IMAGE/gdb-build-$IMAGE_SUFFIX:latest"
       echo "  extends: .build_template"
@@ -165,6 +172,9 @@ function pack_output() {
   PYTHON_VERSIONS_TO_PACK=$PYTHON_VERSIONS
   if [ "$MACOS_AARCH64_TRIPLET" = "$BUILD_ARCH_TRIPLET" ]; then
     PYTHON_VERSIONS_TO_PACK=$PYTHON_MACOS_AARCH64_VERSIONS
+  fi
+  if [ "$WIN_ARM64_TRIPLET" = "$BUILD_ARCH_TRIPLET" ]; then
+    PYTHON_VERSIONS_TO_PACK=$PYTHON_WIN_AARCH64_VERSIONS
   fi
   for ESP_CHIP_ARCH in $ESP_ARCHITECTURES_ALL; do
     echo ""

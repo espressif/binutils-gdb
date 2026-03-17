@@ -1,0 +1,26 @@
+# syntax = edrevo/dockerfile-plus
+
+# Ubuntu 22.04 required for ABI compatibility with the prebuilt LLVM-MinGW toolchain
+ARG FROM_IMAGE=ubuntu:22.04
+INCLUDE+ ./common/Dockerfile.base
+
+# LLVM-MinGW prebuilt toolchain (includes aarch64-w64-mingw32 for Windows ARM64)
+# Remove all DLLs from toolchain to avoid linking dynamic libraries from LLVM-MinGW
+ARG LLVM_MINGW_URL="https://github.com/mstorsjo/llvm-mingw/releases/download/20260311/llvm-mingw-20260311-ucrt-ubuntu-22.04-x86_64.tar.xz"
+RUN wget -q -O llvm-mingw.tar.xz "$LLVM_MINGW_URL" \
+ && mkdir -p /opt/llvm-mingw \
+ && tar -xJf llvm-mingw.tar.xz -C /opt/llvm-mingw --strip-components=1 \
+ && rm llvm-mingw.tar.xz \
+ && find /opt/llvm-mingw/ -name 'lib*.dll*' -delete
+
+ENV PATH="/opt/llvm-mingw/bin:$PATH"
+
+# Needed to build for mingw (same as Dockerfile.win)
+ARG NCURSES_TARGET_OPTS="--enable-term-driver --enable-sp-funcs"
+
+ARG TARGET_HOST="aarch64-w64-mingw32"
+ARG WIN_PLATFORM="arm64"
+
+INCLUDE+ ./common/Dockerfile.gdb-deps
+INCLUDE+ ./common/Dockerfile.win-python
+INCLUDE+ ./common/Dockerfile.rust

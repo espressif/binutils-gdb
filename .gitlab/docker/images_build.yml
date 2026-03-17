@@ -105,6 +105,15 @@ image_win_x86_64:
     RUST_TARGET_TRIPLET: "x86_64-pc-windows-gnu"
   extends: .build_image
 
+image_win_arm64:
+  variables:
+    DOCKERFILE_NAME: Dockerfile.win_arm64
+    IMAGE_NAME: gdb-build-win-arm64
+    TARGET_HOST: "aarch64-w64-mingw32"
+    EXTRA_BUILD_ARGS: "--build-arg WIN_PLATFORM=arm64"
+    RUST_TARGET_TRIPLET: "aarch64-pc-windows-gnullvm"
+  extends: .build_image
+
 image_macos_x86_64:
   variables:
     DOCKERFILE_NAME: Dockerfile.macos

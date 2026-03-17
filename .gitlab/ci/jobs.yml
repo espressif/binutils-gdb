@@ -831,6 +831,82 @@ riscv32-x86_64-w64-mingw32-3.14.0:
   extends: .build_template
 
 
+# BUILD aarch64-w64-mingw32
+
+
+xtensa-aarch64-w64-mingw32-without_python:
+  variables:
+    BUILD_ARCH_TRIPLET: aarch64-w64-mingw32
+    ESP_CHIP_ARCH: xtensa
+    PYTHON_VERSION: without_python
+  image: $CI_REGISTRY_IMAGE/gdb-build-win-arm64:latest
+  extends: .build_template
+xtensa-aarch64-w64-mingw32-3.11.0:
+  variables:
+    BUILD_ARCH_TRIPLET: aarch64-w64-mingw32
+    ESP_CHIP_ARCH: xtensa
+    PYTHON_VERSION: 3.11.0
+  image: $CI_REGISTRY_IMAGE/gdb-build-win-arm64:latest
+  extends: .build_template
+xtensa-aarch64-w64-mingw32-3.12.0:
+  variables:
+    BUILD_ARCH_TRIPLET: aarch64-w64-mingw32
+    ESP_CHIP_ARCH: xtensa
+    PYTHON_VERSION: 3.12.0
+  image: $CI_REGISTRY_IMAGE/gdb-build-win-arm64:latest
+  extends: .build_template
+xtensa-aarch64-w64-mingw32-3.13.0:
+  variables:
+    BUILD_ARCH_TRIPLET: aarch64-w64-mingw32
+    ESP_CHIP_ARCH: xtensa
+    PYTHON_VERSION: 3.13.0
+  image: $CI_REGISTRY_IMAGE/gdb-build-win-arm64:latest
+  extends: .build_template
+xtensa-aarch64-w64-mingw32-3.14.0:
+  variables:
+    BUILD_ARCH_TRIPLET: aarch64-w64-mingw32
+    ESP_CHIP_ARCH: xtensa
+    PYTHON_VERSION: 3.14.0
+  image: $CI_REGISTRY_IMAGE/gdb-build-win-arm64:latest
+  extends: .build_template
+
+riscv32-aarch64-w64-mingw32-without_python:
+  variables:
+    BUILD_ARCH_TRIPLET: aarch64-w64-mingw32
+    ESP_CHIP_ARCH: riscv32
+    PYTHON_VERSION: without_python
+  image: $CI_REGISTRY_IMAGE/gdb-build-win-arm64:latest
+  extends: .build_template
+riscv32-aarch64-w64-mingw32-3.11.0:
+  variables:
+    BUILD_ARCH_TRIPLET: aarch64-w64-mingw32
+    ESP_CHIP_ARCH: riscv32
+    PYTHON_VERSION: 3.11.0
+  image: $CI_REGISTRY_IMAGE/gdb-build-win-arm64:latest
+  extends: .build_template
+riscv32-aarch64-w64-mingw32-3.12.0:
+  variables:
+    BUILD_ARCH_TRIPLET: aarch64-w64-mingw32
+    ESP_CHIP_ARCH: riscv32
+    PYTHON_VERSION: 3.12.0
+  image: $CI_REGISTRY_IMAGE/gdb-build-win-arm64:latest
+  extends: .build_template
+riscv32-aarch64-w64-mingw32-3.13.0:
+  variables:
+    BUILD_ARCH_TRIPLET: aarch64-w64-mingw32
+    ESP_CHIP_ARCH: riscv32
+    PYTHON_VERSION: 3.13.0
+  image: $CI_REGISTRY_IMAGE/gdb-build-win-arm64:latest
+  extends: .build_template
+riscv32-aarch64-w64-mingw32-3.14.0:
+  variables:
+    BUILD_ARCH_TRIPLET: aarch64-w64-mingw32
+    ESP_CHIP_ARCH: riscv32
+    PYTHON_VERSION: 3.14.0
+  image: $CI_REGISTRY_IMAGE/gdb-build-win-arm64:latest
+  extends: .build_template
+
+
 # BUILD x86_64-apple-darwin24.5
 
 
@@ -1902,6 +1978,41 @@ pack-riscv32-x86_64-w64-mingw32:
     - riscv32-x86_64-w64-mingw32-3.12.0
     - riscv32-x86_64-w64-mingw32-3.13.0
     - riscv32-x86_64-w64-mingw32-3.14.0
+  extends: .pack_template
+
+
+# PACK GDB aarch64-w64-mingw32
+
+pack-xtensa-aarch64-w64-mingw32:
+  variables:
+    PLATFORM_NAME: aarch64-w64-mingw32
+    PLATFORMIO_SYSTEM: "\"windows_arm64\""
+    ESP_CHIP_ARCH: xtensa
+    ARCHIVE_TOOL: "zip -r"
+    ARCHIVE_EXT: "zip"
+  tags: [ "amd64", "build" ]
+  needs:
+    - xtensa-aarch64-w64-mingw32-without_python
+    - xtensa-aarch64-w64-mingw32-3.11.0
+    - xtensa-aarch64-w64-mingw32-3.12.0
+    - xtensa-aarch64-w64-mingw32-3.13.0
+    - xtensa-aarch64-w64-mingw32-3.14.0
+  extends: .pack_template
+
+pack-riscv32-aarch64-w64-mingw32:
+  variables:
+    PLATFORM_NAME: aarch64-w64-mingw32
+    PLATFORMIO_SYSTEM: "\"windows_arm64\""
+    ESP_CHIP_ARCH: riscv32
+    ARCHIVE_TOOL: "zip -r"
+    ARCHIVE_EXT: "zip"
+  tags: [ "amd64", "build" ]
+  needs:
+    - riscv32-aarch64-w64-mingw32-without_python
+    - riscv32-aarch64-w64-mingw32-3.11.0
+    - riscv32-aarch64-w64-mingw32-3.12.0
+    - riscv32-aarch64-w64-mingw32-3.13.0
+    - riscv32-aarch64-w64-mingw32-3.14.0
   extends: .pack_template
 
 

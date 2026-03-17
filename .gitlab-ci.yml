@@ -74,8 +74,10 @@ before_script:
     - pack-riscv32-aarch64-linux-gnu
     - win_manifest_xtensa_esp_win64
     - win_manifest_xtensa_esp_win
+    - win_manifest_xtensa_esp_win_arm64
     - win_manifest_riscv32_esp_win64
     - win_manifest_riscv32_esp_win
+    - win_manifest_riscv32_esp_win_arm64
     - macos_codesign_xtensa_esp_macos_arm64
     - macos_codesign_riscv32_esp_macos_arm64
     - macos_codesign_xtensa_esp_macos
@@ -307,6 +309,8 @@ macos_codesign_riscv32_esp_macos:
     DIST_ART_DIR: dist
     # URL to windows manifest repo
     MANIFEST_SCRIPTS_GIT: "${CI_SERVER_PROTOCOL}://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/espressif/windows_manifest.git"
+    WIN_MANIFEST_APP_VERSION: "0.0.0.1"
+    WIN_MANIFEST_ARCH: "x64"
   script:
     - git clone -q --depth=1 ${MANIFEST_SCRIPTS_GIT} -b ${CI_COMMIT_REF_NAME}; if ($LASTEXITCODE -ne 0) { git clone -q --depth=1 ${MANIFEST_SCRIPTS_GIT} }
     - ./windows_manifest/run.ps1
@@ -317,32 +321,36 @@ win_manifest_xtensa_esp_win64:
   needs: [ pack-xtensa-x86_64-w64-mingw32 ]
   variables:
     WIN_MANIFEST_APP_NAME: "xtensa_esp_win64_gdb"
-    WIN_MANIFEST_APP_VERSION: "0.0.0.1"
-    WIN_MANIFEST_ARCH: "x64"
 
 win_manifest_xtensa_esp_win:
   extends: .template_win_manifest
   needs: [ pack-xtensa-i686-w64-mingw32 ]
   variables:
     WIN_MANIFEST_APP_NAME: "xtensa_esp_win_gdb"
-    WIN_MANIFEST_APP_VERSION: "0.0.0.1"
-    WIN_MANIFEST_ARCH: "x86"
 
 win_manifest_riscv32_esp_win64:
   extends: .template_win_manifest
   needs: [ pack-riscv32-x86_64-w64-mingw32 ]
   variables:
     WIN_MANIFEST_APP_NAME: "riscv32_esp_win64_gdb"
-    WIN_MANIFEST_APP_VERSION: "0.0.0.1"
-    WIN_MANIFEST_ARCH: "x64"
 
 win_manifest_riscv32_esp_win:
   extends: .template_win_manifest
   needs: [ pack-riscv32-i686-w64-mingw32 ]
   variables:
     WIN_MANIFEST_APP_NAME: "riscv32_esp_win_gdb"
-    WIN_MANIFEST_APP_VERSION: "0.0.0.1"
-    WIN_MANIFEST_ARCH: "x86"
+
+win_manifest_xtensa_esp_win_arm64:
+  extends: .template_win_manifest
+  needs: [ pack-xtensa-aarch64-w64-mingw32 ]
+  variables:
+    WIN_MANIFEST_APP_NAME: "xtensa_esp_win_arm64_gdb"
+
+win_manifest_riscv32_esp_win_arm64:
+  extends: .template_win_manifest
+  needs: [ pack-riscv32-aarch64-w64-mingw32 ]
+  variables:
+    WIN_MANIFEST_APP_NAME: "riscv32_esp_win_arm64_gdb"
 
 test_with_openocd:
   stage: test

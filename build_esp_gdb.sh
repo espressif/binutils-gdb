@@ -84,7 +84,7 @@ if [ $BUILD_PYTHON_VERSION != "without_python" ]; then
 	PYTHON_CROSS_LINK_FLAG="-l${PYTHON_CROSS_LINK_FLAG#$PYTHON_LIB_PREFIX}"
 	PYTHON_CROSS_DIR_LIB=$(dirname $PYTHON_CROSS_LIB_PATH)
 	PYTHON_LDFLAGS="-L$PYTHON_CROSS_DIR_LIB $PYTHON_CROSS_LINK_FLAG"
-	if [[ ${PLATFORM} != "macos" ]] ; then
+	if [[ ${PLATFORM} != "macos" && ${TARGET_HOST} != "aarch64-w64-mingw32" ]] ; then
 		PYTHON_LDFLAGS="${PYTHON_LDFLAGS} -latomic"
 	fi
 	PYTHON_CONFIG_OPTS="--with-python \
@@ -137,6 +137,10 @@ export LD_LIBRARY_PATH="$PYTHON_CROSS_DIR_LIB:$LD_LIBRARY_PATH"
 export CFLAGS="-I/opt/ncurses-$TARGET_HOST/include -DNCURSES_STATIC"
 export CXXFLAGS="-I/opt/ncurses-$TARGET_HOST/include -DNCURSES_STATIC"
 export LDFLAGS="-L/opt/ncurses-$TARGET_HOST/lib"
+
+if [[ ${TARGET_HOST} = "aarch64-w64-mingw32" ]] ; then
+  export CXXFLAGS="$CXXFLAGS -stdlib=libc++"
+fi
 
 if [[ ${PLATFORM} == "linux" ]] ; then
   export CFLAGS="$CFLAGS -Wno-psabi"
