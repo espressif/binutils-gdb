@@ -244,7 +244,16 @@ buildsym_compunit::finish_block_internal
     {
       struct type *ftype = symbol->type ();
       symbol->set_value_block (block);
-      symbol->set_section_index (SECT_OFF_TEXT (m_objfile));
+      /* Section lookup uses the block's low PC (function entry).  */
+      for (obj_section &s : m_objfile->sections ())
+	{
+	  if (s.contains (start))
+	    {
+	      int symbol_section = &s - m_objfile->sections_start;
+	      symbol->set_section_index (symbol_section);
+	      break;
+	    }
+	}
       block->set_function (symbol);
 
       if (ftype->num_fields () <= 0)
