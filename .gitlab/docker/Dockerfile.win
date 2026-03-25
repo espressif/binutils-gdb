@@ -15,5 +15,6 @@ RUN apt update && apt install -y --force-yes \
     && rm -rf /var/lib/apt/lists/*
 
 INCLUDE+ ./common/Dockerfile.gdb-deps
+INCLUDE+ ./common/Dockerfile.libiconv
 INCLUDE+ ./common/Dockerfile.win-python
 INCLUDE+ ./common/Dockerfile.rust

@@ -22,5 +22,6 @@ ARG TARGET_HOST="aarch64-w64-mingw32"
 ARG WIN_PLATFORM="arm64"
 
 INCLUDE+ ./common/Dockerfile.gdb-deps
+INCLUDE+ ./common/Dockerfile.libiconv
 INCLUDE+ ./common/Dockerfile.win-python
 INCLUDE+ ./common/Dockerfile.rust

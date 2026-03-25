@@ -1,0 +1,15 @@
+ARG LIBICONV_VERSION=1.19
+ARG LIBICONV_URL=https://ftp.gnu.org/pub/gnu/libiconv/libiconv-${LIBICONV_VERSION}.tar.gz
+
+RUN FILE_NAME=$(basename "$LIBICONV_URL") \
+    && wget --no-verbose -O "$FILE_NAME" "$LIBICONV_URL" \
+    && tar xzf "$FILE_NAME" \
+    && DIR="${FILE_NAME%.tar.gz}" \
+    && pushd "$DIR" \
+    && sed -E -i 's#^[[:space:]]+/\*[[:space:]]?"([^"]+)",[[:space:]]+Windows[[:space:]]+\*/#              "\1",                /* Windows */#' ./lib/encodings.def \
+    && ./configure --prefix="/opt/iconv-${TARGET_HOST}" --enable-static --disable-shared --host=${TARGET_HOST} \
+    && make -f Makefile.devel lib/aliases.h lib/canonical.h lib/canonical_local.h \
+    && make \
+    && make install \
+    && popd \
+    && rm -rf $FILE_NAME $DIR

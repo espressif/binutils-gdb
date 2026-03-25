@@ -100,6 +100,11 @@ if [[ ${PLATFORM} == "windows" ]] ; then
     THREADS_STANDARD="windows"
 fi
 
+LIBICONV_CONFIG_OPTS=
+if [[ ${PLATFORM} == "windows" ]] ; then
+  LIBICONV_CONFIG_OPTS=" --with-libiconv-prefix=/opt/iconv-$TARGET_HOST --with-libiconv-type=static"
+fi
+
 CONFIG_OPTS=" \
 --host=$TARGET_HOST \
 --target=${ESP_CHIP_ARCHITECTURE}-esp-elf \
@@ -123,6 +128,7 @@ ${PYTHON_CONFIG_OPTS} \
 --with-libexpat-type=static \
 --with-liblzma-type=static \
 --with-libgmp-type=static \
+${LIBICONV_CONFIG_OPTS} \
 --with-static-standard-libraries \
 --with-pkgversion="esp-gdb" \
 --with-curses \
@@ -137,9 +143,12 @@ export LD_LIBRARY_PATH="$PYTHON_CROSS_DIR_LIB:$LD_LIBRARY_PATH"
 export CFLAGS="-I/opt/ncurses-$TARGET_HOST/include -DNCURSES_STATIC"
 export CXXFLAGS="-I/opt/ncurses-$TARGET_HOST/include -DNCURSES_STATIC"
 export LDFLAGS="-L/opt/ncurses-$TARGET_HOST/lib"
-
-if [[ ${TARGET_HOST} = "aarch64-w64-mingw32" ]] ; then
-  export CXXFLAGS="$CXXFLAGS -stdlib=libc++"
+if [[ ${PLATFORM} == "windows" ]] ; then
+  # Adding -D_LIBICONV_VERSION according to the comment
+  # https://sourceware.org/pipermail/gdb-prs/2022q3/034156.html
+  export CFLAGS="$CFLAGS -I/opt/iconv-$TARGET_HOST/include -D_LIBICONV_VERSION=0x0113"
+  export CXXFLAGS="$CXXFLAGS -I/opt/iconv-$TARGET_HOST/include -D_LIBICONV_VERSION=0x0113"
+  export LDFLAGS="$LDFLAGS -L/opt/iconv-$TARGET_HOST/lib -liconv -lcharset"
 fi
 
 if [[ ${PLATFORM} == "linux" ]] ; then
