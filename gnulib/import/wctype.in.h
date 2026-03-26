@@ -68,6 +68,10 @@
 #ifndef _@GUARD_PREFIX@_WCTYPE_H
 #define _@GUARD_PREFIX@_WCTYPE_H
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 #ifndef _GL_INLINE_HEADER_BEGIN
  #error "Please include config.h first."
 #endif
@@ -726,6 +730,10 @@ _GL_WARN_ON_USE (towctrans, "towctrans is unportable - "
 #endif
 
 _GL_INLINE_HEADER_END
+
+#if defined __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* _@GUARD_PREFIX@_WCTYPE_H */
 #endif /* _@GUARD_PREFIX@_WCTYPE_H */
