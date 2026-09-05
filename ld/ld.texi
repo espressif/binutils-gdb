@@ -2453,6 +2453,59 @@ On platforms where the feature is supported, the option
 On platforms where the feature is not supported, both @option{--relax}
 and @option{--no-relax} are accepted, but ignored.
 
+@cindex Espressif PMP misalign
+@kindex --fix-esp-pmp-misalign
+@item --fix-esp-pmp-misalign[=@var{file}]
+On RISC-V, scan executable input sections and insert NOP instructions after
+each load wider than a byte that is immediately followed by a store through
+a different base register, which is the sequence the erratum faults on.
+Objects need no special assembler option; the fix is applied only when this
+flag is given.  The pass still runs with @option{--no-relax}.  Compressed
+branches and jumps that fall out of range after an insert are rewritten as
+32-bit @code{beq}/@code{bne} or @code{jal}.
+
+Without @var{file} every input object is fixed.  Given one, only the objects
+named are, which is useful when the rest of the image is known never to run
+with the offending PMP configuration.  @var{file} may be a comma separated
+list, the option may be repeated, and each name is matched as a shell glob
+against both the full name of the input object and its last component, so
+@samp{obj/foo.o} and @samp{foo.o} pick out the same file.  Naming an archive
+selects every member linked in from it.  Objects that are not selected are
+still checked for branches and jumps that the NOPs inserted elsewhere pushed
+out of range.
+
+Growing a section can also push a @code{.uleb128} label difference past the
+number of bytes the assembler left room for it, which normally ends the link.
+With this option such an input section is reported and dropped from the
+output instead, since the sections that hold these differences carry debug
+information rather than code.  See
+@option{--no-warn-esp-pmp-misalign} for builds that cannot tolerate the
+report.
+
+@cindex Espressif PMP misalign
+@kindex --no-fix-esp-pmp-misalign
+@item --no-fix-esp-pmp-misalign
+Do not insert Espressif PMP NOPs.  This is the default.
+
+@cindex Espressif PMP misalign
+@kindex --print-esp-pmp-misalign-fixes
+@item --print-esp-pmp-misalign-fixes
+Report each site where @option{--fix-esp-pmp-misalign} inserted NOPs or
+expanded a compressed branch or jump.
+
+@cindex Espressif PMP misalign
+@kindex --warn-esp-pmp-misalign
+@item --warn-esp-pmp-misalign
+@kindex --no-warn-esp-pmp-misalign
+@itemx --no-warn-esp-pmp-misalign
+Warn, or stay quiet, about each input section that
+@option{--fix-esp-pmp-misalign} drops because a @code{.uleb128} difference in
+it no longer fits.  Warning is the default.  Since @option{--fatal-warnings}
+ends the link over this, a build that treats warnings as errors and accepts
+the loss of the dropped debug information wants
+@option{--no-warn-esp-pmp-misalign} rather than a blanket
+@option{--no-fatal-warnings}.
+
 @cindex retaining specified symbols
 @cindex stripping all but some symbols
 @cindex symbols, retaining selectively

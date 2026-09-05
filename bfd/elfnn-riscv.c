@@ -24,6 +24,8 @@
 
 #include "sysdep.h"
 #include "bfd.h"
+#include "libiberty.h"
+#include "fnmatch.h"
 #include "libbfd.h"
 #include "bfdlink.h"
 #include "genlink.h"
@@ -2019,6 +2021,12 @@ calculate_vendor_relocaton (const Elf_Internal_Rela *rel, bfd_vma *value,
   return bfd_reloc_ok;
 }
 
+/* The link riscv_elf_relocate_section is working on, so that a uleb128
+   difference which no longer fits can consult --fix-esp-pmp-misalign and
+   warn through the linker, leaving perform_relocation's interface alone.  */
+
+static struct bfd_link_info *riscv_relocate_section_info = NULL;
+
 /* Emplace a static relocation.  */
 
 static bfd_reloc_status_type
@@ -2155,6 +2163,30 @@ perform_relocation (const reloc_howto_type *howto,
 	while (val_t);
 	if (new_len > len)
 	  {
+	    struct bfd_link_info *info = riscv_relocate_section_info;
+	    struct riscv_elf_params *params
+	      = riscv_elf_hash_table (info)->params;
+
+	    /* The Espressif PMP misalign NOPs grow sections, so a difference
+	       the assembler sized for the unpadded code can end up needing
+	       more bytes than it left room for.  Drop the section that holds
+	       it, which costs whatever debug information it carries,
+	       rather than failing the whole link.  */
+	    if (params->fix_esp_pmp_misalign)
+	      {
+		if ((input_section->flags & SEC_EXCLUDE) == 0)
+		  {
+		    if (params->warn_esp_pmp_misalign)
+		      info->callbacks->einfo
+			(_("%H: warning: final size of uleb128 value exceeds "
+			   "available space after Espressif PMP misalign NOP "
+			   "insertion, leaving the section out of the link\n"),
+			 input_bfd, input_section, rel->r_offset);
+		    input_section->flags |= SEC_EXCLUDE;
+		  }
+		return bfd_reloc_ok;
+	      }
+
 	    _bfd_error_handler
 	      (_("final size of uleb128 value at offset 0x%lx in %pA from "
 		 "%pB exceeds available space"),
@@ -2503,6 +2535,8 @@ riscv_elf_relocate_section (bfd *output_bfd,
   Elf_Internal_Rela *uleb128_set_rel = NULL;
   Elf_Internal_Rela *vendor_rel = NULL;
   bool absolute;
+
+  riscv_relocate_section_info = info;
 
   if (!riscv_init_pcrel_relocs (&pcrel_relocs))
     return false;
@@ -4885,6 +4919,132 @@ _riscv_relax_delete_bytes (bfd *abfd,
   return true;
 }
 
+/* Insert COUNT bytes of NOP at ADDR, then fix reloc offsets and symbols.
+   Adapted from msp430_elf_relax_add_words; bookkeeping mirrors
+   _riscv_relax_delete_bytes in the opposite direction.  */
+
+static bool
+_riscv_relax_insert_bytes (bfd *abfd,
+			   asection *sec,
+			   bfd_vma addr,
+			   size_t count,
+			   bfd_vma nop,
+			   unsigned int nop_size,
+			   struct bfd_link_info *link_info,
+			   riscv_pcgp_relocs *p)
+{
+  unsigned int i, symcount;
+  struct elf_link_hash_entry **sym_hashes = elf_sym_hashes (abfd);
+  Elf_Internal_Shdr *symtab_hdr = &elf_tdata (abfd)->symtab_hdr;
+  unsigned int sec_shndx = _bfd_elf_section_from_bfd_section (abfd, sec);
+  struct bfd_elf_section_data *data = elf_section_data (sec);
+  bfd_byte *contents = data->this_hdr.contents;
+  bfd_vma old_size = sec->size;
+  bfd_vma pos;
+
+  if (count == 0)
+    return true;
+  if (addr > old_size || nop_size == 0 || count % nop_size != 0)
+    return false;
+
+  contents = bfd_realloc (contents, old_size + count);
+  if (contents == NULL)
+    return false;
+  data->this_hdr.contents = contents;
+
+  memmove (contents + addr + count, contents + addr, old_size - addr);
+  for (pos = 0; pos < count; pos += nop_size)
+    {
+      if (nop_size == 2)
+	bfd_putl16 (nop, contents + addr + pos);
+      else
+	bfd_putl32 (nop, contents + addr + pos);
+    }
+
+  sec->size += count;
+
+  /* Relocs at ADDR belong to the instruction after the insert point.  */
+  for (i = 0; i < sec->reloc_count; i++)
+    if (data->relocs[i].r_offset >= addr && data->relocs[i].r_offset < old_size)
+      data->relocs[i].r_offset += count;
+
+  if (p)
+    {
+      /* riscv_update_pcgp_relocs expects size already reduced; pass the
+	 inverse by treating inserted bytes as a negative delete.  */
+      riscv_pcgp_lo_reloc *l;
+      riscv_pcgp_hi_reloc *h;
+
+      for (l = p->lo; l != NULL; l = l->next)
+	if (l->hi_sec_off >= addr && l->hi_sec_off < old_size)
+	  l->hi_sec_off += count;
+      for (h = p->hi; h != NULL; h = h->next)
+	{
+	  if (h->hi_sec_off >= addr && h->hi_sec_off < old_size)
+	    h->hi_sec_off += count;
+	  if (h->sym_sec == sec
+	      && h->hi_addr >= addr
+	      && h->hi_addr < old_size)
+	    h->hi_addr += count;
+	}
+    }
+
+  if (symtab_hdr->contents != NULL)
+    {
+      for (i = 0; i < symtab_hdr->sh_info; i++)
+	{
+	  Elf_Internal_Sym *sym = (Elf_Internal_Sym *) symtab_hdr->contents + i;
+	  if (sym->st_shndx != sec_shndx)
+	    continue;
+	  if (sym->st_value >= addr && sym->st_value <= old_size)
+	    sym->st_value += count;
+	  else if (sym->st_value < addr
+		   && sym->st_value + sym->st_size > addr)
+	    sym->st_size += count;
+	}
+    }
+
+  if (sym_hashes == NULL)
+    return true;
+
+  symcount = ((symtab_hdr->sh_size / sizeof (ElfNN_External_Sym))
+	      - symtab_hdr->sh_info);
+
+  for (i = 0; i < symcount; i++)
+    {
+      struct elf_link_hash_entry *sym_hash = sym_hashes[i];
+
+      if (link_info->wrap_hash != NULL
+	  || sym_hash->versioned != unversioned)
+	{
+	  struct elf_link_hash_entry **cur_sym_hashes;
+
+	  for (cur_sym_hashes = sym_hashes; cur_sym_hashes < &sym_hashes[i];
+	       cur_sym_hashes++)
+	    {
+	      if (*cur_sym_hashes == sym_hash)
+		break;
+	    }
+	  if (cur_sym_hashes < &sym_hashes[i])
+	    continue;
+	}
+
+      if ((sym_hash->root.type == bfd_link_hash_defined
+	   || sym_hash->root.type == bfd_link_hash_defweak)
+	  && sym_hash->root.u.def.section == sec)
+	{
+	  if (sym_hash->root.u.def.value >= addr
+	      && sym_hash->root.u.def.value <= old_size)
+	    sym_hash->root.u.def.value += count;
+	  else if (sym_hash->root.u.def.value < addr
+		   && (sym_hash->root.u.def.value + sym_hash->size > addr))
+	    sym_hash->size += count;
+	}
+    }
+
+  return true;
+}
+
 typedef bool (*relax_delete_t) (bfd *, asection *,
 				bfd_vma, size_t,
 				struct bfd_link_info *,
@@ -5187,7 +5347,7 @@ _bfd_riscv_relax_lui (bfd *abfd,
     }
 
   /* Can we relax LUI to C.LUI?  Alignment might move the section forward;
-     account for this assuming page alignment at worst. In the presence of 
+     account for this assuming page alignment at worst. In the presence of
      RELRO segment the linker aligns it by one page size, therefore sections
      after the segment can be moved more than one page. */
 
@@ -5258,6 +5418,842 @@ _bfd_riscv_relax_tls_le (bfd *abfd,
     default:
       abort ();
     }
+}
+
+/* Return true if INSN, which is LENGTH bytes long, is a store, and so can be
+   the second half of the Espressif PMP misaligned load/store hazard.  The
+   width and the alignment of the store are both irrelevant: it is the load
+   that splits, and the store only has to be the instruction whose permission
+   check runs while the load is still on the bus.  A byte store, which can
+   never split, faults just as an aligned word store does.  */
+
+static bool
+riscv_esp_pmp_insn_is_store (bfd_vma insn, unsigned int length)
+{
+  if (length == 2)
+    {
+      unsigned int quadrant = insn & 0x3;
+      unsigned int funct3 = (insn >> 13) & 0x7;
+
+      /* C0: c.sw (110), c.fsw/c.sd (111).  C2: c.swsp (110), c.fswsp/c.sdsp.  */
+      if ((quadrant == 0 || quadrant == 2)
+	  && (funct3 == 6 || funct3 == 7))
+	return true;
+      /* Zcb: c.sb / c.sh, both in C0.  */
+      if ((insn & MASK_C_SB) == MATCH_C_SB
+	  || (insn & MASK_C_SH) == MATCH_C_SH)
+	return true;
+      return false;
+    }
+
+  if (length == 4)
+    {
+      unsigned int opcode = insn & 0x7f;
+
+      /* STORE / STORE-FP.  */
+      if (opcode == 0x23 || opcode == 0x27)
+	return true;
+      /* SC.W / SC.D (AMO major opcode, funct5 == 00011).  */
+      if (opcode == 0x2f && ((insn >> 27) & 0x1f) == 0x3)
+	return true;
+    }
+
+  return false;
+}
+
+/* Return true if INSN, which is LENGTH bytes long, is a load wider than a
+   byte, and so can cross a 4-byte boundary and arm the Espressif PMP
+   misaligned load/store hazard.  Byte loads (lb / lbu and their FP
+   counterparts) never cross one.  */
+
+static bool
+riscv_esp_pmp_insn_is_wide_load (bfd_vma insn, unsigned int length)
+{
+  if (length == 2)
+    {
+      unsigned int quadrant = insn & 0x3;
+      unsigned int funct3 = (insn >> 13) & 0x7;
+
+      /* C0: c.lw (010), c.flw/c.ld (011).  C2: c.lwsp (010), c.flwsp/c.ldsp.  */
+      if ((quadrant == 0 || quadrant == 2)
+	  && (funct3 == 2 || funct3 == 3))
+	return true;
+      return false;
+    }
+
+  if (length == 4)
+    {
+      unsigned int opcode = insn & 0x7f;
+      unsigned int funct3 = (insn >> 12) & 0x7;
+
+      /* LOAD, excluding LB (funct3 == 0) and LBU (funct3 == 4).  */
+      if (opcode == 0x03 && funct3 != 0 && funct3 != 4)
+	return true;
+      /* LOAD-FP, excluding FLB (funct3 == 0).  */
+      if (opcode == 0x07 && funct3 != 0)
+	return true;
+      /* LR.W / LR.D (AMO major opcode, funct5 == 00010).  */
+      if (opcode == 0x2f && ((insn >> 27) & 0x1f) == 0x2)
+	return true;
+    }
+
+  return false;
+}
+
+/* Return the integer base register used by a load or store instruction.
+   Compressed register numbers are expanded to their architectural values.  */
+
+static int
+riscv_esp_pmp_insn_base_reg (bfd_vma insn, unsigned int length)
+{
+  if (length == 4)
+    return (insn >> 15) & 0x1f;
+
+  if (length == 2)
+    {
+      unsigned int quadrant = insn & 0x3;
+
+      if (quadrant == 0)
+	return 8 + ((insn >> 7) & 0x7);
+      if (quadrant == 2)
+	return X_SP;
+    }
+
+  return -1;
+}
+
+/* Return true if the file name glob PATTERN matches NAME or its last
+   component, so that "obj/foo.o" and "foo.o" pick out the same input.  */
+
+static bool
+riscv_esp_pmp_name_matches (const char *pattern, const char *name)
+{
+  return (fnmatch (pattern, name, 0) == 0
+	  || fnmatch (pattern, lbasename (name), 0) == 0);
+}
+
+/* Return true if the NOPs are wanted in code from ABFD.  Without any file
+   named on the command line they are wanted everywhere; otherwise ABFD, or
+   the archive it came out of, has to be one of the files named.  */
+
+static bool
+riscv_esp_pmp_fix_file (const struct riscv_elf_params *params, bfd *abfd)
+{
+  const char *const *file;
+
+  if (params->fix_esp_pmp_misalign_files == NULL)
+    return true;
+  if (abfd == NULL)
+    return false;
+
+  for (file = params->fix_esp_pmp_misalign_files; *file != NULL; file++)
+    if (riscv_esp_pmp_name_matches (*file, bfd_get_filename (abfd))
+	|| (abfd->my_archive != NULL
+	    && riscv_esp_pmp_name_matches (*file,
+					   bfd_get_filename (abfd->my_archive))))
+      return true;
+
+  return false;
+}
+
+/* Read SEC's contents and relocations, and its owner's local symbols, all of
+   which this pass and the expansion below need.  Return false if SEC cannot
+   be decoded.  */
+
+static bool
+riscv_esp_pmp_read_section (asection *sec)
+{
+  struct bfd_elf_section_data *data = elf_section_data (sec);
+  bfd *abfd = sec->owner;
+  Elf_Internal_Shdr *symtab_hdr;
+
+  if (abfd == NULL || (sec->flags & SEC_HAS_CONTENTS) == 0)
+    return false;
+
+  symtab_hdr = &elf_symtab_hdr (abfd);
+
+  if (data->this_hdr.contents == NULL
+      && !bfd_malloc_and_get_section (abfd, sec, &data->this_hdr.contents))
+    return false;
+
+  if (sec->reloc_count != 0
+      && data->relocs == NULL
+      && (data->relocs = _bfd_elf_link_read_relocs (abfd, sec, NULL, NULL,
+						    true)) == NULL)
+    return false;
+
+  if (symtab_hdr->sh_info != 0
+      && symtab_hdr->contents == NULL
+      && !(symtab_hdr->contents
+	   = (unsigned char *) bfd_elf_get_elf_syms (abfd, symtab_hdr,
+						     symtab_hdr->sh_info,
+						     0, NULL, NULL, NULL)))
+    return false;
+
+  return true;
+}
+
+/* Advance OFFSET past any R_RISCV_ALIGN reservation.  Those bytes may still
+   be deleted by the later ALIGN pass, so they must not stand in for the
+   instruction after a load.  */
+
+static bfd_vma
+riscv_esp_pmp_skip_align (asection *sec, bfd_vma offset)
+{
+  Elf_Internal_Rela *relocs = elf_section_data (sec)->relocs;
+  bool moved;
+
+  do
+    {
+      unsigned int i;
+
+      moved = false;
+      for (i = 0; i < sec->reloc_count; i++)
+	{
+	  Elf_Internal_Rela *rel = relocs + i;
+	  bfd_vma end;
+
+	  if (ELFNN_R_TYPE (rel->r_info) != R_RISCV_ALIGN)
+	    continue;
+	  end = rel->r_offset + rel->r_addend;
+	  if (offset >= rel->r_offset && offset < end)
+	    {
+	      offset = end;
+	      moved = true;
+	    }
+	}
+    }
+  while (moved);
+
+  return offset;
+}
+
+/* Return the base register that the load or store at OFFSET in SEC will use
+   once the link finishes, or -1 if that cannot be told here.  GP and TLS
+   relaxation leave the register the assembler picked in place and let
+   riscv_elf_relocate_section swap in gp, x0 or tp, which happens long after
+   this pass, so for those the encoded register says nothing about the region
+   the access ends up in.  */
+
+static int
+riscv_esp_pmp_insn_final_base (asection *sec, bfd_vma offset, bfd_vma insn,
+			       unsigned int length)
+{
+  struct bfd_elf_section_data *data = elf_section_data (sec);
+  unsigned int i;
+
+  for (i = 0; i < sec->reloc_count; i++)
+    {
+      if (data->relocs[i].r_offset != offset)
+	continue;
+
+      switch (ELFNN_R_TYPE (data->relocs[i].r_info))
+	{
+	case R_RISCV_GPREL_I:
+	case R_RISCV_GPREL_S:
+	case R_RISCV_TPREL_I:
+	case R_RISCV_TPREL_S:
+	  return -1;
+	default:
+	  break;
+	}
+    }
+
+  return riscv_esp_pmp_insn_base_reg (insn, length);
+}
+
+/* Return true if the instruction at OFFSET in SEC may follow a wide load
+   using LOAD_BASE.  Only the instruction immediately after the load matters:
+   the hazard is the load's second bus cycle still being in flight when the
+   next instruction's permission check runs, so anything that is not a store
+   clears it, and so does a store that stays in the load's own PMP region.  */
+
+static bool
+riscv_esp_pmp_next_insn_is_safe (asection *sec, bfd_vma offset, int load_base)
+{
+  bfd_byte *contents = elf_section_data (sec)->this_hdr.contents;
+  bfd_vma insn;
+  unsigned int length;
+  int store_base;
+
+  offset = riscv_esp_pmp_skip_align (sec, offset);
+
+  /* Nothing else in this section.  Execution can fall through into whatever
+     is laid out next, which this pass does not examine.  */
+  if (offset >= sec->size)
+    return true;
+
+  /* A truncated or undecodable instruction; be safe rather than clever.  */
+  if (offset + 2 > sec->size)
+    return false;
+  insn = bfd_getl16 (contents + offset);
+  length = riscv_insn_length (insn);
+  if ((length != 2 && length != 4) || offset + length > sec->size)
+    return false;
+  if (length == 4)
+    insn = bfd_getl32 (contents + offset);
+
+  if (!riscv_esp_pmp_insn_is_store (insn, length))
+    return true;
+
+  /* A store through the load's own base register cannot reach a second PMP
+     region, since a 12-bit displacement is too short to leave the first.  */
+  store_base = riscv_esp_pmp_insn_final_base (sec, offset, insn, length);
+  return load_base >= 0 && store_base == load_base;
+}
+
+/* How many NOPs to insert at a hazardous site.  One is enough on the part
+   that was measured, but Espressif's published guidance asks for two, and
+   only one chip, one pair of PMP regions and an idle bus were characterised,
+   so the second NOP is kept as margin.  */
+
+#define RISCV_ESP_PMP_NOPS 2
+
+/* Return how many NOPs to insert after a wide load so that no hazardous
+   store follows it immediately.  AFTER_LOAD is the offset of the following
+   instruction.  */
+
+static unsigned int
+riscv_esp_pmp_insert_count (asection *sec, bfd_vma after_load, int load_base)
+{
+  return (riscv_esp_pmp_next_insn_is_safe (sec, after_load, load_base)
+	  ? 0 : RISCV_ESP_PMP_NOPS);
+}
+
+/* bfd_relax_section is called from lang_size_sections, which gives an input
+   section its output_offset only after relaxing it.  A section placed earlier
+   in this trip therefore already reports where the bytes added so far have
+   pushed it, while SEC still reports where it sat at the end of the previous
+   trip.  Track the bytes this pass has added to the current output section so
+   both ends of a jump can be measured in the same layout.  Growth is charged
+   per output section, and the trip that settles adds nothing, so the final
+   measurement of every jump is exact.  */
+
+static asection *riscv_esp_pmp_grown_osec = NULL;
+static int riscv_esp_pmp_grown_trip = -1;
+static bfd_vma riscv_esp_pmp_grown = 0;
+
+/* PC-relative offset of REL, using current symbol values.  */
+
+static bool
+riscv_esp_pmp_reloc_foff (bfd *abfd, asection *sec,
+			  const Elf_Internal_Rela *rel, bfd_vma *foff)
+{
+  Elf_Internal_Shdr *symtab_hdr = &elf_symtab_hdr (abfd);
+  asection *sym_sec;
+  bfd_vma symval;
+
+  if (ELFNN_R_SYM (rel->r_info) < symtab_hdr->sh_info)
+    {
+      Elf_Internal_Sym *isym;
+
+      if (symtab_hdr->contents == NULL)
+	return false;
+      isym = ((Elf_Internal_Sym *) symtab_hdr->contents
+	      + ELFNN_R_SYM (rel->r_info));
+      if (isym->st_shndx == SHN_UNDEF)
+	return false;
+      if (isym->st_shndx == SHN_ABS)
+	{
+	  if (sec->output_section == NULL)
+	    return false;
+	  *foff = isym->st_value + rel->r_addend
+		  - (sec_addr (sec) + rel->r_offset);
+	  return true;
+	}
+      if (isym->st_shndx >= elf_numsections (abfd))
+	return false;
+      sym_sec = elf_elfsections (abfd)[isym->st_shndx]->bfd_section;
+      if (sym_sec == NULL)
+	return false;
+      symval = isym->st_value;
+    }
+  else
+    {
+      unsigned long indx;
+      struct elf_link_hash_entry *h;
+
+      indx = ELFNN_R_SYM (rel->r_info) - symtab_hdr->sh_info;
+      h = elf_sym_hashes (abfd)[indx];
+      while (h->root.type == bfd_link_hash_indirect
+	     || h->root.type == bfd_link_hash_warning)
+	h = (struct elf_link_hash_entry *) h->root.u.i.link;
+      if ((h->root.type != bfd_link_hash_defined
+	   && h->root.type != bfd_link_hash_defweak)
+	  || h->root.u.def.section == NULL)
+	return false;
+      sym_sec = h->root.u.def.section;
+      symval = h->root.u.def.value;
+    }
+
+  if (sym_sec == sec)
+    {
+      *foff = symval + rel->r_addend - rel->r_offset;
+      return true;
+    }
+  if (sym_sec->output_section == NULL || sec->output_section == NULL)
+    return false;
+  /* A target not yet laid out this trip will move by at least as much as SEC,
+     so the bias cancels there and only shortens the measured distance, which
+     merely defers an expansion to a later trip.  */
+  *foff = (sec_addr (sym_sec) + symval + rel->r_addend)
+	  - (sec_addr (sec) + riscv_esp_pmp_grown + rel->r_offset);
+  return true;
+}
+
+/* Rewrite a 16-bit compressed branch or jump at REL as a 32-bit insn.
+   Two bytes are inserted after the compressed insn.  */
+
+static bool
+riscv_esp_pmp_expand_one (bfd *abfd, asection *sec,
+			  struct bfd_link_info *info,
+			  Elf_Internal_Rela *rel, bool *expanded)
+{
+  struct bfd_elf_section_data *data = elf_section_data (sec);
+  bfd_vma insn, new_insn;
+  unsigned int old_type = ELFNN_R_TYPE (rel->r_info);
+  unsigned int new_type;
+  int rs1, rd;
+
+  *expanded = false;
+  if (rel->r_offset + 2 > sec->size)
+    {
+      bfd_set_error (bfd_error_bad_value);
+      return false;
+    }
+
+  insn = bfd_getl16 (data->this_hdr.contents + rel->r_offset);
+  if (old_type == R_RISCV_RVC_BRANCH)
+    {
+      rs1 = 8 + ((insn >> 7) & 0x7);
+      if ((insn & MASK_C_BEQZ) == MATCH_C_BEQZ)
+	new_insn = MATCH_BEQ | (rs1 << OP_SH_RS1);
+      else if ((insn & MASK_C_BNEZ) == MATCH_C_BNEZ)
+	new_insn = MATCH_BNE | (rs1 << OP_SH_RS1);
+      else
+	return true;
+      new_type = R_RISCV_BRANCH;
+    }
+  else
+    {
+      if ((insn & MASK_C_J) == MATCH_C_J)
+	rd = 0;
+      else if ((insn & MASK_C_JAL) == MATCH_C_JAL)
+	rd = X_RA;
+      else
+	return true;
+      new_insn = MATCH_JAL | (rd << OP_SH_RD);
+      new_type = R_RISCV_JAL;
+    }
+
+  if (riscv_elf_hash_table (info)->params->print_esp_pmp_misalign_fixes)
+    _bfd_error_handler
+      (_("%pB(%pA+%#" PRIx64 "): note: expanded compressed %s to 32-bit"),
+       abfd, sec, (uint64_t) rel->r_offset,
+       old_type == R_RISCV_RVC_BRANCH ? _("branch") : _("jump"));
+
+  if (!_riscv_relax_insert_bytes (abfd, sec, rel->r_offset + 2, 2,
+				  RVC_NOP, 2, info, NULL))
+    return false;
+
+  bfd_putl32 (new_insn, elf_section_data (sec)->this_hdr.contents
+	      + rel->r_offset);
+  rel->r_info = ELFNN_R_INFO (ELFNN_R_SYM (rel->r_info), new_type);
+  *expanded = true;
+  return true;
+}
+
+/* True if SEC has a relocation at OFFSET.  */
+
+static bool
+riscv_esp_pmp_has_reloc_at (asection *sec, bfd_vma offset)
+{
+  struct bfd_elf_section_data *data = elf_section_data (sec);
+  unsigned int i;
+
+  for (i = 0; i < sec->reloc_count; i++)
+    if (data->relocs[i].r_offset == offset)
+      return true;
+  return false;
+}
+
+/* Restore AUIPC+JALR (R_RISCV_CALL_PLT) when a JAL is out of range after
+   inserts.  Pass 0 may have shortened CALL to JAL using only section
+   alignment as slack; PMP growth in the same output section can exceed
+   that.  */
+
+static bool
+riscv_esp_pmp_expand_jal (bfd *abfd, asection *sec,
+			  struct bfd_link_info *info,
+			  Elf_Internal_Rela *rel, bool *expanded)
+{
+  struct bfd_elf_section_data *data = elf_section_data (sec);
+  bfd_byte *contents;
+  bfd_vma jal, auipc, jalr, guard = 0;
+  int rd;
+
+  *expanded = false;
+  if (rel->r_offset + 4 > sec->size)
+    {
+      bfd_set_error (bfd_error_bad_value);
+      return false;
+    }
+
+  jal = bfd_getl32 (data->this_hdr.contents + rel->r_offset);
+  if ((jal & MASK_JAL) != MATCH_JAL)
+    return true;
+  rd = (jal >> OP_SH_RD) & OP_MASK_RD;
+  /* jal x0 has no destination.  AUIPC x0 is a hint and jalr x0, x0 would
+     jump to the immediate only, so form the address in a scratch register.
+     Use x7 as the `tail' macro does under Zicfilp: x5 is the alternate
+     link register, so jalr x0, x5 is a return-address-stack pop hint, and
+     x7 is the only base Zicfilp exempts from the landing pad check.  The
+     register is dead at a tail call and at the JAL that
+     riscv_esp_pmp_expand_branch emits.  */
+  if (rd == 0)
+    {
+      auipc = MATCH_AUIPC | (X_T2 << OP_SH_RD);
+      jalr = MATCH_JALR | (X_T2 << OP_SH_RS1);
+    }
+  else
+    {
+      auipc = MATCH_AUIPC | (rd << OP_SH_RD);
+      jalr = MATCH_JALR | (rd << OP_SH_RD) | (rd << OP_SH_RS1);
+    }
+
+  /* A JAL reached by an inverted branch may be guarded: gas emits that
+     form for a far conditional branch, and riscv_esp_pmp_expand_branch
+     builds it too.  The skip immediate is encoded in the branch instead of
+     being carried by a relocation, so _riscv_relax_insert_bytes cannot
+     widen it over the word inserted below; grow the skip here.  A branch
+     the programmer wrote keeps its R_RISCV_BRANCH, so a missing relocation
+     identifies the guard.  */
+  if (rel->r_offset >= 4)
+    {
+      bfd_vma prev = bfd_getl32 (data->this_hdr.contents + rel->r_offset - 4);
+
+      if ((prev & OP_MASK_OP) == MATCH_BEQ
+	  && EXTRACT_BTYPE_IMM (prev) == 8
+	  && !riscv_esp_pmp_has_reloc_at (sec, rel->r_offset - 4))
+	guard = (prev & (MASK_BEQ
+			 | (OP_MASK_RS1 << OP_SH_RS1)
+			 | (OP_MASK_RS2 << OP_SH_RS2)))
+		| ENCODE_BTYPE_IMM (12);
+    }
+
+  if (riscv_elf_hash_table (info)->params->print_esp_pmp_misalign_fixes)
+    _bfd_error_handler
+      (_("%pB(%pA+%#" PRIx64 "): note: expanded JAL to AUIPC+JALR"),
+       abfd, sec, (uint64_t) rel->r_offset);
+
+  if (!_riscv_relax_insert_bytes (abfd, sec, rel->r_offset + 4, 4,
+				  RISCV_NOP, 4, info, NULL))
+    return false;
+
+  contents = elf_section_data (sec)->this_hdr.contents;
+  bfd_putl32 (auipc, contents + rel->r_offset);
+  bfd_putl32 (jalr, contents + rel->r_offset + 4);
+  if (guard != 0)
+    bfd_putl32 (guard, contents + rel->r_offset - 4);
+  rel->r_info = ELFNN_R_INFO (ELFNN_R_SYM (rel->r_info), R_RISCV_CALL_PLT);
+  *expanded = true;
+  return true;
+}
+
+/* Replace an out-of-range R_RISCV_BRANCH with
+	inverted_branch 1f
+	jal x0, target
+   1:
+   The inverted branch skips the JAL (offset 8).  The original reloc
+   moves onto the JAL.  JAL ±1MiB covers intra-function labels; if that
+   is still too far, riscv_esp_pmp_expand_jal restores AUIPC+JALR and
+   widens the skip to 12.  */
+
+static bool
+riscv_esp_pmp_expand_branch (bfd *abfd, asection *sec,
+			     struct bfd_link_info *info,
+			     Elf_Internal_Rela *rel, bool *expanded)
+{
+  struct bfd_elf_section_data *data = elf_section_data (sec);
+  bfd_byte *contents;
+  bfd_vma insn, inv, jal;
+  unsigned int funct3;
+  int rs1, rs2;
+
+  *expanded = false;
+  if (rel->r_offset + 4 > sec->size)
+    {
+      bfd_set_error (bfd_error_bad_value);
+      return false;
+    }
+
+  insn = bfd_getl32 (data->this_hdr.contents + rel->r_offset);
+  if ((insn & OP_MASK_OP) != MATCH_BEQ)
+    return true;
+  funct3 = (insn >> OP_SH_FUNCT3) & OP_MASK_FUNCT3;
+  /* Standard conditional branches: invert by flipping the low funct3 bit.
+     funct3 2 and 3 are not allocated.  */
+  if (funct3 == 2 || funct3 == 3)
+    return true;
+  rs1 = (insn >> OP_SH_RS1) & OP_MASK_RS1;
+  rs2 = (insn >> OP_SH_RS2) & OP_MASK_RS2;
+  inv = MATCH_BEQ | ((funct3 ^ 1) << OP_SH_FUNCT3)
+	| (rs1 << OP_SH_RS1) | (rs2 << OP_SH_RS2)
+	| ENCODE_BTYPE_IMM (8);
+  jal = MATCH_JAL;
+
+  if (riscv_elf_hash_table (info)->params->print_esp_pmp_misalign_fixes)
+    _bfd_error_handler
+      (_("%pB(%pA+%#" PRIx64 "): note: expanded out-of-range branch to "
+	 "inverted branch + JAL"),
+       abfd, sec, (uint64_t) rel->r_offset);
+
+  if (!_riscv_relax_insert_bytes (abfd, sec, rel->r_offset + 4, 4,
+				  RISCV_NOP, 4, info, NULL))
+    return false;
+
+  contents = elf_section_data (sec)->this_hdr.contents;
+  bfd_putl32 (inv, contents + rel->r_offset);
+  bfd_putl32 (jal, contents + rel->r_offset + 4);
+  rel->r_offset += 4;
+  rel->r_info = ELFNN_R_INFO (ELFNN_R_SYM (rel->r_info), R_RISCV_JAL);
+  *expanded = true;
+  return true;
+}
+
+/* Widen compressed branches/jumps, invert out-of-range 32-bit branches
+   over a JAL, and restore CALL for JALs, after inserts.  Restart after
+   each expand: growing one site can push an earlier control transfer
+   over its limit.  */
+
+static bool
+riscv_esp_pmp_expand_rvc (bfd *abfd, asection *sec,
+			  struct bfd_link_info *info, bool *again)
+{
+  struct bfd_elf_section_data *data = elf_section_data (sec);
+  bool changed;
+
+  if (sec->reloc_count == 0 || data->relocs == NULL
+      || data->this_hdr.contents == NULL)
+    return true;
+
+  do
+    {
+      unsigned int i;
+
+      changed = false;
+      for (i = 0; i < sec->reloc_count; i++)
+	{
+	  Elf_Internal_Rela *rel = data->relocs + i;
+	  unsigned int type = ELFNN_R_TYPE (rel->r_info);
+	  bfd_vma foff, old_size;
+	  bool expanded;
+	  bool in_range;
+	  bool (*expand) (bfd *, asection *, struct bfd_link_info *,
+			  Elf_Internal_Rela *, bool *);
+
+	  switch (type)
+	    {
+	    case R_RISCV_RVC_BRANCH:
+	    case R_RISCV_RVC_JUMP:
+	    case R_RISCV_BRANCH:
+	    case R_RISCV_JAL:
+	      break;
+	    default:
+	      continue;
+	    }
+
+	  /* No alignment slack is needed here, unlike _bfd_riscv_relax_call:
+	     the only later pass is ALIGN, which just deletes bytes, so no
+	     control transfer can grow beyond what we measure now.  */
+	  if (!riscv_esp_pmp_reloc_foff (abfd, sec, rel, &foff))
+	    continue;
+
+	  switch (type)
+	    {
+	    case R_RISCV_RVC_BRANCH:
+	      in_range = VALID_CBTYPE_IMM (foff);
+	      expand = riscv_esp_pmp_expand_one;
+	      break;
+	    case R_RISCV_RVC_JUMP:
+	      in_range = VALID_CJTYPE_IMM (foff);
+	      expand = riscv_esp_pmp_expand_one;
+	      break;
+	    case R_RISCV_BRANCH:
+	      in_range = VALID_BTYPE_IMM (foff);
+	      expand = riscv_esp_pmp_expand_branch;
+	      break;
+	    default:
+	      in_range = VALID_JTYPE_IMM (foff);
+	      expand = riscv_esp_pmp_expand_jal;
+	      break;
+	    }
+	  if (in_range)
+	    continue;
+	  old_size = sec->size;
+	  if (!expand (abfd, sec, info, rel, &expanded))
+	    return false;
+	  if (!expanded)
+	    continue;
+	  riscv_esp_pmp_grown += sec->size - old_size;
+	  *again = true;
+	  changed = true;
+	  break;
+	}
+    }
+  while (changed);
+
+  return true;
+}
+
+/* A wide load that may need PMP padding.  */
+
+struct riscv_esp_pmp_site
+{
+  bfd_vma offset;
+  unsigned int length;
+  int base;
+  unsigned int need;
+};
+
+/* Insert NOPs after each wide load that a hazardous store follows.
+   ALIGN reservations are skipped when looking for that store: the later
+   ALIGN pass may still delete those bytes.  Then widen any compressed
+   branch or jump, invert any out-of-range 32-bit branch over a JAL, and
+   restore CALL for any JAL, that the inserts pushed out of range.  */
+
+static bool
+riscv_relax_section_esp_pmp (bfd *abfd, asection *sec,
+			     struct bfd_link_info *info,
+			     bool *again)
+{
+  struct riscv_elf_link_hash_table *htab = riscv_elf_hash_table (info);
+  struct bfd_elf_section_data *data = elf_section_data (sec);
+  struct riscv_esp_pmp_site *sites = NULL;
+  size_t site_count = 0, site_room = 0, i;
+  unsigned int nop_size;
+  bfd_vma nop, offset;
+  bool rvc;
+
+  *again = false;
+
+  if (!htab->params->fix_esp_pmp_misalign
+      || bfd_link_relocatable (info)
+      || (sec->flags & SEC_CODE) == 0
+      || (sec->flags & SEC_HAS_CONTENTS) == 0
+      || sec->size == 0
+      /* The exp_seg_relro_adjust is enum phase_enum (0x4),
+	 and defined in ld/ldexp.h.  */
+      || *(htab->data_segment_phase) == 4)
+    return true;
+
+  if (sec->output_section != riscv_esp_pmp_grown_osec
+      || info->relax_trip != riscv_esp_pmp_grown_trip)
+    {
+      riscv_esp_pmp_grown_osec = sec->output_section;
+      riscv_esp_pmp_grown_trip = info->relax_trip;
+      riscv_esp_pmp_grown = 0;
+    }
+
+  if (!riscv_esp_pmp_read_section (sec))
+    return false;
+
+  /* An object the command line left out gets no NOPs, but its branches are
+     still measured below: growth in the objects that were named can push
+     them out of range just the same.  */
+  if (!riscv_esp_pmp_fix_file (htab->params, abfd))
+    return riscv_esp_pmp_expand_rvc (abfd, sec, info, again);
+
+  rvc = (elf_elfheader (abfd)->e_flags & EF_RISCV_RVC) != 0;
+  nop_size = rvc ? 2 : 4;
+  nop = rvc ? RVC_NOP : RISCV_NOP;
+
+  offset = 0;
+  while (offset < sec->size)
+    {
+      bfd_vma insn;
+      unsigned int length;
+
+      offset = riscv_esp_pmp_skip_align (sec, offset);
+      if (offset + 2 > sec->size)
+	break;
+
+      insn = bfd_getl16 (data->this_hdr.contents + offset);
+      length = riscv_insn_length (insn);
+      if ((length != 2 && length != 4) || offset + length > sec->size)
+	{
+	  offset += 2;
+	  continue;
+	}
+      if (length == 4)
+	insn = bfd_getl32 (data->this_hdr.contents + offset);
+
+      if (!riscv_esp_pmp_insn_is_wide_load (insn, length))
+	{
+	  offset += length;
+	  continue;
+	}
+
+      if (site_count == site_room)
+	{
+	  struct riscv_esp_pmp_site *grown;
+
+	  site_room = site_room != 0 ? 2 * site_room : 64;
+	  grown = bfd_realloc (sites, site_room * sizeof (*sites));
+	  if (grown == NULL)
+	    {
+	      free (sites);
+	      return false;
+	    }
+	  sites = grown;
+	}
+
+      sites[site_count].offset = offset;
+      sites[site_count].length = length;
+      sites[site_count].base = riscv_esp_pmp_insn_final_base (sec, offset, insn,
+							      length);
+      site_count++;
+      offset += length;
+    }
+
+  /* Pad from the last site backwards, so that the offsets recorded above stay
+     valid: inserting bytes only moves what follows the insertion point.  What
+     each site decides is independent of the others, since padding a site can
+     only change the instruction that follows that same site.  */
+  for (i = site_count; i-- > 0;)
+    {
+      bfd_vma after_load = sites[i].offset + sites[i].length;
+      unsigned int need;
+
+      need = riscv_esp_pmp_insert_count (sec, after_load, sites[i].base);
+      sites[i].need = need;
+      if (need == 0)
+	continue;
+
+      if (!_riscv_relax_insert_bytes (abfd, sec, after_load, need * nop_size,
+				      nop, nop_size, info, NULL))
+	{
+	  free (sites);
+	  return false;
+	}
+
+      riscv_esp_pmp_grown += need * nop_size;
+      *again = true;
+    }
+
+  /* Report in address order, using offsets into the unpadded section.  */
+  if (htab->params->print_esp_pmp_misalign_fixes)
+    for (i = 0; i < site_count; i++)
+      if (sites[i].need != 0)
+	_bfd_error_handler
+	  (_("%pB(%pA+%#" PRIx64
+	     "): note: inserted %u Espressif PMP misalign NOP%s"),
+	   abfd, sec, (uint64_t) sites[i].offset, sites[i].need,
+	   sites[i].need == 1 ? "" : "s");
+
+  free (sites);
+
+  return riscv_esp_pmp_expand_rvc (abfd, sec, info, again);
 }
 
 /* Implement R_RISCV_ALIGN by deleting excess alignment NOPs.
@@ -5489,8 +6485,13 @@ bfd_elfNN_riscv_set_data_segment_info (struct bfd_link_info *info,
 /* Relax a section.
 
    Pass 0: Shortens code sequences for LUI/CALL/TPREL/PCREL relocs and
-	   deletes the obsolete bytes.
-   Pass 1: Which cannot be disabled, handles code alignment directives.  */
+	   deletes the obsolete bytes.  Always runs.
+   Pass 1: --fix-esp-pmp-misalign: insert PMP NOPs and widen compressed
+	   branches or jumps that the inserts pushed out of range.
+	   Skipped if the flag is not set.  ALIGN reservations are
+	   ignored when looking for the instruction after a load, because
+	   pass 2 may still delete those bytes.
+   Pass 2: R_RISCV_ALIGN.  Always runs.  */
 
 static bool
 _bfd_riscv_relax_section (bfd *abfd, asection *sec,
@@ -5502,12 +6503,21 @@ _bfd_riscv_relax_section (bfd *abfd, asection *sec,
   struct bfd_elf_section_data *data = elf_section_data (sec);
   Elf_Internal_Rela *relocs;
   bool ret = false;
+  bool fix_pmp = htab != NULL && htab->params != NULL
+		&& htab->params->fix_esp_pmp_misalign;
   unsigned int i;
   bfd_vma max_alignment, reserve_size = 0;
   riscv_pcgp_relocs pcgp_relocs;
   static asection *first_section = NULL;
 
   *again = false;
+
+  if (info->relax_pass == 1)
+    {
+      if (!fix_pmp)
+	return true;
+      return riscv_relax_section_esp_pmp (abfd, sec, info, again);
+    }
 
   if (bfd_link_relocatable (info)
       || sec->sec_flg0
@@ -5591,7 +6601,7 @@ _bfd_riscv_relax_section (bfd *abfd, asection *sec,
 	  /* Skip over the R_RISCV_RELAX.  */
 	  i++;
 	}
-      else if (info->relax_pass == 1 && type == R_RISCV_ALIGN)
+      else if (info->relax_pass == 2 && type == R_RISCV_ALIGN)
 	{
 	  relax_func = _bfd_riscv_relax_align;
 	  riscv_relax_delete_bytes = _riscv_relax_delete_immediate;
