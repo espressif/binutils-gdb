@@ -44,6 +44,16 @@ struct riscv_elf_params
   bool relax_gp;
   /* Whether to check if SUB_ULEB128 relocation has non-zero addend.  */
   bool check_uleb128;
+  /* Insert NOPs to work around the Espressif PMP misalign erratum.  */
+  bool fix_esp_pmp_misalign;
+  /* NULL-terminated list of the input objects to insert those NOPs in, or
+     NULL for all of them.  */
+  const char *const *fix_esp_pmp_misalign_files;
+  /* Report each site where PMP NOPs were inserted.  */
+  bool print_esp_pmp_misalign_fixes;
+  /* Warn about a section those NOPs cost us, rather than dropping it
+     quietly.  */
+  bool warn_esp_pmp_misalign;
 };
 
 extern void riscv_elf32_set_options (struct bfd_link_info *,

@@ -26,7 +26,50 @@ fragment <<EOF
 #include "elfxx-riscv.h"
 
 static struct riscv_elf_params params = { .relax_gp = 1,
-					  .check_uleb128 = 0};
+					  .check_uleb128 = 0,
+					  .fix_esp_pmp_misalign = 0,
+					  .fix_esp_pmp_misalign_files = NULL,
+					  .print_esp_pmp_misalign_fixes = 0,
+					  .warn_esp_pmp_misalign = 1};
+
+/* The files named by --fix-esp-pmp-misalign=FILE, NULL terminated.  */
+static const char **esp_pmp_files = NULL;
+static size_t esp_pmp_file_count = 0;
+
+/* Go back to fixing every input object.  */
+
+static void
+esp_pmp_clear_files (void)
+{
+  while (esp_pmp_file_count > 0)
+    free ((char *) esp_pmp_files[--esp_pmp_file_count]);
+  params.fix_esp_pmp_misalign_files = NULL;
+}
+
+/* Add the comma separated file names in ARG to the ones to fix.  */
+
+static void
+esp_pmp_add_files (const char *arg)
+{
+  while (*arg != '\0')
+    {
+      const char *comma = strchr (arg, ',');
+      size_t len = comma != NULL ? (size_t) (comma - arg) : strlen (arg);
+
+      if (len != 0)
+	{
+	  esp_pmp_files = xrealloc (esp_pmp_files,
+				    (esp_pmp_file_count + 2)
+				    * sizeof (*esp_pmp_files));
+	  esp_pmp_files[esp_pmp_file_count++] = xstrndup (arg, len);
+	  esp_pmp_files[esp_pmp_file_count] = NULL;
+	  params.fix_esp_pmp_misalign_files = esp_pmp_files;
+	}
+      if (comma == NULL)
+	break;
+      arg = comma + 1;
+    }
+}
 EOF
 
 # Define some shell vars to insert bits of code into the standard elf
@@ -36,6 +79,16 @@ PARSE_AND_LIST_LONGOPTS=${PARSE_AND_LIST_LONGOPTS}'
     { "no-relax-gp", no_argument, NULL, OPTION_NO_RELAX_GP },
     { "check-uleb128", no_argument, NULL, OPTION_CHECK_ULEB128 },
     { "no-check-uleb128", no_argument, NULL, OPTION_NO_CHECK_ULEB128 },
+    { "fix-esp-pmp-misalign", optional_argument, NULL,
+      OPTION_FIX_ESP_PMP_MISALIGN },
+    { "no-fix-esp-pmp-misalign", no_argument, NULL,
+      OPTION_NO_FIX_ESP_PMP_MISALIGN },
+    { "print-esp-pmp-misalign-fixes", no_argument, NULL,
+      OPTION_PRINT_ESP_PMP_MISALIGN_FIXES },
+    { "warn-esp-pmp-misalign", no_argument, NULL,
+      OPTION_WARN_ESP_PMP_MISALIGN },
+    { "no-warn-esp-pmp-misalign", no_argument, NULL,
+      OPTION_NO_WARN_ESP_PMP_MISALIGN },
 '
 
 PARSE_AND_LIST_OPTIONS=${PARSE_AND_LIST_OPTIONS}'
@@ -43,6 +96,20 @@ PARSE_AND_LIST_OPTIONS=${PARSE_AND_LIST_OPTIONS}'
   fprintf (file, _("  --no-relax-gp               Don'\''t perform GP relaxation\n"));
   fprintf (file, _("  --check-uleb128             Check if SUB_ULEB128 has non-zero addend\n"));
   fprintf (file, _("  --no-check-uleb128          Don'\''t check if SUB_ULEB128 has non-zero addend\n"));
+  fprintf (file, _("\
+  --fix-esp-pmp-misalign[=FILE]   Insert NOPs for Espressif PMP erratum, in\n\
+                                  every input object or only in FILE; drops a\n\
+                                  debug section whose uleb128 no longer\n\
+                                  fits\n"));
+  fprintf (file, _("\
+  --no-fix-esp-pmp-misalign       Don'\''t insert Espressif PMP NOPs (default)\n"));
+  fprintf (file, _("\
+  --print-esp-pmp-misalign-fixes  Report PMP NOP inserts and RVC expands\n"));
+  fprintf (file, _("\
+  --warn-esp-pmp-misalign         Warn about sections the PMP NOPs cost\n\
+                                  (default)\n"));
+  fprintf (file, _("\
+  --no-warn-esp-pmp-misalign      Don'\''t warn about those sections\n"));
 '
 
 PARSE_AND_LIST_ARGS_CASES=${PARSE_AND_LIST_ARGS_CASES}'
@@ -60,6 +127,31 @@ PARSE_AND_LIST_ARGS_CASES=${PARSE_AND_LIST_ARGS_CASES}'
 
     case OPTION_NO_CHECK_ULEB128:
       params.check_uleb128 = 0;
+      break;
+
+    case OPTION_FIX_ESP_PMP_MISALIGN:
+      params.fix_esp_pmp_misalign = 1;
+      if (optarg != NULL && *optarg != 0)
+	esp_pmp_add_files (optarg);
+      else
+	esp_pmp_clear_files ();
+      break;
+
+    case OPTION_NO_FIX_ESP_PMP_MISALIGN:
+      params.fix_esp_pmp_misalign = 0;
+      esp_pmp_clear_files ();
+      break;
+
+    case OPTION_PRINT_ESP_PMP_MISALIGN_FIXES:
+      params.print_esp_pmp_misalign_fixes = 1;
+      break;
+
+    case OPTION_WARN_ESP_PMP_MISALIGN:
+      params.warn_esp_pmp_misalign = 1;
+      break;
+
+    case OPTION_NO_WARN_ESP_PMP_MISALIGN:
+      params.warn_esp_pmp_misalign = 0;
       break;
 '
 
@@ -81,7 +173,9 @@ riscv_elf_before_allocation (void)
 	ENABLE_RELAXATION;
     }
 
-  link_info.relax_pass = 2;
+  /* Pass 0 shrinks sequences.  Pass 1 is --fix-esp-pmp-misalign (skipped
+     if unset).  Pass 2 handles R_RISCV_ALIGN.  */
+  link_info.relax_pass = 3;
 }
 
 static void
