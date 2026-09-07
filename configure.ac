@@ -4298,4 +4298,20 @@ dnl If enabled, add the define to CFLAGS
 if test "x$xespv2p1" = "xyes"; then
   CFLAGS="$CFLAGS -DRISCV_XESPV2P1"
 fi
+
+dnl Add new configure option --enable-xespv2p2
+AC_ARG_ENABLE([xespv2p2],
+  AS_HELP_STRING([--enable-xespv2p2],
+                 [Enable xespv2p2]),
+  [case "${enableval}" in
+     yes) xespv2p2=yes ;;
+     no)  xespv2p2=no ;;
+     *)   AC_MSG_ERROR([bad value ${enableval} for --enable-xespv2p2]) ;;
+   esac],
+  [xespv2p2=no])
+
+dnl If enabled, add the define to CFLAGS
+if test "x$xespv2p2" = "xyes"; then
+  CFLAGS="$CFLAGS -DRISCV_XESPV2P2"
+fi
 AC_OUTPUT

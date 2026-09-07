@@ -1,51 +1,3 @@
-		case 'f':
-		  switch (*++oparg)
-		    {
-		    case 'd':
-		      switch (*++oparg)
-			{
-			case '0':	/* Xefd0 */
-			  /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
-			  print (info->stream, dis_style_register, "%s",
-				 riscv_fpr_names_abi[EXTRACT_ESP_FD_0 (l) | 1
-						     << 3]);
-			  break;	/* Xefd0 */
-			default:	/* Xefd[.] */
-			  goto undefined_modifier;
-			}
-		      break;
-		    case 'r':
-		      switch (*++oparg)
-			{
-			case 's':
-			  switch (*++oparg)
-			    {
-			    case '2':
-			      switch (*++oparg)
-				{
-				case '0':	/* Xefrs20 */
-				  /* 3rd bit of rd/rs1/rs2 absent in PIE instructions and assumed to be '1' */
-				  print (info->stream, dis_style_register,
-					 "%s",
-					 riscv_fpr_names_abi
-					 [EXTRACT_ESP_FRS2_0 (l) | 1 << 3]);
-				  break;	/* Xefrs20 */
-				default:	/* Xefrs2[.] */
-				  goto undefined_modifier;
-				}
-			      break;
-			    default:	/* Xefrs[.] */
-			      goto undefined_modifier;
-			    }
-			  break;
-			default:	/* Xefr[.] */
-			  goto undefined_modifier;
-			}
-		      break;
-		    default:	/* Xef[.] */
-		      goto undefined_modifier;
-		    }
-		  break;
 		case 'd':
 		  switch (*++oparg)
 		    {
@@ -201,11 +153,6 @@
 				     EXTRACT_ESP_OFFSET_256_16_4 ((int32_t)
 								  l));
 			      break;	/* Xeo844 */
-			    case '5':	/* Xeo845 */
-			      print (info->stream, dis_style_immediate, "%d",
-				     EXTRACT_ESP_OFFSET_256_16_5 ((int32_t)
-								  l));
-			      break;	/* Xeo845 */
 			    default:	/* Xeo84[.] */
 			      goto undefined_modifier;
 			    }
@@ -269,40 +216,6 @@
 			    }
 			  break;
 			default:	/* Xeo8[.] */
-			  goto undefined_modifier;
-			}
-		      break;
-		    case '9':
-		      switch (*++oparg)
-			{
-			case '5':
-			  switch (*++oparg)
-			    {
-			    case '0':	/* Xeo950 */
-			      print (info->stream, dis_style_immediate, "%d",
-				     EXTRACT_ESP_OFFSET_512_32_0 ((int32_t)
-								  l));
-			      break;	/* Xeo950 */
-			    case '1':	/* Xeo951 */
-			      print (info->stream, dis_style_immediate, "%d",
-				     EXTRACT_ESP_OFFSET_512_32_1 ((int32_t)
-								  l));
-			      break;	/* Xeo951 */
-			    case '2':	/* Xeo952 */
-			      print (info->stream, dis_style_immediate, "%d",
-				     EXTRACT_ESP_OFFSET_512_32_2 ((int32_t)
-								  l));
-			      break;	/* Xeo952 */
-			    case '3':	/* Xeo953 */
-			      print (info->stream, dis_style_immediate, "%d",
-				     EXTRACT_ESP_OFFSET_512_32_3 ((int32_t)
-								  l));
-			      break;	/* Xeo953 */
-			    default:	/* Xeo95[.] */
-			      goto undefined_modifier;
-			    }
-			  break;
-			default:	/* Xeo9[.] */
 			  goto undefined_modifier;
 			}
 		      break;
@@ -489,7 +402,47 @@
 					 "%d", rm);
 			      }
 			      break;	/* Xevr07 */
+			    case '8':	/* Xevr08 */
+			      {
+				unsigned int rm = (int) EXTRACT_ESP_RM_08 (l);
+				if (rm < ARRAY_SIZE (riscv_espv_rm))
+				  print (info->stream, dis_style_text, "%s",
+					 riscv_espv_rm[rm]);
+				else
+				  print (info->stream, dis_style_immediate,
+					 "%d", rm);
+			      }
+			      break;	/* Xevr08 */
+			    case '9':	/* Xevr09 */
+			      {
+				unsigned int rm = (int) EXTRACT_ESP_RM_09 (l);
+				if (rm < ARRAY_SIZE (riscv_espv_rm))
+				  print (info->stream, dis_style_text, "%s",
+					 riscv_espv_rm[rm]);
+				else
+				  print (info->stream, dis_style_immediate,
+					 "%d", rm);
+			      }
+			      break;	/* Xevr09 */
 			    default:	/* Xevr0[.] */
+			      goto undefined_modifier;
+			    }
+			  break;
+			case '1':
+			  switch (*++oparg)
+			    {
+			    case '0':	/* Xevr10 */
+			      {
+				unsigned int rm = (int) EXTRACT_ESP_RM_10 (l);
+				if (rm < ARRAY_SIZE (riscv_espv_rm))
+				  print (info->stream, dis_style_text, "%s",
+					 riscv_espv_rm[rm]);
+				else
+				  print (info->stream, dis_style_immediate,
+					 "%d", rm);
+			      }
+			      break;	/* Xevr10 */
+			    default:	/* Xevr1[.] */
 			      goto undefined_modifier;
 			    }
 			  break;
@@ -678,6 +631,42 @@
 					 "%d", sat);
 			      }
 			      break;	/* Xevs13 */
+			    case '4':	/* Xevs14 */
+			      {
+				unsigned int sat =
+				  (int) EXTRACT_ESP_SAT_14 (l);
+				if (sat < ARRAY_SIZE (riscv_espv_sat))
+				  print (info->stream, dis_style_text, "%s",
+					 riscv_espv_sat[sat]);
+				else
+				  print (info->stream, dis_style_immediate,
+					 "%d", sat);
+			      }
+			      break;	/* Xevs14 */
+			    case '5':	/* Xevs15 */
+			      {
+				unsigned int sat =
+				  (int) EXTRACT_ESP_SAT_15 (l);
+				if (sat < ARRAY_SIZE (riscv_espv_sat))
+				  print (info->stream, dis_style_text, "%s",
+					 riscv_espv_sat[sat]);
+				else
+				  print (info->stream, dis_style_immediate,
+					 "%d", sat);
+			      }
+			      break;	/* Xevs15 */
+			    case '6':	/* Xevs16 */
+			      {
+				unsigned int sat =
+				  (int) EXTRACT_ESP_SAT_16 (l);
+				if (sat < ARRAY_SIZE (riscv_espv_sat))
+				  print (info->stream, dis_style_text, "%s",
+					 riscv_espv_sat[sat]);
+				else
+				  print (info->stream, dis_style_immediate,
+					 "%d", sat);
+			      }
+			      break;	/* Xevs16 */
 			    default:	/* Xevs1[.] */
 			      goto undefined_modifier;
 			    }
@@ -712,10 +701,6 @@
 			  print (info->stream, dis_style_immediate, "%d",
 				 EXTRACT_ESP_SELECT_16_3 ((int32_t) l));
 			  break;	/* Xes43 */
-			case '4':	/* Xes44 */
-			  print (info->stream, dis_style_immediate, "%d",
-				 EXTRACT_ESP_SELECT_16_4 ((int32_t) l));
-			  break;	/* Xes44 */
 			default:	/* Xes4[.] */
 			  goto undefined_modifier;
 			}
@@ -739,26 +724,7 @@
 			  print (info->stream, dis_style_immediate, "%d",
 				 EXTRACT_ESP_SELECT_2_3 ((int32_t) l));
 			  break;	/* Xes13 */
-			case '4':	/* Xes14 */
-			  print (info->stream, dis_style_immediate, "%d",
-				 EXTRACT_ESP_SELECT_2_4 ((int32_t) l));
-			  break;	/* Xes14 */
 			default:	/* Xes1[.] */
-			  goto undefined_modifier;
-			}
-		      break;
-		    case '5':
-		      switch (*++oparg)
-			{
-			case '0':	/* Xes50 */
-			  print (info->stream, dis_style_immediate, "%d",
-				 EXTRACT_ESP_SELECT_32_0 ((int32_t) l));
-			  break;	/* Xes50 */
-			case '1':	/* Xes51 */
-			  print (info->stream, dis_style_immediate, "%d",
-				 EXTRACT_ESP_SELECT_32_1 ((int32_t) l));
-			  break;	/* Xes51 */
-			default:	/* Xes5[.] */
 			  goto undefined_modifier;
 			}
 		      break;
@@ -789,6 +755,10 @@
 			  print (info->stream, dis_style_immediate, "%d",
 				 EXTRACT_ESP_SELECT_4_5 ((int32_t) l));
 			  break;	/* Xes25 */
+			case '6':	/* Xes26 */
+			  print (info->stream, dis_style_immediate, "%d",
+				 EXTRACT_ESP_SELECT_4_6 ((int32_t) l));
+			  break;	/* Xes26 */
 			default:	/* Xes2[.] */
 			  goto undefined_modifier;
 			}
@@ -808,10 +778,6 @@
 			  print (info->stream, dis_style_immediate, "%d",
 				 EXTRACT_ESP_SELECT_8_2 ((int32_t) l));
 			  break;	/* Xes32 */
-			case '3':	/* Xes33 */
-			  print (info->stream, dis_style_immediate, "%d",
-				 EXTRACT_ESP_SELECT_8_3 ((int32_t) l));
-			  break;	/* Xes33 */
 			default:	/* Xes3[.] */
 			  goto undefined_modifier;
 			}
