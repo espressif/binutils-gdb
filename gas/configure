@@ -824,6 +824,7 @@ enable_generate_build_notes
 enable_mips_fix_loongson3_llsc
 enable_x86_used_note
 enable_default_riscv_attribute
+enable_r_xtensa_32_abs
 enable_werror
 enable_build_warnings
 with_cpu
@@ -1505,6 +1506,9 @@ Optional Features:
   --enable-x86-used-note  generate GNU x86 used ISA and feature properties
   --enable-default-riscv-attribute
                           generate RISC-V arch attribute by default
+  --enable-r-xtensa-32-abs
+                          emit R_XTENSA_32_ABS for 32-bit absolute data by
+                          default
   --enable-werror         treat compile warnings as errors
   --enable-build-warnings enable build-time compiler warnings
   --disable-nls           do not use Native Language Support
@@ -11647,6 +11651,18 @@ if test "${enable_default_riscv_attribute+set}" = set; then :
 esac
 fi
 
+# Decide if the Xtensa assembler should default to emitting R_XTENSA_32_ABS
+# rather than R_XTENSA_32 for 32-bit absolute data.
+ac_default_r_xtensa_32_abs=unset
+# Provide a configuration option to override the default.
+# Check whether --enable-r-xtensa-32-abs was given.
+if test "${enable_r_xtensa_32_abs+set}" = set; then :
+  enableval=$enable_r_xtensa_32_abs; case "${enableval}" in
+  yes)  ac_default_r_xtensa_32_abs=1 ;;
+  no)   ac_default_r_xtensa_32_abs=0 ;;
+esac
+fi
+
 using_cgen=no
 
 
@@ -12745,6 +12761,15 @@ fi
 
 cat >>confdefs.h <<_ACEOF
 #define DEFAULT_RISCV_ATTR $ac_default_generate_riscv_attr
+_ACEOF
+
+
+if test ${ac_default_r_xtensa_32_abs} = unset; then
+  ac_default_r_xtensa_32_abs=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define DEFAULT_R_XTENSA_32_ABS $ac_default_r_xtensa_32_abs
 _ACEOF
 
 
