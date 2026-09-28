@@ -18,43 +18,37 @@
 #define EXTRACT_ESP_LP_OFFSET_9(x) \
   ((RV_X(x, 15, 5) << 1) | (RV_X(x, 8, 4) << 6))
 #define EXTRACT_ESP_OFFSET_16_16_0(x) \
-  ( ( ((RV_X(x, 20, 1) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 4) ) >> (sizeof(x) * 8 - 8) )
+  ( ( ((RV_X(x, 19, 1) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 4) ) >> (sizeof(x) * 8 - 8) )
 #define EXTRACT_ESP_OFFSET_16_16_1(x) \
-  ( ( (RV_X(x, 19, 4)) << (sizeof(x) * 8 - 4) ) >> (sizeof(x) * 8 - 8) )
+  ( ( ((RV_X(x, 20, 1) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 4) ) >> (sizeof(x) * 8 - 8) )
 #define EXTRACT_ESP_OFFSET_16_16_2(x) \
   ( ( (RV_X(x, 20, 4)) << (sizeof(x) * 8 - 4) ) >> (sizeof(x) * 8 - 8) )
 #define EXTRACT_ESP_OFFSET_256_16_0(x) \
-  ( ( ((RV_X(x, 21, 2) << 6) | (RV_X(x, 7, 6))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 12) )
+  ( ( (RV_X(x, 20, 8)) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 12) )
 #define EXTRACT_ESP_OFFSET_256_16_1(x) \
-  ( ( ((RV_X(x, 26, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 12) )
+  ( ( ((RV_X(x, 24, 4) << 4) | (RV_X(x, 19, 1) << 3) | (RV_X(x, 10, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 12) )
 #define EXTRACT_ESP_OFFSET_256_16_2(x) \
-  ( ( ((RV_X(x, 28, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 12) )
+  ( ( ((RV_X(x, 25, 4) << 4) | (RV_X(x, 20, 4))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 12) )
 #define EXTRACT_ESP_OFFSET_256_16_3(x) \
-  ( ( ((RV_X(x, 29, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 12) )
-#define EXTRACT_ESP_OFFSET_256_16_4(x) \
-  ( ( ((RV_X(x, 30, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 12) )
-#define EXTRACT_ESP_OFFSET_256_16_5(x) \
-  ( ( ((RV_X(x, 29, 3) << 5) | (RV_X(x, 20, 4) << 1) | (RV_X(x, 9, 1))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 12) )
+  ( ( ((RV_X(x, 29, 3) << 5) | (RV_X(x, 22, 2) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 12) )
 #define EXTRACT_ESP_OFFSET_256_1_0(x) \
-  ( ( ((RV_X(x, 28, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 8) )
+  ( ( ((RV_X(x, 30, 2) << 6) | (RV_X(x, 24, 5) << 1) | (RV_X(x, 19, 1))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 8) )
 #define EXTRACT_ESP_OFFSET_256_2_0(x) \
-  ( ( ((RV_X(x, 28, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 9) )
+  ( ( ((RV_X(x, 30, 2) << 6) | (RV_X(x, 24, 5) << 1) | (RV_X(x, 19, 1))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 9) )
 #define EXTRACT_ESP_OFFSET_256_4_0(x) \
-  ( ( ((RV_X(x, 28, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 10) )
+  ( ( ((RV_X(x, 30, 2) << 6) | (RV_X(x, 24, 5) << 1) | (RV_X(x, 19, 1))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 10) )
 #define EXTRACT_ESP_OFFSET_256_8_0(x) \
-  ( ( ((RV_X(x, 21, 2) << 6) | (RV_X(x, 7, 6))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 11) )
+  ( ( (RV_X(x, 19, 8)) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 11) )
 #define EXTRACT_ESP_OFFSET_256_8_1(x) \
-  ( ( ((RV_X(x, 20, 4) << 4) | (RV_X(x, 9, 4))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 11) )
+  ( ( ((RV_X(x, 26, 5) << 3) | (RV_X(x, 10, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 11) )
 #define EXTRACT_ESP_OFFSET_256_8_2(x) \
-  ( ( ((RV_X(x, 29, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 11) )
+  ( ( ((RV_X(x, 30, 2) << 6) | (RV_X(x, 26, 3) << 3) | (RV_X(x, 10, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 11) )
 #define EXTRACT_ESP_OFFSET_512_32_0(x) \
-  ( ( ((RV_X(x, 26, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 13) )
+  ( ( (RV_X(x, 20, 8)) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 13) )
 #define EXTRACT_ESP_OFFSET_512_32_1(x) \
-  ( ( ((RV_X(x, 28, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 13) )
+  ( ( ((RV_X(x, 24, 4) << 4) | (RV_X(x, 19, 1) << 3) | (RV_X(x, 10, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 13) )
 #define EXTRACT_ESP_OFFSET_512_32_2(x) \
-  ( ( ((RV_X(x, 29, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 13) )
-#define EXTRACT_ESP_OFFSET_512_32_3(x) \
-  ( ( ((RV_X(x, 30, 1) << 7) | (RV_X(x, 20, 4) << 3) | (RV_X(x, 7, 3))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 13) )
+  ( ( ((RV_X(x, 25, 4) << 4) | (RV_X(x, 20, 4))) << (sizeof(x) * 8 - 8) ) >> (sizeof(x) * 8 - 13) )
 #define EXTRACT_ESP_QU(x) \
   (RV_X(x, 10, 3))
 #define EXTRACT_ESP_QV(x) \
@@ -74,17 +68,15 @@
 #define EXTRACT_ESP_RM_01(x) \
   (RV_X(x, 15, 3))
 #define EXTRACT_ESP_RM_02(x) \
-  ((RV_X(x, 19, 1) << 2) | (RV_X(x, 13, 2)))
+  ((RV_X(x, 19, 2) << 1) | (RV_X(x, 14, 1)))
 #define EXTRACT_ESP_RM_03(x) \
-  ((RV_X(x, 20, 1) << 2) | (RV_X(x, 11, 2)))
-#define EXTRACT_ESP_RM_04(x) \
   (RV_X(x, 19, 3))
-#define EXTRACT_ESP_RM_05(x) \
-  ((RV_X(x, 21, 1) << 2) | (RV_X(x, 11, 2)))
-#define EXTRACT_ESP_RM_06(x) \
+#define EXTRACT_ESP_RM_04(x) \
   ((RV_X(x, 23, 1) << 2) | (RV_X(x, 11, 2)))
-#define EXTRACT_ESP_RM_07(x) \
-  (RV_X(x, 7, 3))
+#define EXTRACT_ESP_RM_05(x) \
+  (RV_X(x, 26, 3))
+#define EXTRACT_ESP_RM_06(x) \
+  ((RV_X(x, 29, 1) << 2) | (RV_X(x, 11, 2)))
 #define EXTRACT_ESP_RS1_0(x) \
   ((RV_X(x, 18, 1) << 4) | (RV_X(x, 15, 3)))
 #define EXTRACT_ESP_RS1_1(x) \
@@ -94,7 +86,7 @@
 #define EXTRACT_ESP_RS2_1(x) \
   ((RV_X(x, 24, 1) << 4) | (RV_X(x, 20, 3)))
 #define EXTRACT_ESP_SAT_00(x) \
-  (RV_X(x, 11, 1))
+  (RV_X(x, 10, 1))
 #define EXTRACT_ESP_SAT_01(x) \
   (RV_X(x, 12, 1))
 #define EXTRACT_ESP_SAT_02(x) \
@@ -102,49 +94,59 @@
 #define EXTRACT_ESP_SAT_03(x) \
   (RV_X(x, 14, 1))
 #define EXTRACT_ESP_SAT_04(x) \
-  (RV_X(x, 17, 1))
+  (RV_X(x, 16, 1))
 #define EXTRACT_ESP_SAT_05(x) \
-  (RV_X(x, 18, 1))
+  (RV_X(x, 17, 1))
 #define EXTRACT_ESP_SAT_06(x) \
-  (RV_X(x, 19, 1))
+  (RV_X(x, 18, 1))
 #define EXTRACT_ESP_SAT_07(x) \
-  (RV_X(x, 21, 1))
+  (RV_X(x, 19, 1))
 #define EXTRACT_ESP_SAT_08(x) \
-  (RV_X(x, 22, 1))
+  (RV_X(x, 21, 1))
 #define EXTRACT_ESP_SAT_09(x) \
-  (RV_X(x, 23, 1))
+  (RV_X(x, 22, 1))
 #define EXTRACT_ESP_SAT_10(x) \
-  (RV_X(x, 25, 1))
+  (RV_X(x, 23, 1))
 #define EXTRACT_ESP_SAT_11(x) \
-  (RV_X(x, 7, 1))
+  (RV_X(x, 24, 1))
 #define EXTRACT_ESP_SAT_12(x) \
-  (RV_X(x, 8, 1))
+  (RV_X(x, 25, 1))
 #define EXTRACT_ESP_SAT_13(x) \
+  (RV_X(x, 29, 1))
+#define EXTRACT_ESP_SAT_14(x) \
+  (RV_X(x, 30, 1))
+#define EXTRACT_ESP_SAT_15(x) \
+  (RV_X(x, 7, 1))
+#define EXTRACT_ESP_SAT_16(x) \
+  (RV_X(x, 8, 1))
+#define EXTRACT_ESP_SAT_17(x) \
   (RV_X(x, 9, 1))
 #define EXTRACT_ESP_SELECT_16_0(x) \
-  ((RV_X(x, 17, 1) << 3) | (RV_X(x, 10, 3)))
+  ((RV_X(x, 15, 1) << 3) | (RV_X(x, 10, 3)))
 #define EXTRACT_ESP_SELECT_16_1(x) \
-  ((RV_X(x, 20, 1) << 3) | (RV_X(x, 7, 3)))
+  ((RV_X(x, 18, 1) << 3) | (RV_X(x, 10, 3)))
 #define EXTRACT_ESP_SELECT_16_2(x) \
-  (RV_X(x, 19, 4))
+  ((RV_X(x, 19, 1) << 3) | (RV_X(x, 7, 3)))
 #define EXTRACT_ESP_SELECT_16_3(x) \
-  ((RV_X(x, 20, 3) << 1) | (RV_X(x, 9, 1)))
+  (RV_X(x, 20, 4))
 #define EXTRACT_ESP_SELECT_16_4(x) \
-  ((RV_X(x, 26, 3) << 1) | (RV_X(x, 23, 1)))
+  ((RV_X(x, 22, 3) << 1) | (RV_X(x, 19, 1)))
 #define EXTRACT_ESP_SELECT_2_0(x) \
   (RV_X(x, 12, 1))
 #define EXTRACT_ESP_SELECT_2_1(x) \
   (RV_X(x, 14, 1))
 #define EXTRACT_ESP_SELECT_2_2(x) \
-  (RV_X(x, 22, 1))
-#define EXTRACT_ESP_SELECT_2_3(x) \
   (RV_X(x, 23, 1))
+#define EXTRACT_ESP_SELECT_2_3(x) \
+  (RV_X(x, 24, 1))
 #define EXTRACT_ESP_SELECT_2_4(x) \
-  (RV_X(x, 9, 1))
+  (RV_X(x, 28, 1))
 #define EXTRACT_ESP_SELECT_32_0(x) \
-  (RV_X(x, 7, 5))
-#define EXTRACT_ESP_SELECT_32_1(x) \
   ((RV_X(x, 15, 3) << 2) | (RV_X(x, 11, 2)))
+#define EXTRACT_ESP_SELECT_32_1(x) \
+  ((RV_X(x, 16, 2) << 3) | (RV_X(x, 10, 3)))
+#define EXTRACT_ESP_SELECT_32_2(x) \
+  ((RV_X(x, 24, 1) << 4) | (RV_X(x, 19, 1) << 3) | (RV_X(x, 10, 3)))
 #define EXTRACT_ESP_SELECT_4_0(x) \
   (RV_X(x, 10, 2))
 #define EXTRACT_ESP_SELECT_4_1(x) \
@@ -152,18 +154,18 @@
 #define EXTRACT_ESP_SELECT_4_2(x) \
   (RV_X(x, 15, 2))
 #define EXTRACT_ESP_SELECT_4_3(x) \
-  (RV_X(x, 20, 2))
+  (RV_X(x, 21, 2))
 #define EXTRACT_ESP_SELECT_4_4(x) \
-  (RV_X(x, 22, 2))
-#define EXTRACT_ESP_SELECT_4_5(x) \
   ((RV_X(x, 24, 1) << 1) | (RV_X(x, 19, 1)))
 #define EXTRACT_ESP_SELECT_8_0(x) \
-  ((RV_X(x, 18, 1) << 2) | (RV_X(x, 11, 2)))
+  (RV_X(x, 10, 3))
 #define EXTRACT_ESP_SELECT_8_1(x) \
-  ((RV_X(x, 24, 1) << 2) | (RV_X(x, 19, 1) << 1) | (RV_X(x, 14, 1)))
+  ((RV_X(x, 18, 1) << 2) | (RV_X(x, 11, 2)))
 #define EXTRACT_ESP_SELECT_8_2(x) \
-  ((RV_X(x, 26, 2) << 1) | (RV_X(x, 23, 1)))
+  ((RV_X(x, 24, 1) << 2) | (RV_X(x, 19, 1) << 1) | (RV_X(x, 14, 1)))
 #define EXTRACT_ESP_SELECT_8_3(x) \
+  (RV_X(x, 26, 3))
+#define EXTRACT_ESP_SELECT_8_4(x) \
   (RV_X(x, 7, 3))
 #define EXTRACT_ESP_SHAMT_0(x) \
   ((RV_X(x, 25, 2) << 4) | (RV_X(x, 23, 1) << 3) | (RV_X(x, 18, 1) << 2) | (RV_X(x, 13, 2)))
@@ -191,43 +193,37 @@
 #define ENCODE_ESP_LP_OFFSET_9(x) \
   ((RV_X(x, 1, 5) << 15) | (RV_X(x, 6, 4) << 8))
 #define ENCODE_ESP_OFFSET_16_16_0(x) \
-  ((RV_X((x >> 4), 3, 1) << 20) | (RV_X((x >> 4), 0, 3) << 7))
+  ((RV_X((x >> 4), 3, 1) << 19) | (RV_X((x >> 4), 0, 3) << 7))
 #define ENCODE_ESP_OFFSET_16_16_1(x) \
-  (RV_X((x >> 4), 0, 4) << 19)
+  ((RV_X((x >> 4), 3, 1) << 20) | (RV_X((x >> 4), 0, 3) << 7))
 #define ENCODE_ESP_OFFSET_16_16_2(x) \
   (RV_X((x >> 4), 0, 4) << 20)
 #define ENCODE_ESP_OFFSET_256_16_0(x) \
-  ((RV_X((x >> 4), 6, 2) << 21) | (RV_X((x >> 4), 0, 6) << 7))
+  (RV_X((x >> 4), 0, 8) << 20)
 #define ENCODE_ESP_OFFSET_256_16_1(x) \
-  ((RV_X((x >> 4), 7, 1) << 26) | (RV_X((x >> 4), 3, 4) << 20) | (RV_X((x >> 4), 0, 3) << 7))
+  ((RV_X((x >> 4), 4, 4) << 24) | (RV_X((x >> 4), 3, 1) << 19) | (RV_X((x >> 4), 0, 3) << 10))
 #define ENCODE_ESP_OFFSET_256_16_2(x) \
-  ((RV_X((x >> 4), 7, 1) << 28) | (RV_X((x >> 4), 3, 4) << 20) | (RV_X((x >> 4), 0, 3) << 7))
+  ((RV_X((x >> 4), 4, 4) << 25) | (RV_X((x >> 4), 0, 4) << 20))
 #define ENCODE_ESP_OFFSET_256_16_3(x) \
-  ((RV_X((x >> 4), 7, 1) << 29) | (RV_X((x >> 4), 3, 4) << 20) | (RV_X((x >> 4), 0, 3) << 7))
-#define ENCODE_ESP_OFFSET_256_16_4(x) \
-  ((RV_X((x >> 4), 7, 1) << 30) | (RV_X((x >> 4), 3, 4) << 20) | (RV_X((x >> 4), 0, 3) << 7))
-#define ENCODE_ESP_OFFSET_256_16_5(x) \
-  ((RV_X((x >> 4), 5, 3) << 29) | (RV_X((x >> 4), 1, 4) << 20) | (RV_X((x >> 4), 0, 1) << 9))
+  ((RV_X((x >> 4), 5, 3) << 29) | (RV_X((x >> 4), 3, 2) << 22) | (RV_X((x >> 4), 0, 3) << 7))
 #define ENCODE_ESP_OFFSET_256_1_0(x) \
-  ((RV_X((x >> 0), 7, 1) << 28) | (RV_X((x >> 0), 3, 4) << 20) | (RV_X((x >> 0), 0, 3) << 7))
+  ((RV_X((x >> 0), 6, 2) << 30) | (RV_X((x >> 0), 1, 5) << 24) | (RV_X((x >> 0), 0, 1) << 19))
 #define ENCODE_ESP_OFFSET_256_2_0(x) \
-  ((RV_X((x >> 1), 7, 1) << 28) | (RV_X((x >> 1), 3, 4) << 20) | (RV_X((x >> 1), 0, 3) << 7))
+  ((RV_X((x >> 1), 6, 2) << 30) | (RV_X((x >> 1), 1, 5) << 24) | (RV_X((x >> 1), 0, 1) << 19))
 #define ENCODE_ESP_OFFSET_256_4_0(x) \
-  ((RV_X((x >> 2), 7, 1) << 28) | (RV_X((x >> 2), 3, 4) << 20) | (RV_X((x >> 2), 0, 3) << 7))
+  ((RV_X((x >> 2), 6, 2) << 30) | (RV_X((x >> 2), 1, 5) << 24) | (RV_X((x >> 2), 0, 1) << 19))
 #define ENCODE_ESP_OFFSET_256_8_0(x) \
-  ((RV_X((x >> 3), 6, 2) << 21) | (RV_X((x >> 3), 0, 6) << 7))
+  (RV_X((x >> 3), 0, 8) << 19)
 #define ENCODE_ESP_OFFSET_256_8_1(x) \
-  ((RV_X((x >> 3), 4, 4) << 20) | (RV_X((x >> 3), 0, 4) << 9))
+  ((RV_X((x >> 3), 3, 5) << 26) | (RV_X((x >> 3), 0, 3) << 10))
 #define ENCODE_ESP_OFFSET_256_8_2(x) \
-  ((RV_X((x >> 3), 7, 1) << 29) | (RV_X((x >> 3), 3, 4) << 20) | (RV_X((x >> 3), 0, 3) << 7))
+  ((RV_X((x >> 3), 6, 2) << 30) | (RV_X((x >> 3), 3, 3) << 26) | (RV_X((x >> 3), 0, 3) << 10))
 #define ENCODE_ESP_OFFSET_512_32_0(x) \
-  ((RV_X((x >> 5), 7, 1) << 26) | (RV_X((x >> 5), 3, 4) << 20) | (RV_X((x >> 5), 0, 3) << 7))
+  (RV_X((x >> 5), 0, 8) << 20)
 #define ENCODE_ESP_OFFSET_512_32_1(x) \
-  ((RV_X((x >> 5), 7, 1) << 28) | (RV_X((x >> 5), 3, 4) << 20) | (RV_X((x >> 5), 0, 3) << 7))
+  ((RV_X((x >> 5), 4, 4) << 24) | (RV_X((x >> 5), 3, 1) << 19) | (RV_X((x >> 5), 0, 3) << 10))
 #define ENCODE_ESP_OFFSET_512_32_2(x) \
-  ((RV_X((x >> 5), 7, 1) << 29) | (RV_X((x >> 5), 3, 4) << 20) | (RV_X((x >> 5), 0, 3) << 7))
-#define ENCODE_ESP_OFFSET_512_32_3(x) \
-  ((RV_X((x >> 5), 7, 1) << 30) | (RV_X((x >> 5), 3, 4) << 20) | (RV_X((x >> 5), 0, 3) << 7))
+  ((RV_X((x >> 5), 4, 4) << 25) | (RV_X((x >> 5), 0, 4) << 20))
 #define ENCODE_ESP_QU(x) \
   (RV_X(x, 0, 3) << 10)
 #define ENCODE_ESP_QV(x) \
@@ -247,17 +243,15 @@
 #define ENCODE_ESP_RM_01(x) \
   (RV_X(x, 0, 3) << 15)
 #define ENCODE_ESP_RM_02(x) \
-  ((RV_X(x, 2, 1) << 19) | (RV_X(x, 0, 2) << 13))
+  ((RV_X(x, 1, 2) << 19) | (RV_X(x, 0, 1) << 14))
 #define ENCODE_ESP_RM_03(x) \
-  ((RV_X(x, 2, 1) << 20) | (RV_X(x, 0, 2) << 11))
-#define ENCODE_ESP_RM_04(x) \
   (RV_X(x, 0, 3) << 19)
-#define ENCODE_ESP_RM_05(x) \
-  ((RV_X(x, 2, 1) << 21) | (RV_X(x, 0, 2) << 11))
-#define ENCODE_ESP_RM_06(x) \
+#define ENCODE_ESP_RM_04(x) \
   ((RV_X(x, 2, 1) << 23) | (RV_X(x, 0, 2) << 11))
-#define ENCODE_ESP_RM_07(x) \
-  (RV_X(x, 0, 3) << 7)
+#define ENCODE_ESP_RM_05(x) \
+  (RV_X(x, 0, 3) << 26)
+#define ENCODE_ESP_RM_06(x) \
+  ((RV_X(x, 2, 1) << 29) | (RV_X(x, 0, 2) << 11))
 #define ENCODE_ESP_RS1_0(x) \
   ((RV_X(x, 4, 1) << 18) | (RV_X(x, 0, 3) << 15))
 #define ENCODE_ESP_RS1_1(x) \
@@ -267,7 +261,7 @@
 #define ENCODE_ESP_RS2_1(x) \
   ((RV_X(x, 4, 1) << 24) | (RV_X(x, 0, 3) << 20))
 #define ENCODE_ESP_SAT_00(x) \
-  (RV_X(x, 0, 1) << 11)
+  (RV_X(x, 0, 1) << 10)
 #define ENCODE_ESP_SAT_01(x) \
   (RV_X(x, 0, 1) << 12)
 #define ENCODE_ESP_SAT_02(x) \
@@ -275,49 +269,59 @@
 #define ENCODE_ESP_SAT_03(x) \
   (RV_X(x, 0, 1) << 14)
 #define ENCODE_ESP_SAT_04(x) \
-  (RV_X(x, 0, 1) << 17)
+  (RV_X(x, 0, 1) << 16)
 #define ENCODE_ESP_SAT_05(x) \
-  (RV_X(x, 0, 1) << 18)
+  (RV_X(x, 0, 1) << 17)
 #define ENCODE_ESP_SAT_06(x) \
-  (RV_X(x, 0, 1) << 19)
+  (RV_X(x, 0, 1) << 18)
 #define ENCODE_ESP_SAT_07(x) \
-  (RV_X(x, 0, 1) << 21)
+  (RV_X(x, 0, 1) << 19)
 #define ENCODE_ESP_SAT_08(x) \
-  (RV_X(x, 0, 1) << 22)
+  (RV_X(x, 0, 1) << 21)
 #define ENCODE_ESP_SAT_09(x) \
-  (RV_X(x, 0, 1) << 23)
+  (RV_X(x, 0, 1) << 22)
 #define ENCODE_ESP_SAT_10(x) \
-  (RV_X(x, 0, 1) << 25)
+  (RV_X(x, 0, 1) << 23)
 #define ENCODE_ESP_SAT_11(x) \
-  (RV_X(x, 0, 1) << 7)
+  (RV_X(x, 0, 1) << 24)
 #define ENCODE_ESP_SAT_12(x) \
-  (RV_X(x, 0, 1) << 8)
+  (RV_X(x, 0, 1) << 25)
 #define ENCODE_ESP_SAT_13(x) \
+  (RV_X(x, 0, 1) << 29)
+#define ENCODE_ESP_SAT_14(x) \
+  (RV_X(x, 0, 1) << 30)
+#define ENCODE_ESP_SAT_15(x) \
+  (RV_X(x, 0, 1) << 7)
+#define ENCODE_ESP_SAT_16(x) \
+  (RV_X(x, 0, 1) << 8)
+#define ENCODE_ESP_SAT_17(x) \
   (RV_X(x, 0, 1) << 9)
 #define ENCODE_ESP_SELECT_16_0(x) \
-  ((RV_X(x, 3, 1) << 17) | (RV_X(x, 0, 3) << 10))
+  ((RV_X(x, 3, 1) << 15) | (RV_X(x, 0, 3) << 10))
 #define ENCODE_ESP_SELECT_16_1(x) \
-  ((RV_X(x, 3, 1) << 20) | (RV_X(x, 0, 3) << 7))
+  ((RV_X(x, 3, 1) << 18) | (RV_X(x, 0, 3) << 10))
 #define ENCODE_ESP_SELECT_16_2(x) \
-  (RV_X(x, 0, 4) << 19)
+  ((RV_X(x, 3, 1) << 19) | (RV_X(x, 0, 3) << 7))
 #define ENCODE_ESP_SELECT_16_3(x) \
-  ((RV_X(x, 1, 3) << 20) | (RV_X(x, 0, 1) << 9))
+  (RV_X(x, 0, 4) << 20)
 #define ENCODE_ESP_SELECT_16_4(x) \
-  ((RV_X(x, 1, 3) << 26) | (RV_X(x, 0, 1) << 23))
+  ((RV_X(x, 1, 3) << 22) | (RV_X(x, 0, 1) << 19))
 #define ENCODE_ESP_SELECT_2_0(x) \
   (RV_X(x, 0, 1) << 12)
 #define ENCODE_ESP_SELECT_2_1(x) \
   (RV_X(x, 0, 1) << 14)
 #define ENCODE_ESP_SELECT_2_2(x) \
-  (RV_X(x, 0, 1) << 22)
-#define ENCODE_ESP_SELECT_2_3(x) \
   (RV_X(x, 0, 1) << 23)
+#define ENCODE_ESP_SELECT_2_3(x) \
+  (RV_X(x, 0, 1) << 24)
 #define ENCODE_ESP_SELECT_2_4(x) \
-  (RV_X(x, 0, 1) << 9)
+  (RV_X(x, 0, 1) << 28)
 #define ENCODE_ESP_SELECT_32_0(x) \
-  (RV_X(x, 0, 5) << 7)
-#define ENCODE_ESP_SELECT_32_1(x) \
   ((RV_X(x, 2, 3) << 15) | (RV_X(x, 0, 2) << 11))
+#define ENCODE_ESP_SELECT_32_1(x) \
+  ((RV_X(x, 3, 2) << 16) | (RV_X(x, 0, 3) << 10))
+#define ENCODE_ESP_SELECT_32_2(x) \
+  ((RV_X(x, 4, 1) << 24) | (RV_X(x, 3, 1) << 19) | (RV_X(x, 0, 3) << 10))
 #define ENCODE_ESP_SELECT_4_0(x) \
   (RV_X(x, 0, 2) << 10)
 #define ENCODE_ESP_SELECT_4_1(x) \
@@ -325,18 +329,18 @@
 #define ENCODE_ESP_SELECT_4_2(x) \
   (RV_X(x, 0, 2) << 15)
 #define ENCODE_ESP_SELECT_4_3(x) \
-  (RV_X(x, 0, 2) << 20)
+  (RV_X(x, 0, 2) << 21)
 #define ENCODE_ESP_SELECT_4_4(x) \
-  (RV_X(x, 0, 2) << 22)
-#define ENCODE_ESP_SELECT_4_5(x) \
   ((RV_X(x, 1, 1) << 24) | (RV_X(x, 0, 1) << 19))
 #define ENCODE_ESP_SELECT_8_0(x) \
-  ((RV_X(x, 2, 1) << 18) | (RV_X(x, 0, 2) << 11))
+  (RV_X(x, 0, 3) << 10)
 #define ENCODE_ESP_SELECT_8_1(x) \
-  ((RV_X(x, 2, 1) << 24) | (RV_X(x, 1, 1) << 19) | (RV_X(x, 0, 1) << 14))
+  ((RV_X(x, 2, 1) << 18) | (RV_X(x, 0, 2) << 11))
 #define ENCODE_ESP_SELECT_8_2(x) \
-  ((RV_X(x, 1, 2) << 26) | (RV_X(x, 0, 1) << 23))
+  ((RV_X(x, 2, 1) << 24) | (RV_X(x, 1, 1) << 19) | (RV_X(x, 0, 1) << 14))
 #define ENCODE_ESP_SELECT_8_3(x) \
+  (RV_X(x, 0, 3) << 26)
+#define ENCODE_ESP_SELECT_8_4(x) \
   (RV_X(x, 0, 3) << 7)
 #define ENCODE_ESP_SHAMT_0(x) \
   ((RV_X(x, 4, 2) << 25) | (RV_X(x, 3, 1) << 23) | (RV_X(x, 2, 1) << 18) | (RV_X(x, 0, 2) << 13))
@@ -361,8 +365,6 @@
 #define VALID_ESP_OFFSET_256_16_1(x) (EXTRACT_ESP_OFFSET_256_16_1(ENCODE_ESP_OFFSET_256_16_1(x)) == (x))
 #define VALID_ESP_OFFSET_256_16_2(x) (EXTRACT_ESP_OFFSET_256_16_2(ENCODE_ESP_OFFSET_256_16_2(x)) == (x))
 #define VALID_ESP_OFFSET_256_16_3(x) (EXTRACT_ESP_OFFSET_256_16_3(ENCODE_ESP_OFFSET_256_16_3(x)) == (x))
-#define VALID_ESP_OFFSET_256_16_4(x) (EXTRACT_ESP_OFFSET_256_16_4(ENCODE_ESP_OFFSET_256_16_4(x)) == (x))
-#define VALID_ESP_OFFSET_256_16_5(x) (EXTRACT_ESP_OFFSET_256_16_5(ENCODE_ESP_OFFSET_256_16_5(x)) == (x))
 #define VALID_ESP_OFFSET_256_1_0(x) (EXTRACT_ESP_OFFSET_256_1_0(ENCODE_ESP_OFFSET_256_1_0(x)) == (x))
 #define VALID_ESP_OFFSET_256_2_0(x) (EXTRACT_ESP_OFFSET_256_2_0(ENCODE_ESP_OFFSET_256_2_0(x)) == (x))
 #define VALID_ESP_OFFSET_256_4_0(x) (EXTRACT_ESP_OFFSET_256_4_0(ENCODE_ESP_OFFSET_256_4_0(x)) == (x))
@@ -372,7 +374,6 @@
 #define VALID_ESP_OFFSET_512_32_0(x) (EXTRACT_ESP_OFFSET_512_32_0(ENCODE_ESP_OFFSET_512_32_0(x)) == (x))
 #define VALID_ESP_OFFSET_512_32_1(x) (EXTRACT_ESP_OFFSET_512_32_1(ENCODE_ESP_OFFSET_512_32_1(x)) == (x))
 #define VALID_ESP_OFFSET_512_32_2(x) (EXTRACT_ESP_OFFSET_512_32_2(ENCODE_ESP_OFFSET_512_32_2(x)) == (x))
-#define VALID_ESP_OFFSET_512_32_3(x) (EXTRACT_ESP_OFFSET_512_32_3(ENCODE_ESP_OFFSET_512_32_3(x)) == (x))
 #define VALID_ESP_QU(x) (EXTRACT_ESP_QU(ENCODE_ESP_QU(x)) == (x))
 #define VALID_ESP_QV(x) (EXTRACT_ESP_QV(ENCODE_ESP_QV(x)) == (x))
 #define VALID_ESP_QW(x) (EXTRACT_ESP_QW(ENCODE_ESP_QW(x)) == (x))
@@ -387,7 +388,6 @@
 #define VALID_ESP_RM_04(x) (EXTRACT_ESP_RM_04(ENCODE_ESP_RM_04(x)) == (x))
 #define VALID_ESP_RM_05(x) (EXTRACT_ESP_RM_05(ENCODE_ESP_RM_05(x)) == (x))
 #define VALID_ESP_RM_06(x) (EXTRACT_ESP_RM_06(ENCODE_ESP_RM_06(x)) == (x))
-#define VALID_ESP_RM_07(x) (EXTRACT_ESP_RM_07(ENCODE_ESP_RM_07(x)) == (x))
 #define VALID_ESP_RS1_0(x) (EXTRACT_ESP_RS1_0(ENCODE_ESP_RS1_0(x)) == (x))
 #define VALID_ESP_RS1_1(x) (EXTRACT_ESP_RS1_1(ENCODE_ESP_RS1_1(x)) == (x))
 #define VALID_ESP_RS2_0(x) (EXTRACT_ESP_RS2_0(ENCODE_ESP_RS2_0(x)) == (x))
@@ -406,6 +406,10 @@
 #define VALID_ESP_SAT_11(x) (EXTRACT_ESP_SAT_11(ENCODE_ESP_SAT_11(x)) == (x))
 #define VALID_ESP_SAT_12(x) (EXTRACT_ESP_SAT_12(ENCODE_ESP_SAT_12(x)) == (x))
 #define VALID_ESP_SAT_13(x) (EXTRACT_ESP_SAT_13(ENCODE_ESP_SAT_13(x)) == (x))
+#define VALID_ESP_SAT_14(x) (EXTRACT_ESP_SAT_14(ENCODE_ESP_SAT_14(x)) == (x))
+#define VALID_ESP_SAT_15(x) (EXTRACT_ESP_SAT_15(ENCODE_ESP_SAT_15(x)) == (x))
+#define VALID_ESP_SAT_16(x) (EXTRACT_ESP_SAT_16(ENCODE_ESP_SAT_16(x)) == (x))
+#define VALID_ESP_SAT_17(x) (EXTRACT_ESP_SAT_17(ENCODE_ESP_SAT_17(x)) == (x))
 #define VALID_ESP_SELECT_16_0(x) (EXTRACT_ESP_SELECT_16_0(ENCODE_ESP_SELECT_16_0(x)) == (x))
 #define VALID_ESP_SELECT_16_1(x) (EXTRACT_ESP_SELECT_16_1(ENCODE_ESP_SELECT_16_1(x)) == (x))
 #define VALID_ESP_SELECT_16_2(x) (EXTRACT_ESP_SELECT_16_2(ENCODE_ESP_SELECT_16_2(x)) == (x))
@@ -418,16 +422,17 @@
 #define VALID_ESP_SELECT_2_4(x) (EXTRACT_ESP_SELECT_2_4(ENCODE_ESP_SELECT_2_4(x)) == (x))
 #define VALID_ESP_SELECT_32_0(x) (EXTRACT_ESP_SELECT_32_0(ENCODE_ESP_SELECT_32_0(x)) == (x))
 #define VALID_ESP_SELECT_32_1(x) (EXTRACT_ESP_SELECT_32_1(ENCODE_ESP_SELECT_32_1(x)) == (x))
+#define VALID_ESP_SELECT_32_2(x) (EXTRACT_ESP_SELECT_32_2(ENCODE_ESP_SELECT_32_2(x)) == (x))
 #define VALID_ESP_SELECT_4_0(x) (EXTRACT_ESP_SELECT_4_0(ENCODE_ESP_SELECT_4_0(x)) == (x))
 #define VALID_ESP_SELECT_4_1(x) (EXTRACT_ESP_SELECT_4_1(ENCODE_ESP_SELECT_4_1(x)) == (x))
 #define VALID_ESP_SELECT_4_2(x) (EXTRACT_ESP_SELECT_4_2(ENCODE_ESP_SELECT_4_2(x)) == (x))
 #define VALID_ESP_SELECT_4_3(x) (EXTRACT_ESP_SELECT_4_3(ENCODE_ESP_SELECT_4_3(x)) == (x))
 #define VALID_ESP_SELECT_4_4(x) (EXTRACT_ESP_SELECT_4_4(ENCODE_ESP_SELECT_4_4(x)) == (x))
-#define VALID_ESP_SELECT_4_5(x) (EXTRACT_ESP_SELECT_4_5(ENCODE_ESP_SELECT_4_5(x)) == (x))
 #define VALID_ESP_SELECT_8_0(x) (EXTRACT_ESP_SELECT_8_0(ENCODE_ESP_SELECT_8_0(x)) == (x))
 #define VALID_ESP_SELECT_8_1(x) (EXTRACT_ESP_SELECT_8_1(ENCODE_ESP_SELECT_8_1(x)) == (x))
 #define VALID_ESP_SELECT_8_2(x) (EXTRACT_ESP_SELECT_8_2(ENCODE_ESP_SELECT_8_2(x)) == (x))
 #define VALID_ESP_SELECT_8_3(x) (EXTRACT_ESP_SELECT_8_3(ENCODE_ESP_SELECT_8_3(x)) == (x))
+#define VALID_ESP_SELECT_8_4(x) (EXTRACT_ESP_SELECT_8_4(ENCODE_ESP_SELECT_8_4(x)) == (x))
 #define VALID_ESP_SHAMT_0(x) (EXTRACT_ESP_SHAMT_0(ENCODE_ESP_SHAMT_0(x)) == (x))
 #define VALID_ESP_SHAMT_1(x) (EXTRACT_ESP_SHAMT_1(ENCODE_ESP_SHAMT_1(x)) == (x))
 #define VALID_ESP_UPD_4(x) (EXTRACT_ESP_UPD_4(ENCODE_ESP_UPD_4(x)) == (x))

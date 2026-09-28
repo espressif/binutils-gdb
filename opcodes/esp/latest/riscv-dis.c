@@ -196,16 +196,6 @@
 				     EXTRACT_ESP_OFFSET_256_16_3 ((int32_t)
 								  l));
 			      break;	/* Xeo843 */
-			    case '4':	/* Xeo844 */
-			      print (info->stream, dis_style_immediate, "%d",
-				     EXTRACT_ESP_OFFSET_256_16_4 ((int32_t)
-								  l));
-			      break;	/* Xeo844 */
-			    case '5':	/* Xeo845 */
-			      print (info->stream, dis_style_immediate, "%d",
-				     EXTRACT_ESP_OFFSET_256_16_5 ((int32_t)
-								  l));
-			      break;	/* Xeo845 */
 			    default:	/* Xeo84[.] */
 			      goto undefined_modifier;
 			    }
@@ -293,11 +283,6 @@
 				     EXTRACT_ESP_OFFSET_512_32_2 ((int32_t)
 								  l));
 			      break;	/* Xeo952 */
-			    case '3':	/* Xeo953 */
-			      print (info->stream, dis_style_immediate, "%d",
-				     EXTRACT_ESP_OFFSET_512_32_3 ((int32_t)
-								  l));
-			      break;	/* Xeo953 */
 			    default:	/* Xeo95[.] */
 			      goto undefined_modifier;
 			    }
@@ -478,17 +463,6 @@
 					 "%d", rm);
 			      }
 			      break;	/* Xevr06 */
-			    case '7':	/* Xevr07 */
-			      {
-				unsigned int rm = (int) EXTRACT_ESP_RM_07 (l);
-				if (rm < ARRAY_SIZE (riscv_espv_rm))
-				  print (info->stream, dis_style_text, "%s",
-					 riscv_espv_rm[rm]);
-				else
-				  print (info->stream, dis_style_immediate,
-					 "%d", rm);
-			      }
-			      break;	/* Xevr07 */
 			    default:	/* Xevr0[.] */
 			      goto undefined_modifier;
 			    }
@@ -678,6 +652,54 @@
 					 "%d", sat);
 			      }
 			      break;	/* Xevs13 */
+			    case '4':	/* Xevs14 */
+			      {
+				unsigned int sat =
+				  (int) EXTRACT_ESP_SAT_14 (l);
+				if (sat < ARRAY_SIZE (riscv_espv_sat))
+				  print (info->stream, dis_style_text, "%s",
+					 riscv_espv_sat[sat]);
+				else
+				  print (info->stream, dis_style_immediate,
+					 "%d", sat);
+			      }
+			      break;	/* Xevs14 */
+			    case '5':	/* Xevs15 */
+			      {
+				unsigned int sat =
+				  (int) EXTRACT_ESP_SAT_15 (l);
+				if (sat < ARRAY_SIZE (riscv_espv_sat))
+				  print (info->stream, dis_style_text, "%s",
+					 riscv_espv_sat[sat]);
+				else
+				  print (info->stream, dis_style_immediate,
+					 "%d", sat);
+			      }
+			      break;	/* Xevs15 */
+			    case '6':	/* Xevs16 */
+			      {
+				unsigned int sat =
+				  (int) EXTRACT_ESP_SAT_16 (l);
+				if (sat < ARRAY_SIZE (riscv_espv_sat))
+				  print (info->stream, dis_style_text, "%s",
+					 riscv_espv_sat[sat]);
+				else
+				  print (info->stream, dis_style_immediate,
+					 "%d", sat);
+			      }
+			      break;	/* Xevs16 */
+			    case '7':	/* Xevs17 */
+			      {
+				unsigned int sat =
+				  (int) EXTRACT_ESP_SAT_17 (l);
+				if (sat < ARRAY_SIZE (riscv_espv_sat))
+				  print (info->stream, dis_style_text, "%s",
+					 riscv_espv_sat[sat]);
+				else
+				  print (info->stream, dis_style_immediate,
+					 "%d", sat);
+			      }
+			      break;	/* Xevs17 */
 			    default:	/* Xevs1[.] */
 			      goto undefined_modifier;
 			    }
@@ -758,6 +780,10 @@
 			  print (info->stream, dis_style_immediate, "%d",
 				 EXTRACT_ESP_SELECT_32_1 ((int32_t) l));
 			  break;	/* Xes51 */
+			case '2':	/* Xes52 */
+			  print (info->stream, dis_style_immediate, "%d",
+				 EXTRACT_ESP_SELECT_32_2 ((int32_t) l));
+			  break;	/* Xes52 */
 			default:	/* Xes5[.] */
 			  goto undefined_modifier;
 			}
@@ -785,10 +811,6 @@
 			  print (info->stream, dis_style_immediate, "%d",
 				 EXTRACT_ESP_SELECT_4_4 ((int32_t) l));
 			  break;	/* Xes24 */
-			case '5':	/* Xes25 */
-			  print (info->stream, dis_style_immediate, "%d",
-				 EXTRACT_ESP_SELECT_4_5 ((int32_t) l));
-			  break;	/* Xes25 */
 			default:	/* Xes2[.] */
 			  goto undefined_modifier;
 			}
@@ -812,6 +834,10 @@
 			  print (info->stream, dis_style_immediate, "%d",
 				 EXTRACT_ESP_SELECT_8_3 ((int32_t) l));
 			  break;	/* Xes33 */
+			case '4':	/* Xes34 */
+			  print (info->stream, dis_style_immediate, "%d",
+				 EXTRACT_ESP_SELECT_8_4 ((int32_t) l));
+			  break;	/* Xes34 */
 			default:	/* Xes3[.] */
 			  goto undefined_modifier;
 			}

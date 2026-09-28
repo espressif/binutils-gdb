@@ -159,12 +159,6 @@
 			    case '3':
 			      used_bits |= ENCODE_ESP_OFFSET_256_16_3 (-1U);
 			      break;	/* Xeo843 */
-			    case '4':
-			      used_bits |= ENCODE_ESP_OFFSET_256_16_4 (-1U);
-			      break;	/* Xeo844 */
-			    case '5':
-			      used_bits |= ENCODE_ESP_OFFSET_256_16_5 (-1U);
-			      break;	/* Xeo845 */
 			    default:	/* Xeo84[.] */
 			      goto unknown_validate_operand;
 			    }
@@ -234,9 +228,6 @@
 			    case '2':
 			      used_bits |= ENCODE_ESP_OFFSET_512_32_2 (-1U);
 			      break;	/* Xeo952 */
-			    case '3':
-			      used_bits |= ENCODE_ESP_OFFSET_512_32_3 (-1U);
-			      break;	/* Xeo953 */
 			    default:	/* Xeo95[.] */
 			      goto unknown_validate_operand;
 			    }
@@ -340,9 +331,6 @@
 			    case '6':
 			      used_bits |= ENCODE_ESP_RM_06 (-1U);
 			      break;	/* Xevr06 */
-			    case '7':
-			      used_bits |= ENCODE_ESP_RM_07 (-1U);
-			      break;	/* Xevr07 */
 			    default:	/* Xevr0[.] */
 			      goto unknown_validate_operand;
 			    }
@@ -406,6 +394,18 @@
 			    case '3':
 			      used_bits |= ENCODE_ESP_SAT_13 (-1U);
 			      break;	/* Xevs13 */
+			    case '4':
+			      used_bits |= ENCODE_ESP_SAT_14 (-1U);
+			      break;	/* Xevs14 */
+			    case '5':
+			      used_bits |= ENCODE_ESP_SAT_15 (-1U);
+			      break;	/* Xevs15 */
+			    case '6':
+			      used_bits |= ENCODE_ESP_SAT_16 (-1U);
+			      break;	/* Xevs16 */
+			    case '7':
+			      used_bits |= ENCODE_ESP_SAT_17 (-1U);
+			      break;	/* Xevs17 */
 			    default:	/* Xevs1[.] */
 			      goto unknown_validate_operand;
 			    }
@@ -474,6 +474,9 @@
 			case '1':
 			  used_bits |= ENCODE_ESP_SELECT_32_1 (-1U);
 			  break;	/* Xes51 */
+			case '2':
+			  used_bits |= ENCODE_ESP_SELECT_32_2 (-1U);
+			  break;	/* Xes52 */
 			default:	/* Xes5[.] */
 			  goto unknown_validate_operand;
 			}
@@ -496,9 +499,6 @@
 			case '4':
 			  used_bits |= ENCODE_ESP_SELECT_4_4 (-1U);
 			  break;	/* Xes24 */
-			case '5':
-			  used_bits |= ENCODE_ESP_SELECT_4_5 (-1U);
-			  break;	/* Xes25 */
 			default:	/* Xes2[.] */
 			  goto unknown_validate_operand;
 			}
@@ -518,6 +518,9 @@
 			case '3':
 			  used_bits |= ENCODE_ESP_SELECT_8_3 (-1U);
 			  break;	/* Xes33 */
+			case '4':
+			  used_bits |= ENCODE_ESP_SELECT_8_4 (-1U);
+			  break;	/* Xes34 */
 			default:	/* Xes3[.] */
 			  goto unknown_validate_operand;
 			}
