@@ -64,8 +64,11 @@ mips_find_call (Sym *parent, bfd_vma p_lowpc, bfd_vma p_highpc)
   p_highpc &= ~3;
   for (pc = p_lowpc; pc < p_highpc; pc += 4)
     {
-      op = bfd_get_32 (core_bfd, ((unsigned char *)core_text_space
-                                 + pc - core_text_sect->vma));
+      unsigned char *instructp = core_text_at (pc);
+
+      if (instructp == NULL)
+	continue;
+      op = bfd_get_32 (core_bfd, instructp);
       if ((op & 0xfc000000) == 0x0c000000)
 	{
 	  /* This is a "jal" instruction.  Check that the destination

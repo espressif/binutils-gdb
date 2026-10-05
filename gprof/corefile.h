@@ -33,8 +33,23 @@ extern struct function_map * symbol_map;
 extern unsigned int symbol_map_count;
 
 extern bfd * core_bfd;		  /* BFD for core-file.  */
-extern asection * core_text_sect; /* Core text section.  */
-extern void * core_text_space;    /* Text space of a.out in core.  */
+
+/* One contiguous executable range.  Every allocated code section
+   with bytes is recorded here.  */
+struct core_text_range
+{
+  asection *sec;
+  bfd_vma low;
+  bfd_vma high;		/* Exclusive.  */
+  void *space;		/* Section bytes, or NULL.  */
+};
+
+extern struct core_text_range *core_text_ranges;
+extern unsigned int core_num_text_ranges;
+
+extern bfd_vma core_text_high;	/* Exclusive end of highest code.  */
+extern struct core_text_range *core_text_range_at (bfd_vma);
+extern unsigned char *core_text_at (bfd_vma);
 extern int offset_to_code;	  /* Offset (in bytes) of code from entry
 				     address of routine.  */
 

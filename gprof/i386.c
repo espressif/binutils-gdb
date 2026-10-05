@@ -63,8 +63,8 @@ i386_find_call (Sym *parent, bfd_vma p_lowpc, bfd_vma p_highpc)
   p_highpc -= 5;
   for (pc = p_lowpc; pc < p_highpc; ++pc)
     {
-      instructp = (unsigned char *) core_text_space + pc - core_text_sect->vma;
-      if (i386_iscall (instructp))
+      instructp = core_text_at (pc);
+      if (instructp != NULL && i386_iscall (instructp))
 	{
 	  DBG (CALLDEBUG,
 	       printf ("[findcall]\t0x%lx:call", (unsigned long) pc));
