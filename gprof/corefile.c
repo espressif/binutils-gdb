@@ -35,8 +35,124 @@ bfd *core_bfd;
 static int core_num_syms;
 static asymbol **core_syms;
 static bfd *core_debug_bfd;	/* Separated debuginfo file, if any.  */
-asection *core_text_sect;
-void * core_text_space;
+
+/* Executable ranges.  Some images keep code in several sections and
+   have no .text section.  */
+struct core_text_range *core_text_ranges;
+unsigned int core_num_text_ranges;
+bfd_vma core_text_high;
+
+/* True if SEC is allocated executable code that actually has bytes.  */
+
+static bool
+core_is_code_section (asection *sec)
+{
+  const flagword code_flags = SEC_ALLOC | SEC_CODE | SEC_HAS_CONTENTS;
+  flagword flags = bfd_section_flags (sec);
+
+  if ((flags & code_flags) != code_flags)
+    return false;
+
+  return bfd_section_size (sec) != 0;
+}
+
+static int
+core_cmp_text_range (const void *lp, const void *rp)
+{
+  const struct core_text_range *left = (const struct core_text_range *) lp;
+  const struct core_text_range *right = (const struct core_text_range *) rp;
+
+  if (left->low < right->low)
+    return -1;
+  if (left->low > right->low)
+    return 1;
+  return 0;
+}
+
+static void
+core_add_text_range (asection *sec)
+{
+  bfd_vma end = sec->vma + bfd_section_size (sec);
+  const size_t size = (core_num_text_ranges + 1) * sizeof (*core_text_ranges);
+  struct core_text_range *range;
+
+  core_text_ranges = xrealloc (core_text_ranges, size);
+  range = &core_text_ranges[core_num_text_ranges];
+  range->sec = sec;
+  range->low = sec->vma;
+  range->high = end;
+  range->space = NULL;
+  core_num_text_ranges++;
+
+  if (end > core_text_high)
+    core_text_high = end;
+}
+
+/* Record every allocated code section that has bytes.  */
+
+static void
+core_find_text_sections (bfd *abfd, const char *aout_name)
+{
+  asection *sec;
+
+  core_text_ranges = NULL;
+  core_num_text_ranges = 0;
+  core_text_high = 0;
+  for (sec = abfd->sections; sec != NULL; sec = sec->next)
+    if (core_is_code_section (sec))
+      core_add_text_range (sec);
+
+  if (core_num_text_ranges == 0)
+    {
+      fprintf (stderr, _("%s: can't find an executable section in %s\n"),
+	       whoami, aout_name);
+      done (1);
+    }
+
+  qsort (core_text_ranges, core_num_text_ranges, sizeof (*core_text_ranges),
+	 core_cmp_text_range);
+
+  DBG (AOUTDEBUG,
+       printf ("[core_find_text_sections] %u code sections\n",
+	       core_num_text_ranges));
+}
+
+/* Range that contains ADDR, or NULL.  */
+
+struct core_text_range *
+core_text_range_at (bfd_vma addr)
+{
+  unsigned int i;
+
+  for (i = 0; i < core_num_text_ranges; i++)
+    if (addr >= core_text_ranges[i].low && addr < core_text_ranges[i].high)
+      return &core_text_ranges[i];
+
+  return NULL;
+}
+
+/* Byte at PC in its code range, or NULL when that byte is not loaded.  */
+
+unsigned char *
+core_text_at (bfd_vma pc)
+{
+  struct core_text_range *range = core_text_range_at (pc);
+
+  if (range == NULL || range->space == NULL)
+    return NULL;
+
+  return (unsigned char *) range->space + (pc - range->low);
+}
+
+/* Section that contains ADDR, or NULL.  */
+
+static asection *
+core_text_section_for_vma (bfd_vma addr)
+{
+  struct core_text_range *range = core_text_range_at (addr);
+
+  return range ? range->sec : NULL;
+}
 
 /* Greatest common divisor of instruction sizes and alignments.  */
 static int insn_boundary;
@@ -254,18 +370,8 @@ core_init (const char * aout_name)
      the external debug information via .gnu_debuglink or build-id.  */
   open_separated_debug_file (core_bfd);
 
-  /* Get core's text section.  */
-  core_text_sect = bfd_get_section_by_name (core_bfd, ".text");
-  if (!core_text_sect)
-    {
-      core_text_sect = bfd_get_section_by_name (core_bfd, "$CODE$");
-      if (!core_text_sect)
-	{
-	  fprintf (stderr, _("%s: can't find .text section in %s\n"),
-		   whoami, aout_name);
-	  done (1);
-	}
-    }
+  /* Get core's text section(s).  */
+  core_find_text_sections (core_bfd, aout_name);
 
   /* Read core's symbol table.  */
 
@@ -338,27 +444,39 @@ core_init (const char * aout_name)
 
 /* Read in the text space of an a.out file.  */
 
+static bool
+core_has_text_space (void)
+{
+  unsigned int i;
+
+  for (i = 0; i < core_num_text_ranges; i++)
+    if (core_text_ranges[i].space != NULL)
+      return true;
+
+  return false;
+}
+
 void
 core_get_text_space (bfd *cbfd)
 {
-  core_text_space = malloc (bfd_section_size (core_text_sect));
+  unsigned int i;
 
-  if (!core_text_space)
+  for (i = 0; i < core_num_text_ranges; i++)
     {
-      fprintf (stderr, _("%s: ran out room for %lu bytes of text space\n"),
-	       whoami, (unsigned long) bfd_section_size (core_text_sect));
-      done (1);
+      struct core_text_range *range = &core_text_ranges[i];
+      bfd_size_type size = range->high - range->low;
+
+      range->space = xmalloc (size);
+
+      if (!bfd_get_section_contents (cbfd, range->sec, range->space, 0, size))
+	{
+	  bfd_perror ("bfd_get_section_contents");
+	  free (range->space);
+	  range->space = NULL;
+	}
     }
 
-  if (!bfd_get_section_contents (cbfd, core_text_sect, core_text_space,
-				 0, bfd_section_size (core_text_sect)))
-    {
-      bfd_perror ("bfd_get_section_contents");
-      free (core_text_space);
-      core_text_space = 0;
-    }
-
-  if (!core_text_space)
+  if (!core_has_text_space ())
     fprintf (stderr, _("%s: can't do -c\n"), whoami);
 }
 
@@ -366,7 +484,7 @@ core_get_text_space (bfd *cbfd)
 void
 find_call (Sym *parent, bfd_vma p_lowpc, bfd_vma p_highpc)
 {
-  if (core_text_space == 0)
+  if (!core_has_text_space ())
     return;
 
   hist_clip_symbol_address (&p_lowpc, &p_highpc);
@@ -531,9 +649,13 @@ get_src_info (bfd_vma addr, const char **filename, const char **name,
   int l = 0;
   /* Use debug BFD for line info if we have a separated debuginfo file.  */
   bfd *info_bfd = core_debug_bfd ? core_debug_bfd : core_bfd;
+  asection *sec = core_text_section_for_vma (addr);
 
-  if (bfd_find_nearest_line (info_bfd, core_text_sect, core_syms,
-			     addr - core_text_sect->vma,
+  if (sec == NULL)
+    return false;
+
+  if (bfd_find_nearest_line (info_bfd, sec, core_syms,
+			     addr - sec->vma,
 			     &fname, &func_name, (unsigned int *) &l)
       && fname && func_name && l)
     {
@@ -571,7 +693,7 @@ num_of_syms_in (FILE * f)
       if (sscanf (buf, "%" STR_BUFSIZE "s %c %" STR_BUFSIZE "s", address, &type, name) == 3)
         if (type == 't' || type == 'T')
 	  {
-	    /* PR 20499 - prevent integer overflow computing argument to xmalloc.  */	  
+	    /* PR 20499 - prevent integer overflow computing argument to xmalloc.  */
 	    if (++num >= UINT_MAX / sizeof (Sym))
 	      return -1U;
 	  }
@@ -825,8 +947,6 @@ core_create_line_syms (void)
   Sym_Table ltab;
   size_t ltab_reserved;
   Sym_Table *symtab = get_symtab_direct ();
-  bfd_vma bfd_vma_low = core_text_sect->vma;
-  bfd_vma bfd_vma_high = bfd_vma_low + bfd_section_size (core_text_sect);
 
   /* Create symbols for functions as usual.  This is necessary in
      cases where parts of a program were not compiled with -g.  For
@@ -862,12 +982,15 @@ core_create_line_syms (void)
      call-graph records and basic-block records, we can look up only the
      line numbers within low PC and high PC in histogram records.  */
   if (gmon_histograms_first)
-    for (size_t i = 0; i < num_histograms; ++i)
-      {
-	bfd_vma hist_vma_high = histograms[i].highpc;
-	bfd_vma vma_low = MAX (histograms[i].lowpc, bfd_vma_low);
-	bfd_vma vma_high = MIN (bfd_vma_high, hist_vma_high);
-	for (vma = vma_low; vma < vma_high; vma += insn_boundary)
+    for (unsigned int r = 0; r < core_num_text_ranges; ++r)
+      for (size_t i = 0; i < num_histograms; ++i)
+	{
+	  bfd_vma hist_vma_high = histograms[i].highpc;
+	  bfd_vma vma_low = MAX (histograms[i].lowpc,
+				 core_text_ranges[r].low);
+	  bfd_vma vma_high = MIN (core_text_ranges[r].high, hist_vma_high);
+
+	  for (vma = vma_low; vma < vma_high; vma += insn_boundary)
 	  {
 	    if (ltab.len >= ltab_reserved)
 	      {
@@ -918,7 +1041,9 @@ core_create_line_syms (void)
 	  }
       }
   else
-    for (vma = bfd_vma_low; vma < bfd_vma_high; vma += insn_boundary)
+    for (unsigned int r = 0; r < core_num_text_ranges; ++r)
+      for (vma = core_text_ranges[r].low;
+	   vma < core_text_ranges[r].high; vma += insn_boundary)
       {
 	if (ltab.len >= ltab_reserved)
 	  {

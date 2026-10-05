@@ -92,12 +92,18 @@ host_triplet = @host@
 target_triplet = @target@
 
 # Create a separated-debuginfo version of the initial binary 
+
+# Host gcc emits .text.* per function.  The linker script places those
+# inputs in output sections that are not named .text.
 @NATIVE_TRUE@am__append_1 = tst-gmon-gprof.sh tst-gmon-gprof-l.sh \
-@NATIVE_TRUE@	tst-gmon-gprof-l2.sh
+@NATIVE_TRUE@	tst-gmon-gprof-l2.sh tst-gmon-sections.sh
 @NATIVE_TRUE@am__append_2 = tst-gmon-gprof.out tst-gmon-gprof-l.out \
-@NATIVE_TRUE@	tst-gmon-gprof-l2.out
+@NATIVE_TRUE@	tst-gmon-gprof-l2.out tst-gmon-sections.out
 @NATIVE_TRUE@am__append_3 = tst-gmon.$(OBJEXT) tst-gmon$(EXEEXT) \
-@NATIVE_TRUE@	gmon.out tst-gmon2$(EXEEXT) tst-gmon2.debug
+@NATIVE_TRUE@	gmon.out tst-gmon2$(EXEEXT) tst-gmon2.debug \
+@NATIVE_TRUE@	tst-gmon-sections$(EXEEXT) tst-gmon-sections.gmon \
+@NATIVE_TRUE@	tst-gmon-sections.prof tst-gmon-sections.err \
+@NATIVE_TRUE@	tst-gmon-sections.syms
 subdir = testsuite
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../bfd/warning.m4 \
@@ -517,6 +523,7 @@ check_SCRIPTS = $(am__append_1)
 check_DATA = $(am__append_2)
 MOSTLYCLEANFILES = $(am__append_3)
 TESTS = $(check_SCRIPTS)
+EXTRA_DIST = tst-gmon-sections.c tst-gmon-sections.ld tst-gmon-sections.sh
 all: all-am
 
 .SUFFIXES:
@@ -725,6 +732,13 @@ tst-gmon-gprof-l2.sh.log: tst-gmon-gprof-l2.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tst-gmon-sections.sh.log: tst-gmon-sections.sh
+	@p='tst-gmon-sections.sh'; \
+	b='tst-gmon-sections.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 .test.log:
 	@p='$<'; \
 	$(am__set_b); \
@@ -909,6 +923,10 @@ uninstall-am:
 
 @NATIVE_TRUE@tst-gmon-gprof-l2.out: tst-gmon2$(EXEEXT) tst-gmon2.debug $(GPROF)
 @NATIVE_TRUE@	$(srcdir)/tst-gmon-gprof-l2.sh $(GPROF) tst-gmon2$(EXEEXT) $(target)
+@NATIVE_TRUE@tst-gmon-sections.out: $(srcdir)/tst-gmon-sections.sh \
+@NATIVE_TRUE@		$(srcdir)/tst-gmon-sections.c \
+@NATIVE_TRUE@		$(srcdir)/tst-gmon-sections.ld $(GPROF)
+@NATIVE_TRUE@	$(srcdir)/tst-gmon-sections.sh $(GPROF) $(CC) $(srcdir)
 
 # Run all tests in series, so they don't fight over the gmon.out file
 @NATIVE_TRUE@.NOTPARALLEL:

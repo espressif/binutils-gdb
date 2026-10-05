@@ -53,7 +53,20 @@ tst-gmon-gprof-l2.out: tst-gmon2$(EXEEXT) tst-gmon2.debug $(GPROF)
 check_DATA += tst-gmon-gprof-l2.out
 MOSTLYCLEANFILES += tst-gmon2$(EXEEXT) tst-gmon2.debug
 
+# Host gcc emits .text.* per function.  The linker script places those
+# inputs in output sections that are not named .text.
+check_SCRIPTS += tst-gmon-sections.sh
+check_DATA += tst-gmon-sections.out
+MOSTLYCLEANFILES += tst-gmon-sections$(EXEEXT) tst-gmon-sections.gmon \
+	tst-gmon-sections.prof tst-gmon-sections.err tst-gmon-sections.syms
+tst-gmon-sections.out: $(srcdir)/tst-gmon-sections.sh \
+		$(srcdir)/tst-gmon-sections.c \
+		$(srcdir)/tst-gmon-sections.ld $(GPROF)
+	$(srcdir)/tst-gmon-sections.sh $(GPROF) $(CC) $(srcdir)
+
 # Run all tests in series, so they don't fight over the gmon.out file
 .NOTPARALLEL:
 
 endif NATIVE
+
+EXTRA_DIST = tst-gmon-sections.c tst-gmon-sections.ld tst-gmon-sections.sh
