@@ -623,12 +623,26 @@ cg_assemble (void)
       parent->cg.cyc.num = 0;
       parent->cg.cyc.head = parent;
       parent->cg.cyc.next = 0;
-      if (ignore_direct_calls
-	  && parent->addr >= core_text_sect->vma
-	  && parent->addr < core_text_sect->vma +  core_text_sect->size
-	  && (parent + 1)->addr >= core_text_sect->vma
-	  && (parent + 1)->addr <= core_text_sect->vma +  core_text_sect->size)
-	find_call (parent, parent->addr, (parent + 1)->addr);
+      if (ignore_direct_calls)
+	{
+	  struct core_text_range *range = core_text_range_at (parent->addr);
+
+	  if (range != NULL && range->space != NULL)
+	    {
+	      bfd_vma high;
+
+	      /* Successor fences the routine inside this range.  The
+		 last symbol ends at the range; parent+1 is off the table.  */
+	      if (parent + 1 < symtab.limit
+		  && (parent + 1)->addr > parent->addr
+		  && (parent + 1)->addr <= range->high)
+		high = (parent + 1)->addr;
+	      else
+		high = range->high;
+
+	      find_call (parent, parent->addr, high);
+	    }
+	}
     }
 
   /* Topologically order things.  If any node is unnumbered, number

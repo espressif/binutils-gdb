@@ -135,7 +135,17 @@ symtab_finalize (Sym_Table *tab)
       else
 	{
 	  if (dst > tab->base && dst[-1].end_addr == 0)
-	    dst[-1].end_addr = src->addr - 1;
+	    {
+	      struct core_text_range *range
+		= core_text_range_at (dst[-1].addr);
+
+	      /* Stop at the end of this symbol's code range so that code
+		 without symbols is not credited to it.  */
+	      if (range != NULL && range->high < src->addr)
+		dst[-1].end_addr = range->high - 1;
+	      else
+		dst[-1].end_addr = src->addr - 1;
+	    }
 
 	  /* Retain sym only if it has a non-empty address range.  */
 	  if (!src->end_addr || src->addr <= src->end_addr)
@@ -148,8 +158,16 @@ symtab_finalize (Sym_Table *tab)
     }
 
   if (tab->len > 0 && dst > tab->base && dst[-1].end_addr == 0)
-    dst[-1].end_addr
-      = core_text_sect->vma + bfd_section_size (core_text_sect) - 1;
+    {
+      struct core_text_range *range = core_text_range_at (dst[-1].addr);
+      bfd_vma high = range != NULL ? range->high : core_text_high;
+
+      /* Bound by the code range holding this symbol, else by the highest
+	 code end.  A symbol above all code, such as data_start, ends
+	 before it starts, so it is dropped when line symbols are
+	 finalized.  */
+      dst[-1].end_addr = high - 1;
+    }
 
   DBG (AOUTDEBUG | IDDEBUG,
        printf ("[symtab_finalize]: removed %d duplicate entries\n",

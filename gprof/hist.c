@@ -395,7 +395,12 @@ hist_assign_samples_1 (histogram *r)
       for (j = k - 1; j < symtab.len; k = ++j)
 	{
 	  sym_low_pc = symtab.base[j].hist.scaled_addr;
-	  sym_high_pc = symtab.base[j + 1].hist.scaled_addr;
+	  /* end_addr is inclusive and stops at the end of the symbol's
+	     code range.  The last symbol has no successor.  */
+	  sym_high_pc = (symtab.base[j].end_addr + 1) / sizeof (UNIT);
+	  if (j + 1 < symtab.len
+	      && symtab.base[j + 1].hist.scaled_addr < sym_high_pc)
+	    sym_high_pc = symtab.base[j + 1].hist.scaled_addr;
 
 	  /* If high end of bin is below entry address,
 	     go for next bin.  */
