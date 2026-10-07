@@ -4993,6 +4993,25 @@ r_reloc_is_defined (const r_reloc *r_rel)
 }
 
 
+/* In a SEC_MERGE section the symbol takes part in resolving a
+   relocation: a section symbol plus addend selects the merged entry at
+   that offset, while any other symbol selects the entry the symbol is
+   in, and the addend is applied after merging.  So two relocations
+   with the same target section and offset may still resolve to
+   different addresses -- e.g. a pointer just past the end of an 8-byte
+   string, ".LC0+8", and the string that follows it at offset 8 once
+   that string is merged elsewhere.  Return true if R_REL targets such a
+   section, so that literals holding it are only equal when they use
+   the same symbol.  */
+
+static bool
+r_reloc_is_merge_target (const r_reloc *r_rel)
+{
+  asection *sec = r_reloc_get_section (r_rel);
+  return sec != NULL && (sec->flags & SEC_MERGE) != 0;
+}
+
+
 static void
 r_reloc_init (r_reloc *r_rel,
 	      bfd *abfd,
@@ -5242,6 +5261,12 @@ literal_value_equal (const literal_value *src1,
       if (r_reloc_get_section (&src1->r_rel)
 	  != r_reloc_get_section (&src2->r_rel))
 	return false;
+
+      if (r_reloc_is_merge_target (&src1->r_rel)
+	  && (h1 != h2
+	      || (!h1 && (ELF32_R_SYM (src1->r_rel.rela.r_info)
+			  != ELF32_R_SYM (src2->r_rel.rela.r_info)))))
+	return false;
     }
   else
     {
@@ -5317,6 +5342,20 @@ literal_value_hash (const literal_value *src)
       else
 	sec_or_hash = r_reloc_get_hash_entry (&src->r_rel);
       hash_val += hash_bfd_vma ((bfd_vma) (size_t) sec_or_hash);
+
+      /* Literals pointing into a SEC_MERGE section are only equal if
+	 they use the same symbol; keep those that differ apart.  */
+      if (r_reloc_is_merge_target (&src->r_rel))
+	{
+	  struct elf_link_hash_entry *h;
+
+	  h = r_reloc_get_hash_entry (&src->r_rel);
+	  if (h)
+	    hash_val += hash_bfd_vma ((bfd_vma) (size_t) h);
+	  else
+	    hash_val += hash_bfd_vma ((bfd_vma)
+				      ELF32_R_SYM (src->r_rel.rela.r_info) << 2);
+	}
     }
   return hash_val;
 }
