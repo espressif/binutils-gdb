@@ -201,6 +201,6 @@ All available -march extensions for RISC-V:
 	xmipslsp                                1.0
 	xsmtvdot                                1.0
 	xsmtvdotii                              1.0
-	xespdsp                                 2.1
+	xespdsp                                 2.3
 	xesploop                                1.0
 	xespv                                   3.0

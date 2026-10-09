@@ -1913,14 +1913,13 @@ static const struct riscv_supported_ext riscv_supported_vendor_x_ext[] =
   {"xesploop",		ISA_SPEC_CLASS_DRAFT,	1, 0, 0},
 #if RISCV_XESPV2P1
   {"xespv",		ISA_SPEC_CLASS_DRAFT,	2, 1, 0},
-#else  /* RISCV_XESPV2P1  */
+#elif RISCV_XESPV2P2
   {"xespdsp",		ISA_SPEC_CLASS_DRAFT,	2, 1, 0},
-#if RISCV_XESPV2P2
   {"xespv",		ISA_SPEC_CLASS_DRAFT,	2, 2, 0},
-#else /* RISCV_XESPV2P2  */
+#else /* latest  */
+  {"xespdsp",		ISA_SPEC_CLASS_DRAFT,	2, 3, 0},
   {"xespv",		ISA_SPEC_CLASS_DRAFT,	3, 0, 0},
-#endif /* RISCV_XESPV2P2  */
-#endif /* RISCV_XESPV2P1  */
+#endif
   {NULL, 0, 0, 0, 0}
 };
 
